@@ -85,6 +85,15 @@ button.mini{width:100%;background:var(--green);color:#fff;border:none;padding:8p
 window.__hadData=false;
 try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('pointage_fiche')===0){ window.__hadData=true; break; } } }catch(e){}
 </script>
+<div id="blockGate" style="display:none;position:fixed;inset:0;z-index:99998;background:var(--bg);overflow:auto;">
+  <div style="max-width:380px;margin:0 auto;padding:calc(60px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
+    <div style="font-size:3.5rem;">🚫</div>
+    <h2 style="margin:10px 0 6px;font-size:1.3rem;color:var(--red);">บัญชีของคุณถูกระงับชั่วคราว</h2>
+    <div class="small" style="font-size:.95rem;margin-bottom:20px;">กรุณาติดต่อหัวหน้า</div>
+    <button onclick="checkBlocked(true)" style="width:100%;background:var(--blue);color:#fff;border:none;padding:14px;border-radius:12px;font-size:1.05rem;font-weight:700;">🔄 ตรวจสอบอีกครั้ง</button>
+    <div id="blockMsg" class="small" style="margin-top:10px;"></div>
+  </div>
+</div>
 <div id="accessGate" style="display:none;position:fixed;inset:0;z-index:99999;background:var(--bg);overflow:auto;">
   <div style="max-width:380px;margin:0 auto;padding:calc(48px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
     <div style="font-size:3rem;">🔐</div>
@@ -644,13 +653,35 @@ async function syncSheet(){
     const p=dayPayload(day); if(!p || sent[p.id]) continue;
     // on ne marque « envoyé » que si Google répond vraiment « ok »
     try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(p)}); const t=(await r.text()).trim();
-         if(r.ok && t==='ok'){ markSent(p.id); okN++; } else pending++; }
+         if(r.ok && t==='ok'){ markSent(p.id); okN++; }
+         else if(t==='blocked'){ setBlocked(true); pending++; break; }
+         else pending++; }
     catch(e){ pending++; }
   }
   sheetBusy=false;
   const el=document.getElementById('sheetInfo');
   if(el){ if(pending) el.textContent='⏳ รอส่งข้อมูลให้หัวหน้า '+pending+' วัน — จะลองส่งใหม่อัตโนมัติ'; else if(okN) el.textContent='📤 ส่งข้อมูลให้หัวหน้าแล้ว'; }
 }
+// ===== EMPLOYÉ BLOQUÉ PAR LE PATRON (onglet « Employés » de la feuille Google) =====
+function setBlocked(on){
+  try{ if(on) localStorage.setItem('pointage_blocked','1'); else localStorage.removeItem('pointage_blocked'); }catch(e){}
+  const g=document.getElementById('blockGate'); if(g) g.style.display = on ? 'block' : 'none';
+  document.body.style.overflow = on ? 'hidden' : '';
+}
+async function checkBlocked(manual){
+  const n=document.getElementById('name').value, t=document.getElementById('phone').value;
+  if(!SHEET_URL || !n || !t) return;
+  const msg=document.getElementById('blockMsg'); if(manual && msg) msg.textContent='⏳ …';
+  try{
+    const r=await fetch(SHEET_URL+'?emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&_='+Date.now());
+    const txt=(await r.text()).trim();
+    if(txt==='blocked'){ setBlocked(true); if(manual && msg) msg.textContent='🚫 ยังถูกระงับอยู่'; }
+    else if(txt==='ok'){ const was=(()=>{try{return localStorage.getItem('pointage_blocked')==='1'}catch(e){return false}})(); setBlocked(false); if(was) syncSheet(); }
+  }catch(e){ if(manual && msg) msg.textContent='⚠️ ไม่มีอินเทอร์เน็ต'; }
+}
+try{ if(localStorage.getItem('pointage_blocked')==='1') setBlocked(true); }catch(e){}
+setTimeout(()=>checkBlocked(false), 1500);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkBlocked(false); });
 window.addEventListener('online', syncSheet);
 setInterval(syncSheet, 5*60*1000);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncSheet(); });
