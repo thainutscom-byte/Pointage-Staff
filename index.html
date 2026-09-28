@@ -535,24 +535,16 @@ function toggleDay(h3){
 let bossUnlocked=false, bossTimer=null;
 function setupDone(){ const sh = N===10 ? document.getElementById('shiftGlobal').value : document.getElementById('shiftGlobalMonthly').value; return !!sh; }
 function applyFreeze(){
+  // plus de clé 🔑 : contrat et horaire modifiables librement
   const anyLocked = !!document.querySelector('.day[data-locked="1"]');
   ['startDate','pkg'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=anyLocked; });
-  const lockCS = setupDone() && !bossUnlocked;
-  document.getElementById('contract').disabled = anyLocked; // contrat libre (bloqué seulement si des jours sont validés)
-  ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ document.getElementById(id).disabled = lockCS; });
-  let bb=document.getElementById('bossBtn');
-  if(!bb){ bb=document.createElement('button'); bb.id='bossBtn'; bb.type='button'; bb.onclick=bossUnlock;
-    bb.style.cssText='width:100%;margin:0 0 10px;padding:10px;border-radius:10px;border:1px dashed var(--yellow-b);background:var(--yellow);color:var(--text);font-weight:700;font-size:.85rem;';
-  }
-  // le bouton 🔑 se place juste APRÈS le choix de l'horaire
-  { const anchor = N===10 ? document.getElementById('freelanceNote') : document.getElementById('shiftGlobalMonthly').closest('.field');
-    if(bb.previousElementSibling!==anchor) anchor.after(bb); }
-  bb.style.display = setupDone() ? 'block' : 'none';
-  bb.textContent = bossUnlocked ? '🔓 ปลดล็อกแล้ว — เลือกช่วงเวลาใหม่ได้' : '🔑 เปลี่ยนช่วงเวลา (ใช้รหัสหัวหน้า)';
+  document.getElementById('contract').disabled = false;
+  ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ document.getElementById(id).disabled = false; });
+  const old=document.getElementById('bossBtn'); if(old) old.remove();
   let note=document.getElementById('freezeNote');
   if(!note){ note=document.createElement('div'); note.id='freezeNote'; note.className='small'; note.style.cssText='color:var(--red);font-weight:700;margin:6px 0;';
     document.getElementById('startDate').closest('.field').after(note); }
-  note.textContent = anyLocked ? '🔒 มีวันที่ยืนยันแล้ว — เปลี่ยนสัญญา/วันที่เริ่ม/แพ็กเกจไม่ได้ (กด 🗑️ รอบใหม่ ก่อน)' : '';
+  note.textContent = anyLocked ? '🔒 มีวันที่ยืนยันแล้ว — เปลี่ยนวันที่เริ่ม/แพ็กเกจไม่ได้ (กด 🗑️ รอบใหม่ ก่อน)' : '';
 }
 function bossLock(){ bossUnlocked=false; clearTimeout(bossTimer); applyFreeze(); }
 function bossUnlock(){
@@ -903,7 +895,13 @@ function resetCycle(){
   document.getElementById('saveInfo').textContent='✅ เริ่มรอบใหม่แล้ว — ล้างเฉพาะวันทำงาน';
 }
 
-document.getElementById('contract').addEventListener('change', ()=>{ if(document.querySelector('.day[data-locked="1"]')){ applyFreeze(); return; } buildDays(); saveState();});
+document.getElementById('contract').addEventListener('change', ()=>{
+  // changer de contrat en gardant les jours déjà remplis / validés
+  const newN=parseInt(document.getElementById('contract').value);
+  const lost=[...document.querySelectorAll('.day')].filter(d=>+d.dataset.d>newN && (d.dataset.locked==='1' || d.querySelector('.solo').value || d.querySelector('.duo').value || d.querySelector('.duo8').value));
+  if(lost.length){ alert('⚠️ มีข้อมูลหลังวันที่ '+newN+' — เปลี่ยนเป็นสัญญา '+newN+' วันไม่ได้'); document.getElementById('contract').value=String(N); return; }
+  saveState(); if(!loadState()){ buildDays(); saveState(); }
+});
 document.getElementById('pkg').addEventListener('change', saveState);
 document.getElementById('rate').addEventListener('input', saveState);
 document.getElementById('rateUrg').addEventListener('input', saveState);
