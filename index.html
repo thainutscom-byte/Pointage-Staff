@@ -622,11 +622,12 @@ function handleJustFile(inp){
 // ===== ENVOI AU PATRON : chaque journée validée part dans la feuille Google (chiffre d'affaires par jour) =====
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwTwB_sp6Jy73mRrqZ6QeJnjbIUvUmGnd4wZeW_2_80LsAJIBF3DneyCsfJZUVSzPI5/exec';
 const PRICE_1L = 600, PRICE_2L = 800, PRICE_HH = 600;
-function sheetSent(){ try{ return JSON.parse(localStorage.getItem('sheet_sent_v2')||'{}'); }catch(e){ return {}; } }
-function markSent(id){ const m=sheetSent(); m[id]=1; try{ localStorage.setItem('sheet_sent_v2', JSON.stringify(m)); }catch(e){} }
+function sheetSent(){ try{ return JSON.parse(localStorage.getItem('sheet_sent_v3')||'{}'); }catch(e){ return {}; } }
+function markSent(id){ const m=sheetSent(); m[id]=1; try{ localStorage.setItem('sheet_sent_v3', JSON.stringify(m)); }catch(e){} }
 function dayPayload(day){
   const q=s=>day.querySelector(s), dd=dayDate(+day.dataset.d); if(!dd) return null;
-  const l1=+q('.solo').value||0, l2=+q('.duo8').value||0, hh=+q('.duo').value||0;
+  // 2 lady : chaque lady saisit 1 → compte 1/2 massage (l'autre lady saisit aussi 1)
+  const l1=+q('.solo').value||0, l2=(+q('.duo8').value||0)*0.5, hh=+q('.duo').value||0;
   let sit=[]; if(q('.c-abs').checked) sit.push(q('.c-med').checked?'Absence justifiée':'Absent');
   if(q('.c-l1529').checked) sit.push('Retard 15-29'); if(q('.c-l3059').checked) sit.push('Retard 30-59'); if(q('.c-l60').checked) sit.push('Retard 60+');
   const name=document.getElementById('name').value||'-', phone=document.getElementById('phone').value||'';
