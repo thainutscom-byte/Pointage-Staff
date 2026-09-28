@@ -620,7 +620,7 @@ function handleJustFile(inp){
   reader.readAsDataURL(file);
 }
 // ===== ENVOI AU PATRON : chaque journée validée part dans la feuille Google (chiffre d'affaires par jour) =====
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwTwB_sp6Jy73mRrqZ6QeJnjbIUvUmGnd4wZeW_2_80LsAJIBF3DneyCsfJZUVSzPI5/exec';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const PRICE_1L = 600, PRICE_2L = 800, PRICE_HH = 600;
 function sheetSent(){ try{ return JSON.parse(localStorage.getItem('sheet_sent_v3')||'{}'); }catch(e){ return {}; } }
 function markSent(id){ const m=sheetSent(); m[id]=1; try{ localStorage.setItem('sheet_sent_v3', JSON.stringify(m)); }catch(e){} }
