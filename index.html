@@ -69,6 +69,14 @@ button.mini{width:100%;background:var(--green);color:#fff;border:none;padding:8p
 .fileBtn{display:inline-flex;align-items:center;gap:6px;background:var(--blue);color:#fff;font-weight:700;font-size:.85rem;padding:9px 14px;border-radius:9px;cursor:pointer;}
 .fileBtn.gray{background:#6b7280;}
 .fileName{margin-left:8px;}
+.massRow>div{display:flex;flex-direction:column;justify-content:flex-end;text-align:center;}
+.massRow label{text-align:center;line-height:1.25;}
+.massRow input{text-align:center;}
+.massRow label{font-weight:800;font-size:.85rem;}
+.massRow .m1 label{color:#1d4ed8;} .massRow .m1 input{border-color:#1d4ed8;border-width:2px;}
+.massRow .m2 label{color:#7e22ce;} .massRow .m2 input{border-color:#7e22ce;border-width:2px;}
+.massRow .m3 label{color:#c2410c;} .massRow .m3 input{border-color:#c2410c;border-width:2px;}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .massRow .m1 label{color:#93c5fd;} :root:not([data-theme="light"]) .massRow .m2 label{color:#d8b4fe;} :root:not([data-theme="light"]) .massRow .m3 label{color:#fdba74;} }
 </style>
 </head>
 <body>
@@ -103,6 +111,14 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
   <h1>📋 แบบฟอร์มลงเวลาประจำวัน</h1>
 
   <div class="card">
+    <div id="nextCycleBox" style="display:none;background:var(--yellow);border:2px solid #f59e0b;border-radius:12px;padding:12px;margin-bottom:12px;color:var(--text);">
+      <b>🔔 รอบ 10 วันจบแล้ว — จะเริ่มสัญญาใหม่วันที่เท่าไร?</b>
+      <div id="nextFree" class="small" style="color:var(--text);margin-top:4px;"></div>
+      <div class="small" style="color:var(--text);">หลังจากนั้น ปรับ 1,000 ฿ ต่อวัน (สูงสุด 7 วัน)</div>
+      <input id="nextStart" type="date" onchange="saveState(); renderNextBox();" style="margin-top:8px;">
+      <div id="nextInfo" class="small" style="font-weight:700;margin-top:4px;"></div>
+      <div class="small" style="color:var(--text);margin-top:4px;">📄 ส่ง PDF ให้หัวหน้าก่อน แล้วกด 🗑️ รอบใหม่</div>
+    </div>
     <div class="field"><label>ชื่อพนักงาน</label><input id="name" placeholder="ชื่อ-นามสกุล"></div>
     <div class="field"><label>เบอร์โทรศัพท์</label><input id="phone" placeholder="0X XXX XXXX"></div>
     <div class="field">
@@ -174,10 +190,12 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
         <div style="display:flex;gap:8px;padding:2px 0;border-bottom:1px solid var(--border);"><b style="min-width:92px;">31/12</b><span>วันส่งท้ายปีเก่า</span></div>
       </details>
       <div class="small" style="background:var(--yellow);padding:8px;border-radius:8px;margin-bottom:8px;">
-        📅 รอบรายเดือน: ลาต่อเนื่องได้ไม่เกิน <b>4 วัน</b>
+        📅 รอบรายเดือน: ลาต่อเนื่องได้ <b>4 วัน</b> ฟรี · เกิน 4 วัน ปรับ <b>1,000 ฿ ต่อวัน</b> (สูงสุด 7 วัน)
       </div>
-      <div class="field"><label>วันที่ต้องการเริ่มลา (ล่วงหน้า 15 วัน – 2 เดือน)</label><input id="congeStart" type="date" onchange="calcConge()"></div>
-      <div class="field"><label>ลาถึงวันที่ (อัตโนมัติ — ลาได้สูงสุด 4 วันติดต่อกัน ต่อเดือน)</label><input id="congeEnd" type="text" disabled></div>
+      <div class="field"><label>วันที่ต้องการเริ่มลา (ล่วงหน้า 15 วัน – 2 เดือน)</label><input id="congeStart" type="date" onchange="calcConge(true)"></div>
+      <div class="field"><label>จำนวนวันลา</label><select id="congeDays" onchange="calcConge(true)"><option value="1">1 วัน (ฟรี)</option><option value="2">2 วัน (ฟรี)</option><option value="3">3 วัน (ฟรี)</option><option value="4" selected>4 วัน (ฟรี)</option><option value="5">5 วัน (+1,000 ฿)</option><option value="6">6 วัน (+2,000 ฿)</option><option value="7">7 วัน (+3,000 ฿)</option><option value="8">8 วัน (+4,000 ฿)</option><option value="9">9 วัน (+5,000 ฿)</option><option value="10">10 วัน (+6,000 ฿)</option><option value="11">11 วัน (+7,000 ฿)</option></select></div>
+      <input type="hidden" id="congeReqAt">
+      <div class="field"><label>ลาถึงวันที่ (อัตโนมัติ)</label><input id="congeEnd" type="text" disabled></div>
       <input type="hidden" id="holidayDates">
       <div id="congeValidation" class="small" style="font-weight:700;"></div>
     </div>
@@ -195,7 +213,9 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       8- สายเกิน 3 ชั่วโมง = นับเป็นขาดงาน<br>
       9- สายน้อยกว่า 15 นาที = ไม่ปรับ<br>
       10- ขาดงานมีใบรับรองแพทย์ (แนบรูป) = ไม่ปรับ ไม่กิโยติน<br>
-      11- ต้องส่งใบรับรองแพทย์ภายใน 4 ชม. หลังเวลาเริ่มงาน มิฉะนั้นนับเป็นขาดงาน
+      11- ต้องส่งใบรับรองแพทย์ภายใน 4 ชม. หลังเวลาเริ่มงาน มิฉะนั้นนับเป็นขาดงาน<br>
+      12- ฟรีแลนซ์: เริ่มรอบใหม่ได้ภายใน 2 วันหลังจบรอบ 10 วัน หลังจากนั้นปรับ 1,000 ฿ ต่อวัน (สูงสุด 7 วัน)<br>
+      13- รายเดือน: ลาได้ 4 วันติดต่อกันฟรี เกิน 4 วัน ปรับ 1,000 ฿ ต่อวัน (สูงสุด 7 วัน)
     </div>
     </details>
     <input type="hidden" id="rate" value="135"><input type="hidden" id="rateUrg" value="100">
@@ -217,9 +237,12 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div class="summary-row"><span>ระดับที่ทำได้</span><span id="sRate">-</span></div>
     <div class="summary-row"><span>แพ็กเกจที่พัก</span><span id="sPkg">0 ฿</span></div>
     <div class="summary-row"><span>ค่าปรับรวม</span><span id="sPen">0 ฿</span></div>
+    <div class="summary-row" id="rowLeave" style="display:none;color:var(--red);"><span>ค่าลาเกิน 4 วัน</span><span id="sLeave">0 ฿</span></div>
+    <div class="summary-row" id="rowRestart" style="display:none;color:var(--red);"><span>ค่าปรับเริ่มรอบช้า</span><span id="sRestart">0 ฿</span></div>
     <div class="summary-row total"><span>ยอดสุทธิ</span><span id="sNet">0 ฿</span></div>
     <div class="small" id="saveInfo">💾 บันทึกอัตโนมัติ</div>
     <div class="small" id="pdfInfo" style="font-weight:700;"></div>
+    <div class="small" id="sheetInfo"></div>
   </div>
   </div>
 </div>
@@ -277,26 +300,96 @@ function updateDates(){
 // ===== CONGÉS : 1 date de début, fin automatique (4 jours consécutifs max), jours interdits =====
 const NO_LEAVE=[{f:101,t:420,n:'วันปีใหม่'},{f:210,t:210,n:'ตรุษจีน'},{f:212,t:212,n:'มาฆบูชา'},{f:214,t:214,n:'วันวาเลนไทน์'},{f:224,t:224,n:'มาฆบูชา'},{f:406,t:406,n:'วันจักรีอนุสรณ์'},{f:413,t:413,n:'สงกรานต์ (ปีใหม่ไทย)'},{f:501,t:501,n:'วันแรงงาน'},{f:505,t:505,n:'วันฉัตรมงคล'},{f:522,t:522,n:'วันเกิดของราชินี'},{f:603,t:603,n:'วันเกิดของราชินี'},{f:701,t:701,n:'ฉลองกลางปี'},{f:720,t:720,n:'อาสนะบูชาและเข้าพรรษา'},{f:728,t:728,n:'วันคล้ายวันพระราชสมภพสมเด็จพระวชิราลงกรณ'},{f:815,t:815,n:'วันแม่ (วันเกิดของราชินี)'},{f:1013,t:1013,n:'พระบาทสมเด็จพระปรมินทรมหาภูมิพลอดุลยเดชสวรรคต'},{f:1023,t:1023,n:'ครบรอบวันสวรรคตของพระบาทสมเด็จพระจุลจอมเกล้าเจ้าอยู่หัว'},{f:1115,t:1115,n:'ลอยกระทง'},{f:1205,t:1205,n:'วันคล้ายวันพระราชสมภพพระบาทสมเด็จพระปรมินทรมหาภูมิพลอดุลยเดช'},{f:1210,t:1210,n:'วันรัฐธรรมนูญ'},{f:1224,t:1224,n:'คริสต์มาส'},{f:1220,t:1230,n:'ฤดูท่องเที่ยว'},{f:1231,t:1231,n:'วันส่งท้ายปีเก่า'}];
 function noLeaveName(d){ const k=(d.getMonth()+1)*100+d.getDate(); const h=NO_LEAVE.find(x=>k>=x.f && k<=x.t); return h?h.n:null; }
+// ===== REPRISE DU CONTRAT FREELANCE (employé reconnu par nom + téléphone) =====
+// J+1 ou J+2 après la fin du cycle : gratuit. Ensuite 1 000 ฿ par jour de retard, 7 jours maximum.
+const RESTART_FREE=2, RESTART_FEE=1000, RESTART_MAXDAYS=7;
+function empKey(){ const n=(document.getElementById('name').value||'').trim().toLowerCase().replace(/\s+/g,' '); const p=(document.getElementById('phone').value||'').replace(/\D/g,''); return (n&&p)? n+'|'+p : ''; }
+function histGet(){ try{ return JSON.parse(localStorage.getItem('pointage_history')||'{}'); }catch(e){ return {}; } }
+function histSet(h){ try{ localStorage.setItem('pointage_history', JSON.stringify(h)); }catch(e){} }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function cycleEndDate(){ const sv=document.getElementById('startDate').value; if(!sv) return null; return addDays(new Date(sv+'T00:00:00'), N-1); }
+function lateRestartDays(lastEnd, start){ const diff=Math.round((start-lastEnd)/86400000); return Math.max(0, Math.min(RESTART_MAXDAYS, diff-RESTART_FREE)); }
+function restartInfo(){
+  if(N!==10) return {days:0,amount:0};
+  const k=empKey(), sv=document.getElementById('startDate').value; if(!k||!sv) return {days:0,amount:0};
+  const h=histGet()[k]; if(!h||!h.lastEnd) return {days:0,amount:0};
+  const last=new Date(h.lastEnd+'T00:00:00'), st=new Date(sv+'T00:00:00');
+  if(st<=last) return {days:0,amount:0};
+  const days=lateRestartDays(last, st); return {days, amount:days*RESTART_FEE, lastEnd:last};
+}
+function cycleFinished(){
+  const e=cycleEndDate(); if(!e) return false;
+  const today=new Date(); today.setHours(0,0,0,0);
+  return today>e || !!document.querySelector('.day[data-d="'+N+'"][data-locked="1"]');
+}
+function renderNextBox(){
+  // employé connu (nom + téléphone) : pas de date de début dans le passé tant qu'aucun jour n'est validé
+  { const sdEl=document.getElementById('startDate'), k=empKey();
+    if(N===10 && k && histGet()[k] && !document.querySelector('.day[data-locked="1"]')){ const t=new Date(); t.setHours(0,0,0,0); sdEl.min=isoD(t); }
+    else sdEl.removeAttribute('min'); }
+  const box=document.getElementById('nextCycleBox'); if(!box) return;
+  if(N!==10 || !cycleFinished()){ box.style.display='none'; return; }
+  const e=cycleEndDate(), f1=addDays(e,1), f2=addDays(e,2);
+  box.style.display='block';
+  const inp=document.getElementById('nextStart'); inp.min=isoD(f1);
+  document.getElementById('nextFree').textContent='เริ่มได้โดยไม่มีค่าปรับ: '+TH_DAYS[f1.getDay()]+' '+fmtDate(f1)+' หรือ '+TH_DAYS[f2.getDay()]+' '+fmtDate(f2);
+  const info=document.getElementById('nextInfo');
+  if(inp.value){
+    const d=lateRestartDays(e, new Date(inp.value+'T00:00:00'));
+    info.style.color = d ? 'var(--red)' : 'var(--green)';
+    info.textContent = d ? '⚠️ เริ่มช้า '+d+' วัน = ค่าปรับ '+(d*RESTART_FEE).toLocaleString('en-US')+' ฿ (หักในรอบถัดไป)' : '✅ ไม่มีค่าปรับ';
+  } else { info.style.color='var(--red)'; info.textContent='⏳ ยังไม่ได้เลือกวันเริ่มรอบใหม่'; }
+}
+function remindNextCycle(){
+  try{
+    if(localStorage.getItem('pointage_access_ok')!=='1') return;
+    if(N!==10 || !cycleFinished() || document.getElementById('nextStart').value) return;
+    const k='pointage_remind_'+getKey()+'_'+isoD(new Date());
+    if(localStorage.getItem(k)) return; localStorage.setItem(k,'1');
+    alert('🔔 รอบ 10 วันจบแล้ว\nกรุณาเลือกวันเริ่มสัญญาใหม่ (ด้านบนของหน้า)\nเริ่มได้ฟรีภายใน 2 วัน หลังจากนั้นปรับ 1,000 ฿/วัน');
+    document.getElementById('nextCycleBox').scrollIntoView({behavior:'smooth'});
+  }catch(e){}
+}
 function leaveMax(){ const m=new Date(); m.setHours(0,0,0,0); m.setMonth(m.getMonth()+2); return m; }
 function isoD(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function setLeaveLimits(){ const el=document.getElementById('congeStart'); if(!el) return; const mn=new Date(); mn.setHours(0,0,0,0); mn.setDate(mn.getDate()+15); el.min=isoD(mn); el.max=isoD(leaveMax()); }
-function calcConge(){
+// ===== CONGÉS (contrat mensuel) : 4 jours gratuits, puis 1 000 ฿ par jour en plus (7 jours max) =====
+const LEAVE_FREE=4, LEAVE_FEE=1000, LEAVE_MAXEXTRA=7;
+function leaveEval(){
+  const sv=document.getElementById('congeStart').value; if(!sv) return null;
+  const n=Math.min(LEAVE_FREE+LEAVE_MAXEXTRA, Math.max(1, +document.getElementById('congeDays').value||LEAVE_FREE));
+  const start=new Date(sv+'T00:00:00'), end=addDays(start,n-1);
+  // délai compté à partir du jour de la demande (pas d'aujourd'hui)
+  const rq=document.getElementById('congeReqAt').value; const req=rq?new Date(rq+'T00:00:00'):(()=>{const t=new Date(); t.setHours(0,0,0,0); return t;})();
+  const daysAhead=Math.round((start-req)/86400000);
+  const max=new Date(req); max.setMonth(max.getMonth()+2);
+  let error=null;
+  for(let i=0;i<n;i++){ const d=addDays(start,i); const nm=noLeaveName(d); if(nm){ error='❌ ไม่อนุมัติ: ตรงกับวันห้ามลา — '+fmtDate(d).slice(0,5)+' '+nm; break; } }
+  if(!error && start>max) error='❌ ไม่อนุมัติ: เลือกวันลาได้ล่วงหน้าไม่เกิน 2 เดือน (ถึง '+fmtDate(max)+')';
+  if(!error && daysAhead<15) error='❌ ไม่อนุมัติ: ต้องแจ้งล่วงหน้าอย่างน้อย 15 วัน (เหลือ '+daysAhead+' วัน)';
+  const extra=Math.max(0,n-LEAVE_FREE);
+  return {start,end,n,error,extra,amount:extra*LEAVE_FEE};
+}
+// montant retenu sur le cycle qui contient le début du congé
+function leaveExtraInfo(){
+  if(N!==30) return {days:0,amount:0};
+  const ev=leaveEval(); if(!ev || ev.error || !ev.extra) return {days:0,amount:0};
+  const cs=document.getElementById('startDate').value; if(!cs) return {days:0,amount:0};
+  const c0=new Date(cs+'T00:00:00'), c1=addDays(c0,N-1);
+  if(ev.start<c0 || ev.start>c1) return {days:0,amount:0};
+  return {days:ev.extra, amount:ev.amount};
+}
+function calcConge(fromUser){
   setLeaveLimits();
-  const startVal = document.getElementById('congeStart').value;
-  const endEl = document.getElementById('congeEnd'), val = document.getElementById('congeValidation');
-  if(!startVal){ endEl.value=''; val.textContent=''; saveState(); return; }
-  const start = new Date(startVal+'T00:00:00');
-  const end = new Date(start); end.setDate(end.getDate()+3);
-  endEl.value = fmtDate(start)+'  →  '+fmtDate(end)+'  (4 วัน)';
-  const today = new Date(); today.setHours(0,0,0,0);
-  const daysAhead = Math.round((start-today)/86400000);
-  let bad=null;
-  for(let i=0;i<4;i++){ const d=new Date(start); d.setDate(d.getDate()+i); const n=noLeaveName(d); if(n){ bad=fmtDate(d).slice(0,5)+' '+n; break; } }
-  if(bad){ val.style.color='var(--red)'; val.textContent='❌ ไม่อนุมัติ: ตรงกับวันห้ามลา — '+bad; }
-  else if(start>leaveMax()){ val.style.color='var(--red)'; val.textContent='❌ ไม่อนุมัติ: เลือกวันลาได้ล่วงหน้าไม่เกิน 2 เดือน (ถึง '+fmtDate(leaveMax())+')'; }
-  else if(daysAhead<15){ val.style.color='var(--red)'; val.textContent='❌ ไม่อนุมัติ: ต้องแจ้งล่วงหน้าอย่างน้อย 15 วัน (เหลือ '+daysAhead+' วัน)'; }
-  else { val.textContent=''; } // date valide : pas de message, seules les erreurs s'affichent
-  saveState();
+  if(fromUser===true){ document.getElementById('congeReqAt').value=isoD(new Date()); }
+  const endEl=document.getElementById('congeEnd'), val=document.getElementById('congeValidation');
+  const ev=leaveEval();
+  if(!ev){ endEl.value=''; val.textContent=''; calc(); return; }
+  endEl.value=fmtDate(ev.start)+'  →  '+fmtDate(ev.end)+'  ('+ev.n+' วัน)';
+  if(ev.error){ val.style.color='var(--red)'; val.textContent=ev.error; }
+  else if(ev.extra){ val.style.color='#d97706'; val.textContent='💰 ลาเกิน 4 วัน: '+ev.extra+' วัน × 1,000 ฿ = '+ev.amount.toLocaleString('en-US')+' ฿ (หักจากเงินเดือนรอบที่ลา)'; }
+  else { val.textContent=''; }
+  calc();
 }
 function buildDays(){
   N = parseInt(document.getElementById('contract').value);
@@ -309,9 +402,11 @@ function buildDays(){
       <h3 onclick="toggleDay(this)" style="cursor:pointer;">วันที่ ${i}<span class="dayDate" style="font-weight:600;font-size:.85rem;"></span> <span class="dayArrow"></span></h3>
       <div class="daySummary small" style="display:none;"></div>
       <div class="dayBody">
-        <div class="grid4 yellow">
-          <div><label>จำนวนนวด 1 เลดี้</label><input type="number" min="0" class="solo" oninput="calc()"></div>
-          <div><label>จำนวนนวด 2 เลดี้</label><input type="number" min="0" class="duo" oninput="calc()"></div>
+        <div class="small" style="font-weight:700;color:var(--text);margin:0 0 4px;">จำนวนนวด</div>
+        <div class="grid4 yellow massRow" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="m1"><label>1 เลดี้<br>600 ฿</label><input type="number" min="0" inputmode="numeric" class="solo" oninput="calc()"></div>
+          <div class="m2"><label>2 เลดี้<br>800 ฿</label><input type="number" min="0" inputmode="numeric" class="duo8" oninput="calc()"></div>
+          <div class="m3"><label>Happy Hour<br>1 เลดี้ 600 ฿</label><input type="number" min="0" inputmode="numeric" class="duo" oninput="calc()"></div>
         </div>
         <div class="grid4" style="margin-top:8px;">
           <button class="mini" style="margin-top:0;" onclick="startWork(this)">▶️ เริ่มงาน</button>
@@ -395,12 +490,12 @@ function finishWork(btn){
   saveState();
 }
 function daySummaryText(day){
-  const solo=day.querySelector('.solo').value||0, duo=day.querySelector('.duo').value||0;
+  const solo=day.querySelector('.solo').value||0, duo=day.querySelector('.duo').value||0, duo8=day.querySelector('.duo8').value||0;
   const abs=day.querySelector('.c-abs').checked, med=day.querySelector('.c-med').checked;
   const late=day.querySelector('.c-l1529').checked||day.querySelector('.c-l3059').checked||day.querySelector('.c-l60').checked;
   const pen=day.querySelector('.pen').value||0;
   let flags=[]; if(abs) flags.push('ขาดงาน'); if(med) flags.push('ใบรับรองแพทย์'); if(late) flags.push('มาสาย');
-  return `1 เลดี้ ${solo} · 2 เลดี้ ${duo}${flags.length?' · '+flags.join(', '):''} · ค่าปรับ ${pen} ฿`;
+  return `1 เลดี้ 600 ${solo} · 2 เลดี้ 800 ${duo8} · Happy Hour 600 ${duo}${flags.length?' · '+flags.join(', '):''} · ค่าปรับ ${pen} ฿`;
 }
 function collapseDay(day){
   day.querySelector('.dayBody').style.display='none';
@@ -532,6 +627,37 @@ function handleJustFile(inp){
   };
   reader.readAsDataURL(file);
 }
+// ===== ENVOI AU PATRON : chaque journée validée part dans la feuille Google (chiffre d'affaires par jour) =====
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwTwB_sp6Jy73mRrqZ6QeJnjbIUvUmGnd4wZeW_2_80LsAJIBF3DneyCsfJZUVSzPI5/exec';
+const PRICE_1L = 600, PRICE_2L = 800, PRICE_HH = 600;
+function sheetSent(){ try{ return JSON.parse(localStorage.getItem('sheet_sent')||'{}'); }catch(e){ return {}; } }
+function markSent(id){ const m=sheetSent(); m[id]=1; try{ localStorage.setItem('sheet_sent', JSON.stringify(m)); }catch(e){} }
+function dayPayload(day){
+  const q=s=>day.querySelector(s), dd=dayDate(+day.dataset.d); if(!dd) return null;
+  const l1=+q('.solo').value||0, l2=+q('.duo8').value||0, hh=+q('.duo').value||0;
+  let sit=[]; if(q('.c-abs').checked) sit.push(q('.c-med').checked?'Absence justifiée':'Absent');
+  if(q('.c-l1529').checked) sit.push('Retard 15-29'); if(q('.c-l3059').checked) sit.push('Retard 30-59'); if(q('.c-l60').checked) sit.push('Retard 60+');
+  const name=document.getElementById('name').value||'-', phone=document.getElementById('phone').value||'';
+  const date=isoD(dd);
+  return { id:(empKey()||name)+'|'+date, date, name, phone, contract: N===10?'Freelance 10 j':'Mensuel 30 j',
+           l1, l2, hh, ca: l1*PRICE_1L + l2*PRICE_2L + hh*PRICE_HH,
+           arrival:q('.arrival').value||'', finish:q('.finish').value||'', situation: sit.join(', ')||'OK', penalty:+q('.pen').value||0 };
+}
+let sheetBusy=false;
+async function syncSheet(){
+  if(sheetBusy || !SHEET_URL) return; sheetBusy=true;
+  const sent=sheetSent(); let pending=0, okN=0;
+  for(const day of document.querySelectorAll('.day[data-locked="1"]')){
+    const p=dayPayload(day); if(!p || sent[p.id]) continue;
+    try{ await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p)}); markSent(p.id); okN++; }
+    catch(e){ pending++; }
+  }
+  sheetBusy=false;
+  const el=document.getElementById('sheetInfo');
+  if(el){ if(pending) el.textContent='⏳ รอส่งข้อมูลให้หัวหน้า '+pending+' วัน (ไม่มีอินเทอร์เน็ต)'; else if(okN) el.textContent='📤 ส่งข้อมูลให้หัวหน้าแล้ว'; }
+}
+window.addEventListener('online', syncSheet);
+setTimeout(syncSheet, 2500);
 function lockDay(btn){
   { const dd=btn.closest('.day'); if(dd.querySelector('.c-just').checked && !dd.dataset.cert){ alert('⚠️ กรุณาแนบใบรับรองแพทย์ก่อน'); return; } }
   if(!confirm('ล็อกวันนี้ถาวร? หลังจากนี้จะแก้ไขไม่ได้')) return;
@@ -543,6 +669,7 @@ function lockDay(btn){
   collapseDay(day);
   applyFreeze();
   saveState();
+  syncSheet();
 }
 function parseShiftStart(str){
   if(!str) return null;
@@ -579,7 +706,7 @@ function calc(){
   let count60=0;
   days.forEach(d=>{
     const solo=+d.querySelector('.solo').value||0;
-    const duo=+d.querySelector('.duo').value||0;
+    const duo=(+d.querySelector('.duo').value||0) + (+d.querySelector('.duo8').value||0);
     const abs=d.querySelector('.c-abs').checked;
     const c1529=d.querySelector('.c-l1529').checked, c3059=d.querySelector('.c-l3059').checked, c60=d.querySelector('.c-l60').checked;
     mass += solo + duo*0.5;
@@ -640,7 +767,14 @@ function calc(){
     ? (N===10 ? 'มี — 1,300 ฿ (100฿×10 วัน + ค่าทำความสะอาด 300฿)' : 'มี — '+pkgAmount+' ฿ (100฿×'+N+' วัน)')
     : 'ไม่มี';
   const pkg = pkgOn ? pkgAmount : 0;
-  const net = massPay - pkg - penTot;
+  const rs = restartInfo();
+  const lx = leaveExtraInfo();
+  const net = massPay - pkg - penTot - rs.amount - lx.amount;
+  document.getElementById('rowLeave').style.display = lx.amount ? 'flex' : 'none';
+  document.getElementById('sLeave').textContent = lx.amount ? '-'+lx.amount.toLocaleString('en-US')+' ฿ ('+lx.days+' วัน)' : '0 ฿';
+  document.getElementById('rowRestart').style.display = rs.amount ? 'flex' : 'none';
+  document.getElementById('sRestart').textContent = rs.amount ? '-'+rs.amount.toLocaleString('en-US')+' ฿ ('+rs.days+' วัน)' : '0 ฿';
+  renderNextBox();
 
   const st = document.getElementById('status');
   const arrowNow = document.getElementById('toggleArrow') ? document.getElementById('toggleArrow').textContent : '▼';
@@ -660,7 +794,7 @@ function getKey(){ return 'pointage_fiche_single'; }
 function saveState(){
   try{
     const days=[...document.querySelectorAll('.day')].map(d=>({
-      solo:d.querySelector('.solo').value, duo:d.querySelector('.duo').value,
+      solo:d.querySelector('.solo').value, duo:d.querySelector('.duo').value, duo8:d.querySelector('.duo8').value,
       arrival:d.querySelector('.arrival').value, finish:d.querySelector('.finish').value,
       abs:d.querySelector('.c-abs').checked, med:d.querySelector('.c-med').checked,
       l1529:d.querySelector('.c-l1529').checked, l3059:d.querySelector('.c-l3059').checked, l60:d.querySelector('.c-l60').checked,
@@ -674,7 +808,7 @@ function saveState(){
       startDate:document.getElementById('startDate').value, shiftGlobal:document.getElementById('shiftGlobal').value, qrDataUrl,
       shiftGlobalMonthly:document.getElementById('shiftGlobalMonthly').value,
       penRate1:document.getElementById('penRate1').value, penRate2:document.getElementById('penRate2').value, penRate60a:document.getElementById('penRate60a').value, penRate60b:document.getElementById('penRate60b').value,
-      congeStart:document.getElementById('congeStart').value, holidayDates:document.getElementById('holidayDates').value,
+      congeStart:document.getElementById('congeStart').value, congeDays:document.getElementById('congeDays').value, congeReqAt:document.getElementById('congeReqAt').value, nextStart:document.getElementById('nextStart').value, holidayDates:document.getElementById('holidayDates').value,
       days
     };
     localStorage.setItem(getKey(), JSON.stringify(state));
@@ -703,10 +837,13 @@ function loadState(){
     document.getElementById('penRate60a').value=s.penRate60a||500;
     document.getElementById('penRate60b').value=s.penRate60b||2000;
     document.getElementById('congeStart').value=s.congeStart||'';
+    document.getElementById('congeDays').value=s.congeDays||'4';
+    document.getElementById('congeReqAt').value=s.congeReqAt||(s.congeStart?isoD(new Date()):'');
+    document.getElementById('nextStart').value=s.nextStart||'';
     document.getElementById('holidayDates').value=s.holidayDates||'';
     (s.days||[]).forEach((d,i)=>{
       const el=document.querySelectorAll('.day')[i]; if(!el) return;
-      el.querySelector('.solo').value=d.solo||''; el.querySelector('.duo').value=d.duo||'';
+      el.querySelector('.solo').value=d.solo||''; el.querySelector('.duo').value=d.duo||''; el.querySelector('.duo8').value=d.duo8||'';
       el.querySelector('.arrival').value=d.arrival||'';
       el.querySelector('.finish').value=d.finish||'';
       if(d.arrival){ const b=el.querySelector('button[onclick^="startWork"]'); b.disabled=true; b.textContent='✅ เริ่มงาน '+d.arrival; }
@@ -746,13 +883,19 @@ function resetCycle(){
   // Nom, téléphone, QR, contrat, horaire, logement, congés : conservés.
   try{ for(let i=1;i<=31;i++) localStorage.removeItem(getKey()+'_selfie_'+i); }catch(e){}
   const sd=document.getElementById('startDate');
-  if(sd.value){ // le nouveau cycle commence le lendemain de la fin de l'ancien
+  // mémoriser la fin de ce cycle pour cet employé (nom + téléphone)
+  { const k=empKey(), e=cycleEndDate();
+    if(k && e && N===10 && document.querySelector('.day[data-locked="1"]')){ const h=histGet(); h[k]={lastEnd:isoD(e)}; histSet(h); } }
+  const ns=document.getElementById('nextStart');
+  if(ns && ns.value){ sd.value=ns.value; }
+  else if(sd.value){ // le nouveau cycle commence le lendemain de la fin de l'ancien
     const d=new Date(sd.value+'T00:00:00'); d.setDate(d.getDate()+N);
     sd.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   }
+  if(ns) ns.value='';
   buildDays();
   updateDates();
-  saveState();
+  calc();
   document.getElementById('saveInfo').textContent='✅ เริ่มรอบใหม่แล้ว — ล้างเฉพาะวันทำงาน';
 }
 
@@ -760,10 +903,13 @@ document.getElementById('contract').addEventListener('change', ()=>{ if(document
 document.getElementById('pkg').addEventListener('change', saveState);
 document.getElementById('rate').addEventListener('input', saveState);
 document.getElementById('rateUrg').addEventListener('input', saveState);
-document.getElementById('startDate').addEventListener('change', ()=>{ updateDates(); saveState(); });
+document.getElementById('startDate').addEventListener('change', ()=>{ updateDates(); calc(); });
 document.getElementById('name').addEventListener('input', saveState);
+document.getElementById('name').addEventListener('change', calc);
 document.getElementById('phone').addEventListener('input', saveState);
+document.getElementById('phone').addEventListener('change', calc);
 if(!loadState()) buildDays();
+setTimeout(remindNextCycle, 900);
 setLeaveLimits();
 
 // ===== PDF BILINGUE EN / TH =====
@@ -790,7 +936,7 @@ function buildPDF(){
   const info=[['Employee / พนักงาน',name],['Phone / เบอร์โทร',phone],['Contract / สัญญา',contract],['Shift / ช่วงเวลาทำงาน',shift],['Cycle / รอบ',cycle],['Payment date / วันจ่ายเงิน',val('payDate')||'-']];
   info.forEach(([k,v])=>{ F('normal',10); doc.setTextColor(100); doc.text(k,15,y); doc.setTextColor(0); F('bold',10.5); doc.text(String(v),72,y); y+=6.2; });
   y+=3;
-  const cols=[['Day\nวัน',15],['1 Lady\n1 เลดี้',40],['2 Ladies\n2 เลดี้',55],['In\nเข้า',70],['Out\nออก',84],['Status\nสถานะ',98],['Penalty (฿)\nค่าปรับ',170]];
+  const cols=[['Day\nวัน',15],['1L 600฿\n1 เลดี้',38],['2L 800฿\n2 เลดี้',52],['HH 600฿\n1 เลดี้',68],['In\nเข้า',84],['Out\nออก',96],['Status\nสถานะ',108],['Penalty (฿)\nค่าปรับ',170]];
   const header=()=>{ doc.setFillColor(255,243,176); doc.rect(15,y-4.5,180,11,'F'); F('bold',9); cols.forEach(([t,x])=>doc.text(t.split('\n'),x+1,y)); y+=10; };
   header();
   let penTot=0;
@@ -806,16 +952,16 @@ function buildPDF(){
     if(q('.c-l3059').checked) st.push('Late 30-59 / สาย 30-59 นาที');
     if(q('.c-l60').checked) st.push('Late 60+ / สาย 60+ นาที');
     if(q('.c-med').checked && !justified) st.push('Med. cert / ใบแพทย์');
-    const filled = q('.solo').value||q('.duo').value||q('.arrival').value||d.dataset.locked==='1';
+    const filled = q('.solo').value||q('.duo').value||q('.duo8').value||q('.arrival').value||d.dataset.locked==='1';
     const stTxt = st.length ? st.join(', ') : (filled ? 'On time / ตรงเวลา' : '-');
     const pen=+q('.pen').value||0; penTot+=pen;
     if(i%2){ doc.setFillColor(246,247,249); doc.rect(15,y-4,180,6,'F'); }
     F('normal',9.5);
     doc.setTextColor(0);
-    { const dd=dayDate(i+1); doc.text(String(i+1)+(dd?'  '+fmtDate(dd).slice(0,5):''),16,y); } doc.text(String(q('.solo').value||0),41,y); doc.text(String(q('.duo').value||0),56,y);
-    doc.text(q('.arrival').value||'-',71,y); doc.text(q('.finish').value||'-',85,y);
+    { const dd=dayDate(i+1); doc.text(String(i+1)+(dd?'  '+fmtDate(dd).slice(0,5):''),16,y); } doc.text(String(q('.solo').value||0),39,y); doc.text(String(q('.duo8').value||0),53,y); doc.text(String(q('.duo').value||0),69,y);
+    doc.text(q('.arrival').value||'-',85,y); doc.text(q('.finish').value||'-',97,y);
     if(st.length && !q('.c-med').checked) doc.setTextColor(200,30,30);
-    doc.text(stTxt,99,y); doc.setTextColor(0);
+    F('normal',8); doc.text(stTxt,109,y,{maxWidth:60}); F('normal',9.5); doc.setTextColor(0);
     doc.text(String(pen),171,y);
     y+=6;
   });
@@ -828,6 +974,8 @@ function buildPDF(){
   sumRow('', document.getElementById('sRate').textContent);
   sumRow('Housing package / แพ็กเกจที่พัก', document.getElementById('sPkg').textContent);
   sumRow('Total penalties / ค่าปรับรวม', document.getElementById('sPen').textContent);
+  { const lx=leaveExtraInfo(); if(lx.amount) sumRow('Extra day off / ค่าลาเกิน 4 วัน ('+lx.days+' วัน)', '-'+lx.amount.toLocaleString('en-US')+' ฿', [200,30,30]); }
+  { const rs=restartInfo(); if(rs.amount) sumRow('Late restart / ค่าปรับเริ่มรอบช้า ('+rs.days+' วัน)', '-'+rs.amount.toLocaleString('en-US')+' ฿', [200,30,30]); }
   y+=1; doc.setFillColor(219,234,254); doc.rect(15,y-6,180,11,'F');
   F('bold',14); doc.text('NET PAY / ยอดสุทธิ',18,y+1.5); doc.text(document.getElementById('sNet').textContent,192,y+1.5,{align:'right'}); y+=14;
   if(qrDataUrl){
