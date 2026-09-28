@@ -426,7 +426,7 @@ function applyFreeze(){
   const anyLocked = !!document.querySelector('.day[data-locked="1"]');
   ['startDate','pkg'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=anyLocked; });
   const lockCS = setupDone() && !bossUnlocked;
-  document.getElementById('contract').disabled = lockCS || anyLocked;
+  document.getElementById('contract').disabled = anyLocked; // contrat libre (bloqué seulement si des jours sont validés)
   ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ document.getElementById(id).disabled = lockCS; });
   let bb=document.getElementById('bossBtn');
   if(!bb){ bb=document.createElement('button'); bb.id='bossBtn'; bb.type='button'; bb.onclick=bossUnlock;
@@ -436,11 +436,11 @@ function applyFreeze(){
   { const anchor = N===10 ? document.getElementById('freelanceNote') : document.getElementById('shiftGlobalMonthly').closest('.field');
     if(bb.previousElementSibling!==anchor) anchor.after(bb); }
   bb.style.display = setupDone() ? 'block' : 'none';
-  bb.textContent = bossUnlocked ? '🔓 ปลดล็อกแล้ว — เลือกใหม่ได้ (ล็อกอีกครั้งหลังเปลี่ยน)' : '🔑 เปลี่ยนสัญญา / ช่วงเวลา (ใช้รหัสหัวหน้า)';
+  bb.textContent = bossUnlocked ? '🔓 ปลดล็อกแล้ว — เลือกช่วงเวลาใหม่ได้' : '🔑 เปลี่ยนช่วงเวลา (ใช้รหัสหัวหน้า)';
   let note=document.getElementById('freezeNote');
   if(!note){ note=document.createElement('div'); note.id='freezeNote'; note.className='small'; note.style.cssText='color:var(--red);font-weight:700;margin:6px 0;';
     document.getElementById('startDate').closest('.field').after(note); }
-  note.textContent = anyLocked ? '🔒 มีวันที่ยืนยันแล้ว — เปลี่ยนวันที่เริ่ม/แพ็กเกจ/สัญญาไม่ได้ (กด 🗑️ รอบใหม่ ก่อน)' : '';
+  note.textContent = anyLocked ? '🔒 มีวันที่ยืนยันแล้ว — เปลี่ยนสัญญา/วันที่เริ่ม/แพ็กเกจไม่ได้ (กด 🗑️ รอบใหม่ ก่อน)' : '';
 }
 function bossLock(){ bossUnlocked=false; clearTimeout(bossTimer); applyFreeze(); }
 function bossUnlock(){
