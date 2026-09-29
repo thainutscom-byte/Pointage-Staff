@@ -179,21 +179,35 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     </div>
     <div id="freelanceNote" class="small" style="display:none;background:var(--yellow);padding:8px;border-radius:8px;margin-bottom:8px;">
       <div class="field" style="margin-bottom:6px;"><label>ช่วงเวลาทำงาน (เลือกครั้งเดียวต่อรอบ)</label>
-        <select id="shiftGlobal" onchange="saveState(); calUpdate(); if(setupDone()) bossLock();">
+        <select id="shiftGlobal" onchange="shiftChosen(this); saveState(); calUpdate(); if(setupDone()) bossLock();">
           <option value="">-- เลือก --</option>
           <option>10h-16h</option><option>13h-19h</option><option>16h-22h</option><option>19h-01h</option><option>21h-03h</option>
         </select>
       </div>
-      🕐 เลือกได้ 5 ช่วงเวลา (6-8 ชม. ขึ้นอยู่กับพนักงาน)
+      🕐 เลือกได้ 5 ช่วงเวลา (6-8 ชม. ขึ้นอยู่กับพนักงาน) · 👥 สูงสุด 5 คน ต่อช่วงเวลา
     </div>
 
     <div id="monthlyCard" style="display:none;">
       <div class="field" style="margin-bottom:6px;"><label>ช่วงเวลาทำงาน (เลือกครั้งเดียวต่อรอบ)</label>
-        <select id="shiftGlobalMonthly" onchange="saveState(); calUpdate(); if(setupDone()) bossLock();">
+        <select id="shiftGlobalMonthly" onchange="shiftChosen(this); saveState(); calUpdate(); if(setupDone()) bossLock();">
           <option value="">-- เลือก --</option>
           <option>09:00-17:00</option><option>17:00-01:00</option>
         </select>
       </div>
+      <div class="small" style="margin-bottom:6px;">👥 สูงสุด 5 คน ต่อช่วงเวลา</div>
+      <script>
+      // horaires affichés en thaï + anglais (la valeur enregistrée reste « 10h-16h », « 09:00-17:00 »…)
+      function shiftLabel(v){
+        const p=String(v).split('-'); if(p.length!==2) return v;
+        const hm=t=>{ const q=t.trim().split(/[h:]/); return [(+q[0]||0)%24, +q[1]||0]; };
+        const th=a=>String(a[0]).padStart(2,'0')+':'+String(a[1]).padStart(2,'0');
+        const en=a=>{ const h=a[0]%12||12; return h+(a[1]?':'+String(a[1]).padStart(2,'0'):'')+(a[0]<12?'AM':'PM'); };
+        const a=hm(p[0]), b=hm(p[1]);
+        return th(a)+'-'+th(b)+' น.';
+      }
+      ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ [...document.getElementById(id).options].forEach(o=>{
+        if(!o.value) return; const v=o.textContent.trim(); o.setAttribute('value', v); o.dataset.base=shiftLabel(v); o.textContent=o.dataset.base; }); });
+      </script>
       <details class="small" style="margin:0 0 8px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px;">
         <summary style="font-weight:700;cursor:pointer;">📅 วันห้ามลา (แตะเพื่อดู)</summary>
         <div style="margin:6px 0;color:var(--red);font-weight:700;">วันหยุดนักขัตฤกษ์ - วันพระ - การเลือกตั้ง: ไม่มีวันหยุดพักผ่อน<br>วันหยุดนักขัตฤกษ์ - วันพระ - การเลือกตั้ง: บาร์ไฟน์ 3,000 บาท</div>
@@ -373,6 +387,7 @@ function updateDates(){
   endEl.value = fmtDate(end);
   payEl.value = fmtDate(pay);
   updateDayDates();
+  planRefreshSoon();
 }
 // ===== CONGÉS : 1 date de début, fin automatique (4 jours consécutifs max), jours interdits =====
 const NO_LEAVE=[{f:101,t:420,n:'วันปีใหม่'},{f:210,t:210,n:'ตรุษจีน'},{f:212,t:212,n:'มาฆบูชา'},{f:214,t:214,n:'วันวาเลนไทน์'},{f:224,t:224,n:'มาฆบูชา'},{f:406,t:406,n:'วันจักรีอนุสรณ์'},{f:413,t:413,n:'สงกรานต์ (ปีใหม่ไทย)'},{f:501,t:501,n:'วันแรงงาน'},{f:505,t:505,n:'วันฉัตรมงคล'},{f:522,t:522,n:'วันเกิดของราชินี'},{f:603,t:603,n:'วันเกิดของราชินี'},{f:701,t:701,n:'ฉลองกลางปี'},{f:720,t:720,n:'อาสนะบูชาและเข้าพรรษา'},{f:728,t:728,n:'วันคล้ายวันพระราชสมภพสมเด็จพระวชิราลงกรณ'},{f:815,t:815,n:'วันแม่ (วันเกิดของราชินี)'},{f:1013,t:1013,n:'พระบาทสมเด็จพระปรมินทรมหาภูมิพลอดุลยเดชสวรรคต'},{f:1023,t:1023,n:'ครบรอบวันสวรรคตของพระบาทสมเด็จพระจุลจอมเกล้าเจ้าอยู่หัว'},{f:1115,t:1115,n:'ลอยกระทง'},{f:1205,t:1205,n:'วันคล้ายวันพระราชสมภพพระบาทสมเด็จพระปรมินทรมหาภูมิพลอดุลยเดช'},{f:1210,t:1210,n:'วันรัฐธรรมนูญ'},{f:1224,t:1224,n:'คริสต์มาส'},{f:1220,t:1230,n:'ฤดูท่องเที่ยว'},{f:1231,t:1231,n:'วันส่งท้ายปีเก่า'}];
@@ -621,7 +636,7 @@ function applyFreeze(){
   const anyLocked = !!document.querySelector('.day[data-locked="1"]');
   ['startDate','pkg'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=anyLocked; });
   document.getElementById('contract').disabled = false;
-  ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ document.getElementById(id).disabled = false; });
+  ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ document.getElementById(id).disabled = shiftLocked(); });
   const old=document.getElementById('bossBtn'); if(old) old.remove();
   let note=document.getElementById('freezeNote');
   if(!note){ note=document.createElement('div'); note.id='freezeNote'; note.className='small'; note.style.cssText='color:var(--red);font-weight:700;margin:6px 0;';
@@ -721,7 +736,7 @@ function dayPayload(day){
 }
 function cycleInfo(){
   const sv=document.getElementById('startDate').value; if(!sv) return {};
-  const s=new Date(sv+'T00:00:00'), o={cycleStart:sv, cycleEnd:isoD(addDays(s,N-1))};
+  const s=new Date(sv+'T00:00:00'), o={cycleStart:sv, cycleEnd:isoD(addDays(s,N-1)), sh:curShift()};
   if(N===30){ try{ const ev=leaveEval(); if(ev && !ev.error){ o.congeStart=isoD(ev.start); o.congeEnd=isoD(ev.end); } }catch(e){} }
   return o;
 }
@@ -874,6 +889,75 @@ function applyCorrections(rows){
     calc(); updateDayDates(); saveState(); }
 }
 
+// ===== 🕐 CHANGER D'HORAIRE : une fois choisi pour le contrat, seulement si le patron l'autorise (Employés → « ✔ Peut changer les horaires ») =====
+function shiftLocked(){ try{ const c=JSON.parse(localStorage.getItem('pointage_hor')||'null'); const sv=document.getElementById('startDate').value;
+  return !!(c && c.sh && !c.ok && c.s===sv && curShift()===c.sh); }catch(e){ return false; } }
+function applyShiftRight(c){
+  if(!c) return;
+  c.s=document.getElementById('startDate').value;
+  try{ localStorage.setItem('pointage_hor', JSON.stringify(c)); }catch(e){}
+  const lock=shiftLocked();
+  ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ const e=document.getElementById(id); if(e) e.disabled=lock; });
+  const sel=shiftSel(); if(!sel) return;
+  let n=document.getElementById('horNote');
+  if(!n){ n=document.createElement('div'); n.id='horNote'; n.className='small'; n.style.cssText='font-weight:700;margin-top:4px;'; }
+  sel.after(n);
+  if(c.sh && !c.ok){ n.style.color='var(--muted)'; n.textContent='🔒 เปลี่ยนช่วงเวลาได้เมื่อหัวหน้าอนุญาตเท่านั้น'; }
+  else if(c.sh && c.ok){ n.style.color='var(--green)'; n.textContent='✅ หัวหน้าอนุญาตให้เปลี่ยนช่วงเวลาได้ 1 ครั้ง'; }
+  else n.textContent='';
+}
+setTimeout(()=>{ try{ const c=JSON.parse(localStorage.getItem('pointage_hor')||'null'); if(c) applyShiftRight(c); }catch(e){} }, 700);
+
+// ===== 🗓️ HORAIRES : 5 filles max par horaire, pas 2 débuts le même jour, roulement après 2 contrats =====
+function curShift(){ return (N===10 ? document.getElementById('shiftGlobal').value : document.getElementById('shiftGlobalMonthly').value) || ''; }
+function shiftSel(){ return document.getElementById(N===10 ? 'shiftGlobal' : 'shiftGlobalMonthly'); }
+function planMsg(v){
+  if(!v) return '';
+  const p=v.split('|');
+  if(p[0]==='plein') return '🔴 ช่วงเวลานี้เต็มแล้ว (5 คน) วันที่ '+String(p[1]||'').split('-').reverse().slice(0,2).join('/');
+  if(p[0]==='meme') return '⛔ มีคนเริ่มรอบวันเดียวกันในช่วงเวลานี้แล้ว — เลือกช่วงเวลาอื่น หรือวันเริ่มอื่น';
+  if(p[0]==='roulement') return '🔄 ทำช่วงเวลานี้ครบ 2 รอบติดกันแล้ว — ต้องเปลี่ยนช่วงเวลา';
+  if(p[0]==='verrou') return '🔒 เปลี่ยนช่วงเวลาไม่ได้ — ต้องให้หัวหน้าอนุญาตก่อน (ช่วงเวลาเดิม: '+(p[1]||'')+')';
+  return '⚠️ เลือกไม่ได้';
+}
+let planTimer=null;
+function planRefreshSoon(){ clearTimeout(planTimer); planTimer=setTimeout(planRefresh, 600); }
+async function planRefresh(){
+  const sel=shiftSel(), sv=document.getElementById('startDate').value, k=empKey();
+  if(!sel || !sv || !k || !SHEET_URL) return;
+  const opts=[...sel.options].filter(o=>o.value);
+  opts.forEach(o=>{ if(!o.dataset.base){ o.dataset.base=o.textContent.trim(); o.setAttribute('value', o.dataset.base); } });   // la valeur ne change pas quand on ajoute « — 3/5 »
+  try{
+    const r=await fetch(SHEET_URL+'?plan=1&emp='+encodeURIComponent(document.getElementById('name').value.trim())+'&tel='+encodeURIComponent(document.getElementById('phone').value.trim())+
+      '&s='+sv+'&n='+N+'&sh='+encodeURIComponent(opts.map(o=>o.value).join(','))+'&_='+Date.now());
+    const t=await readTxt(r); if(t[0]!=='{') return;
+    const res=JSON.parse(t);
+    opts.forEach(o=>{ const x=res[o.value]; if(!x) return;
+      const bad=!!x.v && o.value!==sel.value;
+      o.disabled=bad;
+      const libre=Math.max(0,5-(+x.max||0));
+      o.textContent = o.dataset.base + (x.v ? '  — '+(x.v.startsWith('plein')?'🔴 เต็ม 5/5':x.v.startsWith('meme')?'⛔ วันเริ่มซ้ำ (ว่าง '+libre+'/5)':'🔄 ต้องเปลี่ยน')
+                                             : '  — ✅ ว่าง '+libre+'/5 ที่'); });
+  }catch(e){}
+}
+async function shiftChosen(sel){
+  const sv=document.getElementById('startDate').value, k=empKey();
+  if(!sv || !k || !SHEET_URL) return;                // pas encore de nom / date : contrôle au prochain envoi
+  const p={type:'cycle', name:document.getElementById('name').value.trim(), phone:document.getElementById('phone').value.trim(),
+           contract:N===10?'Freelance 10 j':'Mensuel 30 j', ...cycleInfo()};
+  try{
+    const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(p)}); const t=await readTxt(r);
+    if(t.indexOf('refus|')===0){
+      alert(planMsg(t.slice(6)));
+      sel.value = sel.dataset.prev || ''; saveState(); calUpdate();     // on revient à l'horaire d'avant
+    } else if(t==='ok'){ sel.dataset.prev = sel.value; setTimeout(()=>checkBlocked(false), 800); }
+  }catch(e){}
+  planRefresh();
+}
+setTimeout(()=>{ ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ const e=document.getElementById(id); if(e) e.dataset.prev=e.value; }); }, 900);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) planRefreshSoon(); });
+setTimeout(planRefresh, 2000);
+
 // ===== 📅 ALARMES DANS LE CALENDRIER DU TÉLÉPHONE (1 h et 15 min avant le shift) =====
 function calParams(){
   const sv=document.getElementById('startDate').value;
@@ -974,11 +1058,11 @@ async function checkBlocked(manual){
   if(!SHEET_URL || !n || !t) return;
   const msg=document.getElementById('blockMsg'); if(manual && msg) msg.textContent='⏳ …';
   try{
-    const r=await fetch(SHEET_URL+'?emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&v=2&_='+Date.now());
+    const r=await fetch(SHEET_URL+'?emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&v=2&s='+encodeURIComponent(document.getElementById('startDate').value||'')+'&_='+Date.now());
     let txt=await readTxt(r);
     if(txt[0]==='{'){ try{ const j=JSON.parse(txt); txt=j.s;
       const nv=JSON.stringify(j.tel||[]); if(nv!==(localStorage.getItem('pointage_tel_inf')||'[]')){ localStorage.setItem('pointage_tel_inf', nv); calc(); }
-      if(j.s!=='blocked'){ applyCorrections(j.cor); queueMessages(j.msg); startResync(j.rs); } }catch(e){} }
+      if(j.s!=='blocked'){ applyCorrections(j.cor); queueMessages(j.msg); startResync(j.rs); applyShiftRight(j.hor); } }catch(e){} }
     if(txt==='blocked'){ setBlocked(true); if(manual && msg) msg.textContent='🚫 ยังถูกระงับอยู่'; }
     else if(txt==='ok'){ const was=(()=>{try{return localStorage.getItem('pointage_blocked')==='1'}catch(e){return false}})(); setBlocked(false); if(was) syncSheet(); }
   }catch(e){ if(manual && msg) msg.textContent='⚠️ ไม่มีอินเทอร์เน็ต'; }
