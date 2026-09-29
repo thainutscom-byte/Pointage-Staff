@@ -738,14 +738,30 @@ function absPayloads(){
   });
   return out;
 }
+// réponse de Google : texte simple (parfois emballé dans une page HTML → on garde seulement le texte)
+async function readTxt(r){ let t=(await r.text()).trim();
+  if(t[0]==='<'){ try{ t=(new DOMParser().parseFromString(t,'text/html').body.innerText||'').trim(); }catch(e){} } return t; }
+// 🔁 récupération demandée par Google : renvoyer une fois toutes les journées validées (Happy Hour ½ + CA)
+let resyncMode=false;
+function startResync(tok){
+  if(!tok) return; let done=''; try{ done=localStorage.getItem('pointage_rs')||''; }catch(e){}
+  if(done===tok || resyncMode) return;
+  resyncMode=tok; setTimeout(syncSheet, 300);
+}
 let sheetBusy=false;
 async function syncSheet(){
   if(sheetBusy || !SHEET_URL) return; sheetBusy=true;
-  const sent=sheetSent(); let pending=0, okN=0;
+  const sent=sheetSent(); let pending=0, okN=0; const rsTok=resyncMode;
   for(const day of document.querySelectorAll('.day[data-locked="1"]')){
-    const p=dayPayload(day); if(!p || sent[p.id]) continue;
+    const p=dayPayload(day); if(!p) continue;
+    if(rsTok && sent[p.id]){   // 🔁 récupération : renvoi des journées déjà envoyées
+      try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({...p, resync:true})}); const t=await readTxt(r); if(!(r.ok && (t==='ok'||t==='blocked'))) pending++; }
+      catch(e){ pending++; }
+      continue;
+    }
+    if(sent[p.id]) continue;
     // on ne marque « envoyé » que si Google répond vraiment « ok »
-    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(p)}); const t=(await r.text()).trim();
+    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(p)}); const t=await readTxt(r);
          if(r.ok && t==='ok'){ markSent(p.id); okN++; }
          else if(t==='blocked'){ setBlocked(true); pending++; break; }
          else pending++; }
@@ -759,17 +775,18 @@ async function syncSheet(){
     const st={type:'start', id:k+'|'+isoD(dd), date:isoD(dd), arrival:arr, name:document.getElementById('name').value.trim(),
               phone:document.getElementById('phone').value.trim(), contract:N===10?'Freelance 10 j':'Mensuel 30 j', ...cycleInfo()};
     if(ss0[st.id]) continue;
-    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(st)}); const t=(await r.text()).trim();
+    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(st)}); const t=await readTxt(r);
          if(r.ok && (t==='ok'||t==='blocked')){ ss0[st.id]=1; try{ localStorage.setItem('sheet_start_v1', JSON.stringify(ss0)); }catch(e){} }
          if(t==='blocked') setBlocked(true); }catch(e){}
   }
   const as=absSent();
   for(const a of absPayloads()){
     if(as[a.id]) continue;
-    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(a)}); const t=(await r.text()).trim();
+    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(a)}); const t=await readTxt(r);
          if(r.ok && (t==='ok'||t==='blocked')){ as[a.id]=1; try{ localStorage.setItem('sheet_abs_v1', JSON.stringify(as)); }catch(e){} } }catch(e){}
   }
   sheetBusy=false;
+  if(rsTok){ if(!pending){ try{ localStorage.setItem('pointage_rs', rsTok); }catch(e){} } resyncMode=false; }
   checkBlocked(false);
   const el=document.getElementById('sheetInfo');
   if(el){ if(pending) el.textContent='⏳ รอส่งข้อมูลให้หัวหน้า '+pending+' วัน — จะลองส่งใหม่อัตโนมัติ'; else if(okN) el.textContent='📤 ส่งข้อมูลให้หัวหน้าแล้ว'; }
@@ -839,13 +856,15 @@ function applyCorrections(rows){
     const dd=dayDate(+day.dataset.d); if(!dd) return; const iso=isoD(dd), g=byDate[iso]; if(!g) return;
     const q=s=>day.querySelector(s);
     const cur={l1:+q('.solo').value||0, l2:(+q('.duo8').value||0)*0.5, hh:(+q('.duo').value||0)*0.5, pen:+q('.pen').value||0};
-    const diff=['l1','l2','hh','pen'].filter(k=>Math.abs((+g[k]||0)-cur[k])>0.001);
+    // seulement les colonnes corrigées par le patron (les autres ne sont pas envoyées)
+    const diff=['l1','l2','hh','pen'].filter(k=>g[k]!==undefined && Math.abs((+g[k]||0)-cur[k])>0.001);
     if(!diff.length) return;
-    const avant='1 เลดี้ '+cur.l1+' · 2 เลดี้ '+(cur.l2*2)+' · HH '+(cur.hh*2)+' · ค่าปรับ '+cur.pen+' ฿';
-    q('.solo').value=+g.l1||0; q('.duo8').value=Math.round((+g.l2||0)*2*100)/100; q('.duo').value=Math.round((+g.hh||0)*2*100)/100; q('.pen').value=+g.pen||0;
-    const apres='1 เลดี้ '+(+g.l1||0)+' · 2 เลดี้ '+Math.round((+g.l2||0)*200)/100+' · HH '+Math.round((+g.hh||0)*200)/100+' · ค่าปรับ '+(+g.pen||0)+' ฿';
+    const nv={...cur}; diff.forEach(k=>nv[k]=+g[k]||0);
+    const txt=o=>'1 เลดี้ '+o.l1+' · 2 เลดี้ '+Math.round(o.l2*200)/100+' · HH '+Math.round(o.hh*200)/100+' · ค่าปรับ '+o.pen+' ฿';
+    const avant=txt(cur), apres=txt(nv);
+    q('.solo').value=nv.l1; q('.duo8').value=Math.round(nv.l2*200)/100; q('.duo').value=Math.round(nv.hh*200)/100; q('.pen').value=nv.pen;
     corr[iso]=1; changed=true;
-    const id='corr|'+iso+'|'+g.l1+'|'+g.l2+'|'+g.hh+'|'+g.pen;
+    const id='corr|'+iso+'|'+nv.l1+'|'+nv.l2+'|'+nv.hh+'|'+nv.pen;
     if(!seenGet()[id] && !msgQueue.some(x=>x.id===id))
       msgQueue.push({id, quiet:true, icon:'✏️', title:'หัวหน้าแก้ไขข้อมูลวันทำงาน', date:fmtDate(dd), text:'ก่อน: '+avant+'\nใหม่: '+apres, red:false});
   });
@@ -955,10 +974,10 @@ async function checkBlocked(manual){
   const msg=document.getElementById('blockMsg'); if(manual && msg) msg.textContent='⏳ …';
   try{
     const r=await fetch(SHEET_URL+'?emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&v=2&_='+Date.now());
-    let txt=(await r.text()).trim();
+    let txt=await readTxt(r);
     if(txt[0]==='{'){ try{ const j=JSON.parse(txt); txt=j.s;
       const nv=JSON.stringify(j.tel||[]); if(nv!==(localStorage.getItem('pointage_tel_inf')||'[]')){ localStorage.setItem('pointage_tel_inf', nv); calc(); }
-      if(j.s!=='blocked'){ applyCorrections(j.cor); queueMessages(j.msg); } }catch(e){} }
+      if(j.s!=='blocked'){ applyCorrections(j.cor); queueMessages(j.msg); startResync(j.rs); } }catch(e){} }
     if(txt==='blocked'){ setBlocked(true); if(manual && msg) msg.textContent='🚫 ยังถูกระงับอยู่'; }
     else if(txt==='ok'){ const was=(()=>{try{return localStorage.getItem('pointage_blocked')==='1'}catch(e){return false}})(); setBlocked(false); if(was) syncSheet(); }
   }catch(e){ if(manual && msg) msg.textContent='⚠️ ไม่มีอินเทอร์เน็ต'; }
