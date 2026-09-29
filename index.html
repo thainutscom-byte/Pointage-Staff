@@ -172,7 +172,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       </div>
     </div>
     <div class="row2">
-      <div class="field"><label>👖 กางเกงขาสั้นดำ <b>200 ฿</b></label>
+      <div class="field"><label>👖 กางเกงขาสั้น <b>200 ฿</b></label>
         <select id="uniShort" onchange="calc()"><option value="0">ไม่ซื้อ</option><option value="1">1 ตัว — 200 ฿</option><option value="2">2 ตัว — 400 ฿</option></select></div>
       <div class="field"><label>👕 เสื้อยืด <b>250 ฿</b></label>
         <select id="uniTee" onchange="calc()"><option value="0">ไม่ซื้อ</option><option value="1">1 ตัว — 250 ฿</option><option value="2">2 ตัว — 500 ฿</option></select></div>
@@ -816,7 +816,7 @@ async function syncSheet(){
 // ===== 👕 UNIFORME : short noir 200 ฿, T-shirt 250 ฿ (1 ou 2 pièces), retenu sur le salaire =====
 function uniInfo(){
   const a=+(document.getElementById('uniShort')||{}).value||0, b=+(document.getElementById('uniTee')||{}).value||0;
-  const t=[], e=[]; if(a){ t.push('กางเกง '+a+' ตัว'); e.push(a+' black short'); } if(b){ t.push('เสื้อ '+b+' ตัว'); e.push(b+' T-shirt'); }
+  const t=[], e=[]; if(a){ t.push('กางเกง '+a+' ตัว'); e.push(a+' short'); } if(b){ t.push('เสื้อ '+b+' ตัว'); e.push(b+' T-shirt'); }
   return {amount:a*200+b*250, txt:t.join(' + '), en:e.join(' + ')};
 }
 
