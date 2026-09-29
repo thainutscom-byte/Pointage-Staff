@@ -91,6 +91,15 @@ button.mini{width:100%;background:var(--green);color:#fff;border:none;padding:8p
 window.__hadData=false;
 try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('pointage_fiche')===0){ window.__hadData=true; break; } } }catch(e){}
 </script>
+<div id="msgGate" style="display:none;position:fixed;inset:0;z-index:99997;background:rgba(15,23,42,.55);overflow:auto;">
+  <div style="max-width:380px;width:calc(100% - 32px);box-sizing:border-box;margin:calc(70px + env(safe-area-inset-top,0px)) auto 30px;background:#fff;border-radius:16px;padding:20px 18px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);">
+    <div id="msgIcon" style="font-size:2.6rem;">💬</div>
+    <h2 id="msgTitle" style="margin:6px 0 4px;font-size:1.2rem;">ข้อความจากหัวหน้า</h2>
+    <div id="msgDate" class="small" style="margin-bottom:12px;"></div>
+    <div id="msgText" style="font-size:1.15rem;font-weight:700;white-space:pre-wrap;word-break:break-word;text-align:left;background:#f3f4f6;border-radius:12px;padding:14px;margin-bottom:16px;"></div>
+    <button onclick="ackMsg()" style="width:100%;background:var(--green,#16a34a);color:#fff;border:none;padding:14px;border-radius:12px;font-size:1.1rem;font-weight:800;">✅ รับทราบ</button>
+  </div>
+</div>
 <div id="blockGate" style="display:none;position:fixed;inset:0;z-index:99998;background:var(--bg);overflow:auto;">
   <div style="max-width:380px;margin:0 auto;padding:calc(60px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
     <div style="font-size:3.5rem;">🚫</div>
@@ -168,7 +177,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     </div>
     <div id="freelanceNote" class="small" style="display:none;background:var(--yellow);padding:8px;border-radius:8px;margin-bottom:8px;">
       <div class="field" style="margin-bottom:6px;"><label>ช่วงเวลาทำงาน (เลือกครั้งเดียวต่อรอบ)</label>
-        <select id="shiftGlobal" onchange="saveState(); if(setupDone()) bossLock();">
+        <select id="shiftGlobal" onchange="saveState(); calUpdate(); if(setupDone()) bossLock();">
           <option value="">-- เลือก --</option>
           <option>10h-16h</option><option>13h-19h</option><option>16h-22h</option><option>19h-01h</option><option>21h-03h</option>
         </select>
@@ -178,7 +187,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
 
     <div id="monthlyCard" style="display:none;">
       <div class="field" style="margin-bottom:6px;"><label>ช่วงเวลาทำงาน (เลือกครั้งเดียวต่อรอบ)</label>
-        <select id="shiftGlobalMonthly" onchange="saveState(); if(setupDone()) bossLock();">
+        <select id="shiftGlobalMonthly" onchange="saveState(); calUpdate(); if(setupDone()) bossLock();">
           <option value="">-- เลือก --</option>
           <option>09:00-17:00</option><option>17:00-01:00</option>
         </select>
@@ -221,6 +230,10 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       <div id="congeValidation" class="small" style="font-weight:700;"></div>
     </div>
 
+    <button id="calBtn" type="button" onclick="addCalendar()" style="display:none;width:100%;margin-top:8px;background:#7c3aed;color:#fff;border:none;padding:13px;border-radius:12px;font-size:1rem;font-weight:800;line-height:1.35;">📅 เพิ่มการแจ้งเตือนในปฏิทิน<br><span style="font-weight:600;font-size:.85rem;">ปลุกก่อนเข้างาน 1 ชั่วโมง และ 15 นาที — กันมาสาย</span></button>
+    <button id="calBtnG" type="button" onclick="addGoogleCal()" style="display:none;width:100%;margin-top:6px;background:#fff;color:#1a73e8;border:2px solid #1a73e8;padding:11px;border-radius:12px;font-size:.95rem;font-weight:800;">📅 ใช้ Google Calendar (Android)</button>
+    <div id="calInfo" class="small" style="display:none;margin-top:4px;text-align:center;"></div>
+
     <details class="small" style="margin-top:6px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px;">
       <summary style="font-weight:700;cursor:pointer;color:var(--text);">📋 กฎการจ่ายเงินและค่าปรับ (แตะเพื่อดู)</summary>
     <div style="line-height:1.9;margin-top:6px;">
@@ -236,7 +249,8 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       10- ขาดงานมีใบรับรองแพทย์ (แนบรูป) = ไม่ปรับ ไม่กิโยติน<br>
       11- ต้องส่งใบรับรองแพทย์ภายใน 4 ชม. หลังเวลาเริ่มงาน มิฉะนั้นนับเป็นขาดงาน<br>
       12- ฟรีแลนซ์: เริ่มรอบใหม่ได้ภายใน 2 วันหลังจบรอบ 10 วัน หลังจากนั้นปรับ 1,000 ฿ ต่อวัน (สูงสุด 7 วัน)<br>
-      13- รายเดือน: ลาได้ 4 วันติดต่อกันฟรี เกิน 4 วัน ปรับ 1,000 ฿ ต่อวัน (สูงสุด 7 วัน)
+      13- รายเดือน: ลาได้ 4 วันติดต่อกันฟรี เกิน 4 วัน ปรับ 1,000 ฿ ต่อวัน (สูงสุด 7 วัน)<br>
+      14- 📵 ใช้โทรศัพท์หน้าตู้กระจกร้าน (หัวหน้าเป็นผู้ยืนยัน, นับต่อรอบ): ครั้งที่ 1 = ตักเตือนอย่างเป็นทางการ · ครั้งที่ 2 = ปรับ 200 ฿ · ครั้งที่ 3 ขึ้นไป = ปรับ 500 ฿ + ยกเลิกค่าการันตีรายวัน · ครั้งที่ 4 = ใช้กฎกิโยติน
     </div>
     </details>
     <input type="hidden" id="rate" value="135"><input type="hidden" id="rateUrg" value="100">
@@ -248,6 +262,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
   <div id="days"></div>
 
   <div class="card summary">
+    <div id="remBar" style="display:none;background:#ffedd5;color:#c2410c;border:2px solid #fb923c;border-radius:12px;padding:10px;margin-bottom:8px;text-align:center;font-weight:800;cursor:pointer;" onclick="goValidate()">⏰ ยังไม่ได้ยืนยันวันนี้ — กด ✔️ ยืนยันวันนี้</div>
     <div id="status" class="status ok" style="cursor:pointer;" onclick="toggleSummary()">🟢 สถานะปกติ <span id="toggleArrow">▼</span></div>
         <div class="btnrow" style="margin:0 0 6px;">
       <button onclick="exportPDF()">📄 PDF</button>
@@ -259,6 +274,8 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div class="summary-row"><span>ระดับที่ทำได้</span><span id="sRate">-</span></div>
     <div class="summary-row"><span>แพ็กเกจที่พัก</span><span id="sPkg">0 ฿</span></div>
     <div class="summary-row"><span>ค่าปรับรวม</span><span id="sPen">0 ฿</span></div>
+    <div class="summary-row" id="rowTel" style="display:none;color:var(--red);"><span>📵 ค่าปรับโทรศัพท์</span><span id="sTel">0 ฿</span></div>
+    <div id="telList" class="small" style="display:none;margin:-2px 0 6px;color:var(--red);font-weight:700;"></div>
     <div class="summary-row" id="rowLeave" style="display:none;color:var(--red);"><span>ค่าลาเกิน 4 วัน</span><span id="sLeave">0 ฿</span></div>
     <div class="summary-row" id="rowRestart" style="display:none;color:var(--red);"><span>ค่าปรับเริ่มรอบช้า</span><span id="sRestart">0 ฿</span></div>
     <div class="summary-row total"><span>ยอดสุทธิ</span><span id="sNet">0 ฿</span></div>
@@ -534,7 +551,7 @@ function handleSelfie(inp){
       catch(err){ const si=document.getElementById('saveInfo'); if(si) si.textContent='⚠️ หน่วยความจำเต็ม — บันทึกรูปไม่ได้'; }
       day.querySelector('.arrival').value=hm;
       const b=day.querySelector('button[onclick^="startWork"]'); b.disabled=true; b.textContent='✅ เริ่มงาน '+hm;
-      showSelfie(day); calc();
+      showSelfie(day); calc(); setTimeout(syncSheet, 300);
     };
     im.src=e.target.result;
   };
@@ -728,6 +745,18 @@ async function syncSheet(){
          else pending++; }
     catch(e){ pending++; }
   }
+  // ▶️ เริ่มงาน : l'employé apparaît tout de suite dans l'onglet « Employés » de Google
+  const ss0=(()=>{ try{ return JSON.parse(localStorage.getItem('sheet_start_v1')||'{}'); }catch(e){ return {}; } })();
+  for(const day of document.querySelectorAll('.day')){
+    const arr=day.querySelector('.arrival').value, dd=dayDate(+day.dataset.d), k=empKey();
+    if(!arr || !dd || !k) continue;
+    const st={type:'start', id:k+'|'+isoD(dd), date:isoD(dd), arrival:arr, name:document.getElementById('name').value.trim(),
+              phone:document.getElementById('phone').value.trim(), contract:N===10?'Freelance 10 j':'Mensuel 30 j', ...cycleInfo()};
+    if(ss0[st.id]) continue;
+    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(st)}); const t=(await r.text()).trim();
+         if(r.ok && (t==='ok'||t==='blocked')){ ss0[st.id]=1; try{ localStorage.setItem('sheet_start_v1', JSON.stringify(ss0)); }catch(e){} }
+         if(t==='blocked') setBlocked(true); }catch(e){}
+  }
   const as=absSent();
   for(const a of absPayloads()){
     if(as[a.id]) continue;
@@ -739,6 +768,144 @@ async function syncSheet(){
   const el=document.getElementById('sheetInfo');
   if(el){ if(pending) el.textContent='⏳ รอส่งข้อมูลให้หัวหน้า '+pending+' วัน — จะลองส่งใหม่อัตโนมัติ'; else if(okN) el.textContent='📤 ส่งข้อมูลให้หัวหน้าแล้ว'; }
 }
+// ===== 📵 TÉLÉPHONE DEVANT LA VITRINE : infractions validées par le patron dans Google (onglet « 📵 Téléphone ») =====
+const TEL_SANCTIONS=[
+  {amt:0,   th:'ตักเตือนอย่างเป็นทางการ', en:'Formal warning'},
+  {amt:200, th:'ปรับ 200 ฿', en:'-200 B'},
+  {amt:500, th:'ปรับ 500 ฿ + ยกเลิกค่าการันตีรายวัน', en:'-500 B + daily guarantee cancelled'},
+  {amt:500, th:'ปรับ 500 ฿ + กฎกิโยติน', en:'-500 B + GUILLOTINE clause'}];
+function telGet(){ try{ return JSON.parse(localStorage.getItem('pointage_tel_inf')||'[]'); }catch(e){ return []; } }
+function telInfo(){
+  const sv=document.getElementById('startDate').value; const out={count:0,amount:0,noGuarantee:false,guillotine:false,list:[]};
+  if(!sv) return out;
+  const s=new Date(sv+'T00:00:00'), e=addDays(s,N-1), si=isoD(s), ei=isoD(e);
+  const L=telGet().filter(x=>x.d>=si && x.d<=ei).sort((a,b)=>a.d<b.d?-1:1);   // comptées dans le cycle en cours
+  // numéro d'infraction choisi par le patron dans Google (1 à 4)
+  L.forEach((x,i)=>{ const n=Math.min(4,Math.max(1,+x.n||(i+1))), S=TEL_SANCTIONS[n-1];
+    out.list.push({d:x.d,n,th:S.th,en:S.en}); out.amount+=S.amt; if(n>=3) out.noGuarantee=true; if(n>=4) out.guillotine=true; });
+  out.count=L.length;
+  return out;
+}
+
+// ===== 💬 MESSAGES DU PATRON (onglet « 💬 Messages ») + avis d'infraction téléphone =====
+let msgQueue=[], msgCur=null;
+function seenGet(){ try{ return JSON.parse(localStorage.getItem('pointage_msg_seen')||'{}'); }catch(e){ return {}; } }
+function queueMessages(msgs){
+  const seen=seenGet();
+  (msgs||[]).forEach(m=>{ if(!seen[m.id] && !msgQueue.some(q=>q.id===m.id) && !(msgCur && msgCur.id===m.id))
+    msgQueue.push({id:m.id, icon:'💬', title:'ข้อความจากหัวหน้า', date:m.at, text:m.t, red:false}); });
+  // nouvelle infraction téléphone validée par le patron
+  telGet().forEach(x=>{ const n=Math.min(4,Math.max(1,+x.n||1)), id='tel|'+x.d+'|'+n;
+    if(seen[id] || msgQueue.some(q=>q.id===id) || (msgCur && msgCur.id===id)) return;
+    const S=TEL_SANCTIONS[n-1];
+    msgQueue.push({id, icon:'📵', title:'ใช้โทรศัพท์หน้าตู้กระจกร้าน', date:x.d.split('-').reverse().join('/'), text:'ครั้งที่ '+n+'\n'+S.th, red:true}); });
+  showNextMsg();
+}
+function showNextMsg(){
+  if(msgCur || !msgQueue.length) return;
+  msgCur=msgQueue.shift();
+  document.getElementById('msgIcon').textContent=msgCur.icon;
+  const tt=document.getElementById('msgTitle'); tt.textContent=msgCur.title; tt.style.color=msgCur.red?'var(--red)':'var(--text)';
+  document.getElementById('msgDate').textContent=msgCur.date||'';
+  const tx=document.getElementById('msgText'); tx.textContent=msgCur.text; tx.style.color=msgCur.red?'var(--red)':'var(--text)';
+  document.getElementById('msgGate').style.display='block';
+}
+function ackMsg(){
+  if(!msgCur) return;
+  if(msgCur.local){ document.getElementById('msgGate').style.display='none'; msgCur=null; goValidate(); setTimeout(showNextMsg, 250); return; }
+  const m=msgCur, seen=seenGet(); seen[m.id]=Date.now(); try{ localStorage.setItem('pointage_msg_seen', JSON.stringify(seen)); }catch(e){}
+  document.getElementById('msgGate').style.display='none'; msgCur=null;
+  // accusé de lecture → colonne « 👁 » dans Google
+  try{ fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'lu', id:m.id, name:document.getElementById('name').value.trim(), phone:document.getElementById('phone').value.trim()})}).catch(()=>{}); }catch(e){}
+  setTimeout(showNextMsg, 250);
+}
+setInterval(()=>{ if(!document.hidden) checkBlocked(false); }, 120000);
+
+// ===== 📅 ALARMES DANS LE CALENDRIER DU TÉLÉPHONE (1 h et 15 min avant le shift) =====
+function calParams(){
+  const sv=document.getElementById('startDate').value;
+  const shiftStr = N===10 ? document.getElementById('shiftGlobal').value : document.getElementById('shiftGlobalMonthly').value;
+  if(!sv || !shiftStr) return null;
+  const s=new Date(sv+'T00:00:00'), e=addDays(s,N-1), t=workToday();
+  const from = t>s ? t : s; if(from>e) return null;
+  const n=Math.round((e-from)/86400000)+1, skip=[];
+  if(N===30){ try{ const ev=leaveEval(); if(ev && !ev.error) for(let d=new Date(ev.start); d<=ev.end; d=addDays(d,1)) skip.push(isoD(d)); }catch(err){} }
+  return {s:isoD(from), n, sh:shiftStr, x:skip.join(','), key:sv+'|'+shiftStr+'|'+skip.join(',')};
+}
+const IS_ANDROID=/android/i.test(navigator.userAgent);
+function calUpdate(){
+  const b=document.getElementById('calBtn'), info=document.getElementById('calInfo'); if(!b) return;
+  const p=calParams(); b.style.display = (p && SHEET_URL) ? 'block' : 'none';
+  document.getElementById('calBtnG').style.display = (p && IS_ANDROID) ? 'block' : 'none';
+  let done=''; try{ done=localStorage.getItem('pointage_cal_done')||''; }catch(e){}
+  const ok = p && done===p.key;
+  info.style.display = p ? 'block' : 'none';
+  info.innerHTML = ok ? '✅ เพิ่มในปฏิทินแล้ว (กดอีกครั้งได้ถ้าเปลี่ยนเวลา)' : '⚠️ ยังไม่ได้เพิ่มการแจ้งเตือน — กดปุ่มด้านบน แล้วเลือก <b>“เพิ่มทั้งหมด / Add All”</b>';
+  info.style.color = ok ? 'var(--green,#16a34a)' : '#c2410c';
+}
+function addCalendar(){
+  const p=calParams(); if(!p){ alert('⚠️ เลือกวันที่เริ่มรอบและช่วงเวลาทำงานก่อน'); return; }
+  const url=SHEET_URL+'?ics=1'+(IS_ANDROID?'&dl=1':'')+'&s='+p.s+'&n='+p.n+'&sh='+encodeURIComponent(p.sh)+'&x='+encodeURIComponent(p.x)+'&nm='+encodeURIComponent(document.getElementById('name').value||'');
+  try{ localStorage.setItem('pointage_cal_done', p.key); }catch(e){}
+  window.open(url, '_blank');
+  calUpdate();
+}
+// Android avec seulement Google Calendar : un événement répété chaque jour du cycle
+function addGoogleCal(){
+  const p=calParams(); if(!p){ alert('⚠️ เลือกวันที่เริ่มรอบและช่วงเวลาทำงานก่อน'); return; }
+  const parts=p.sh.split('-'), hm=t=>{ const q=t.trim().split(/[h:]/); return (+q[0]||0)*60+(+q[1]||0); };
+  const sm=hm(parts[0]); let em=hm(parts[1]); if(em<=sm) em+=1440;
+  const d0=new Date(p.s+'T00:00:00+07:00'), a=new Date(d0.getTime()+sm*60000), b=new Date(d0.getTime()+em*60000);
+  const z=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  const hh=parts[0].trim().replace('h',':').replace(/:$/,':00');
+  const txt='💆 เข้างาน '+hh+' น. (ลงเวลา)';
+  const det='อย่ามาสาย! สาย 15-29 นาที ปรับ 20 ฿/นาที · 30-59 นาที 30 ฿/นาที · เกิน 60 นาที 500-2,000 ฿\n⏰ ตั้งการแจ้งเตือน 1 ชั่วโมง และ 15 นาที ก่อนเข้างาน';
+  const url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(txt)+'&dates='+z(a)+'/'+z(b)+
+            '&ctz=Asia/Bangkok&recur='+encodeURIComponent('RRULE:FREQ=DAILY;COUNT='+p.n)+'&details='+encodeURIComponent(det);
+  try{ localStorage.setItem('pointage_cal_done', p.key); }catch(e){}
+  window.open(url, '_blank');
+  calUpdate();
+}
+
+// ===== ⏰ RAPPEL : journée pas validée 2 h après la fin du service =====
+const REMIND_AFTER_H=2, REMIND_EVERY_MIN=30;
+function shiftEndMin(str){ if(!str || str.indexOf('-')<0) return null; const e=str.split('-')[1].trim(); const p=e.split(/[h:]/); return (+p[0]||0)*60+(+p[1]||0); }
+function todayCard(){ const sv=document.getElementById('startDate').value; if(!sv) return null;
+  const idx=Math.round((workToday()-new Date(sv+'T00:00:00'))/86400000)+1; return document.querySelector('.day[data-d="'+idx+'"]'); }
+function goValidate(){ const d=todayCard(); if(!d) return; d.scrollIntoView({behavior:'smooth',block:'center'});
+  const b=d.querySelector('button[onclick^="lockDay"]'); if(b){ b.style.outline='4px solid #fb923c'; setTimeout(()=>b.style.outline='',4000); } }
+function reminderCheck(){
+  const bar=document.getElementById('remBar'); if(!bar) return;
+  const d=todayCard(); let due=false;
+  if(d && d.dataset.locked!=='1'){
+    const q=s=>d.querySelector(s).value;
+    const worked = q('.arrival') || q('.finish') || q('.solo') || q('.duo8') || q('.duo');
+    const shiftStr = N===10 ? document.getElementById('shiftGlobal').value : document.getElementById('shiftGlobalMonthly').value;
+    const sMin=parseShiftStart(shiftStr), eMin=shiftEndMin(shiftStr), dd=dayDate(+d.dataset.d);
+    if(worked && dd && sMin!==null){
+      let ref=null;
+      const fin=q('.finish');
+      if(fin){ const p=fin.split(':'); let m=(+p[0])*60+(+p[1]); if(m<sMin-120) m+=1440; ref=new Date(dd.getTime()+m*60000); }   // ⏹️ เลิกงาน
+      else if(eMin!==null){ let m=eMin; if(m<=sMin) m+=1440; ref=new Date(dd.getTime()+m*60000); }                              // fin prévue du shift
+      if(ref && Date.now() >= ref.getTime()+REMIND_AFTER_H*3600000) due=true;
+    }
+  }
+  bar.style.display = due ? 'block' : 'none';
+  if(!due) return;
+  let last=0; try{ last=+localStorage.getItem('pointage_rem_last')||0; }catch(e){}
+  if(Date.now()-last < REMIND_EVERY_MIN*60000 || document.getElementById('blockGate').style.display==='block') return;
+  try{ localStorage.setItem('pointage_rem_last', String(Date.now())); }catch(e){}
+  const id='rem|'+isoD(dayDate(+d.dataset.d));
+  if(!msgQueue.some(x=>x.id===id) && !(msgCur && msgCur.id===id)){
+    msgQueue.unshift({id, local:true, icon:'⏰', title:'ลืมยืนยันวันนี้หรือเปล่า?', date:fmtDate(dayDate(+d.dataset.d)),
+      text:'เลิกงานแล้ว '+REMIND_AFTER_H+' ชั่วโมง แต่ยังไม่ได้กด ✔️ ยืนยันวันนี้\nกรุณายืนยันก่อน 06:00 น. มิฉะนั้นจะแก้ไขไม่ได้', red:true});
+    showNextMsg();
+  }
+}
+setInterval(()=>{ if(!document.hidden) reminderCheck(); }, 60000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(reminderCheck, 800); });
+setTimeout(reminderCheck, 2500);
+
 // ===== EMPLOYÉ BLOQUÉ PAR LE PATRON (onglet « Employés » de la feuille Google) =====
 function setBlocked(on){
   try{ if(on) localStorage.setItem('pointage_blocked','1'); else localStorage.removeItem('pointage_blocked'); }catch(e){}
@@ -753,8 +920,11 @@ async function checkBlocked(manual){
   if(!SHEET_URL || !n || !t) return;
   const msg=document.getElementById('blockMsg'); if(manual && msg) msg.textContent='⏳ …';
   try{
-    const r=await fetch(SHEET_URL+'?emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&_='+Date.now());
-    const txt=(await r.text()).trim();
+    const r=await fetch(SHEET_URL+'?emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&v=2&_='+Date.now());
+    let txt=(await r.text()).trim();
+    if(txt[0]==='{'){ try{ const j=JSON.parse(txt); txt=j.s;
+      const nv=JSON.stringify(j.tel||[]); if(nv!==(localStorage.getItem('pointage_tel_inf')||'[]')){ localStorage.setItem('pointage_tel_inf', nv); calc(); }
+      if(j.s!=='blocked') queueMessages(j.msg); }catch(e){} }
     if(txt==='blocked'){ setBlocked(true); if(manual && msg) msg.textContent='🚫 ยังถูกระงับอยู่'; }
     else if(txt==='ok'){ const was=(()=>{try{return localStorage.getItem('pointage_blocked')==='1'}catch(e){return false}})(); setBlocked(false); if(was) syncSheet(); }
   }catch(e){ if(manual && msg) msg.textContent='⚠️ ไม่มีอินเทอร์เน็ต'; }
@@ -778,6 +948,7 @@ function lockDay(btn){
   applyFreeze();
   saveState();
   syncSheet();
+  reminderCheck();
 }
 function parseShiftStart(str){
   if(!str) return null;
@@ -849,7 +1020,8 @@ function calc(){
       flagsEl.textContent = labels.length ? labels.join(' · ')+(pen>0?' — '+pen+' ฿':'') : '✅ ตรงเวลา';
     }
   });
-  const guillotine = lateTot>=3 || absTot>=1;
+  const tel = telInfo();
+  const guillotine = lateTot>=3 || absTot>=1 || tel.guillotine;
   const bonus = +document.getElementById('rate').value||135;
   const urgence = +document.getElementById('rateUrg').value||100;
   let massPay, niveau, niveauEn;
@@ -866,6 +1038,7 @@ function calc(){
     else if(mass>=20){ massPay = mass*bonus; niveau='ระดับ 4 (20-29) — เรทมาตรฐาน'; niveauEn='Level 4 (20-29) - standard rate'; }
     else { massPay = mass*urgence; niveau='ระดับ 5 (ต่ำกว่า 20) — เรทฉุกเฉิน'; niveauEn='Level 5 (<20) - emergency rate'; }
   }
+  if(!guillotine && tel.noGuarantee){ massPay = mass*bonus; niveau='📵 ยกเลิกค่าการันตีรายวัน — '+bonus+' ฿/รอบ'; niveauEn='Daily guarantee cancelled (phone) - '+bonus+' B/round'; }
   if(guillotine){ massPay = mass*urgence; }
   window.pdfNiveau = guillotine ? 'Guillotine ('+urgence+' B/round)' : niveauEn;
   window.pdfStatus = guillotine ? 'PUNITIVE GUILLOTINE' : 'NORMAL';
@@ -877,7 +1050,11 @@ function calc(){
   const pkg = pkgOn ? pkgAmount : 0;
   const rs = restartInfo();
   const lx = leaveExtraInfo();
-  const net = massPay - pkg - penTot - rs.amount - lx.amount;
+  const net = massPay - pkg - penTot - rs.amount - lx.amount - tel.amount;
+  document.getElementById('rowTel').style.display = tel.count ? 'flex' : 'none';
+  document.getElementById('sTel').textContent = (tel.amount?'-':'')+tel.amount.toLocaleString('en-US')+' ฿ ('+tel.count+' ครั้ง)';
+  { const tl=document.getElementById('telList'); tl.style.display = tel.count ? 'block' : 'none';
+    tl.innerHTML = tel.list.map(x=>'📵 '+x.d.split('-').reverse().join('/')+' — ครั้งที่ '+x.n+' : '+x.th).join('<br>'); }
   document.getElementById('rowLeave').style.display = lx.amount ? 'flex' : 'none';
   document.getElementById('sLeave').textContent = lx.amount ? '-'+lx.amount.toLocaleString('en-US')+' ฿ ('+lx.days+' วัน)' : '0 ฿';
   document.getElementById('rowRestart').style.display = rs.amount ? 'flex' : 'none';
@@ -897,6 +1074,8 @@ function calc(){
   document.querySelectorAll('.day').forEach(d=>{ const j=d.querySelector('.c-just'); if(j && j.checked) showCert(d); });
   applyFreeze();
   saveState();
+  { const bar=document.getElementById('remBar'); if(bar && bar.style.display==='block' && typeof reminderCheck==='function') reminderCheck(); }
+  if(typeof calUpdate==='function') calUpdate();
 }
 function getKey(){ return 'pointage_fiche_single'; }
 function saveState(){
@@ -1088,6 +1267,8 @@ function buildPDF(){
   sumRow('', document.getElementById('sRate').textContent);
   sumRow('Housing package / แพ็กเกจที่พัก', document.getElementById('sPkg').textContent);
   sumRow('Total penalties / ค่าปรับรวม', document.getElementById('sPen').textContent);
+  { const tl=telInfo(); if(tl.count){ sumRow('Phone at shop window / ใช้โทรศัพท์หน้าตู้กระจก ('+tl.count+'x)', '-'+tl.amount.toLocaleString('en-US')+' ฿', [200,30,30]);
+      tl.list.forEach(x=>sumRow('   '+x.d.split('-').reverse().join('/')+'  #'+x.n, x.en, [200,30,30])); } }
   { const lx=leaveExtraInfo(); if(lx.amount) sumRow('Extra day off / ค่าลาเกิน 4 วัน ('+lx.days+' วัน)', '-'+lx.amount.toLocaleString('en-US')+' ฿', [200,30,30]); }
   { const rs=restartInfo(); if(rs.amount) sumRow('Late restart / ค่าปรับเริ่มรอบช้า ('+rs.days+' วัน)', '-'+rs.amount.toLocaleString('en-US')+' ฿', [200,30,30]); }
   y+=1; doc.setFillColor(219,234,254); doc.rect(15,y-6,180,11,'F');
