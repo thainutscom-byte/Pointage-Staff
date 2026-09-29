@@ -58,7 +58,7 @@
     <button class="big" id="ok" disabled onclick="valider()">✔ Valider</button>
     <div id="msg"></div>
     <div id="smsBox"></div>
-    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();return false">🔄 Actualiser</a> · <a href="#" onclick="logout();return false">🔒 Changer de code</a></div>
+    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();return false">🔄 Actualiser</a></div>
   </div>
 </div>
 <script>
@@ -66,7 +66,7 @@ const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7
 const CH=[['1','Avertissement formel'],['2','-200 ฿'],['3','-500 ฿ + garantie annulée'],['4','-500 ฿ + guillotine']];
 let emps=[],sel=null,n=1;
 const $=id=>document.getElementById(id);
-function getPin(){ try{ return localStorage.getItem('patron_pin')||''; }catch(e){ return ''; } }
+function getPin(){ return 'x'; }   // plus de code patron
 function savePin(){ const v=$('pin').value.trim(); if(!v) return; try{ localStorage.setItem('patron_pin',v); }catch(e){} start(); }
 function logout(){ try{ localStorage.removeItem('patron_pin'); }catch(e){} start(); }
 async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
