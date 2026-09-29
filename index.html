@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2563eb">
+<meta name="color-scheme" content="light only">
 <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIkRhaWx5IFRpbWVzaGVldCIsICJzaG9ydF9uYW1lIjogIlRpbWVzaGVldCIsICJzdGFydF91cmwiOiAiLiIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjVmNmY4IiwgInRoZW1lX2NvbG9yIjogIiMyNTYzZWIiLCAiaWNvbnMiOiBbeyJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhacFpYZENiM2c5SWpBZ01DQXhPVElnTVRreUlqNEtQSEpsWTNRZ2QybGtkR2c5SWpFNU1pSWdhR1ZwWjJoMFBTSXhPVElpSUhKNFBTSXpOaUlnWm1sc2JEMGlJekkxTmpObFlpSXZQZ284ZEdWNGRDQjRQU0k1TmlJZ2VUMGlNVEk0SWlCbWIyNTBMWE5wZW1VOUlqRXhNQ0lnZEdWNGRDMWhibU5vYjNJOUltMXBaR1JzWlNJKzhKK1Rpend2ZEdWNGRENEtQQzl6ZG1jKyIsICJzaXplcyI6ICIxOTJ4MTkyIiwgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsICJwdXJwb3NlIjogImFueSJ9XX0=">
 <link rel="apple-touch-icon" href="data:image/png;base64,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">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -27,7 +28,7 @@
 <style>
 :root{
   --yellow:#fff3b0; --yellow-b:#e6c229; --blue:#2563eb; --blue-d:#1d4ed8;
-  --red:#dc2626; --red-bg:#fee2e2; --green:#16a34a; --bg:#f5f6f8; --card:#ffffff;
+  --red:#dc2626; --red-bg:#fee2e2; --green:#16a34a; --bg:#e5e7eb; --card:#ffffff;
   --text:#1f2430; --muted:#6b7280; --border:#e2e4e9;
 }
 @media (prefers-color-scheme: dark){
@@ -35,6 +36,7 @@
 }
 :root[data-theme="dark"]{--bg:#14161c;--card:#1e2129;--text:#f2f3f5;--muted:#9aa0ac;--border:#333844;--yellow:#5c4d0f;--yellow-b:#a5851f;--red-bg:#4a1414;}
 *{box-sizing:border-box;}
+html{color-scheme:light;}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
 body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
 .wrap{max-width:480px;margin:0 auto;padding:16px;}
@@ -149,7 +151,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       <div id="nextInfo" class="small" style="font-weight:700;margin-top:4px;"></div>
       <div class="small" style="color:var(--text);margin-top:4px;">📄 ส่ง PDF ให้หัวหน้าก่อน แล้วกด 🗑️ รอบใหม่</div>
     </div>
-    <div class="field"><label>ชื่อพนักงาน</label><input id="name" placeholder="ชื่อ-นามสกุล"></div>
+    <div class="field"><label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label><input id="name" placeholder="เช่น Noi, Ploy, Mint" autocapitalize="words" autocomplete="off" oninput="checkNameEn()"><div id="nameWarn" class="small" style="display:none;color:var(--red);font-weight:700;margin-top:4px;">⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z) เท่านั้น</div></div>
     <div class="field"><label>เบอร์โทรศัพท์</label><input id="phone" placeholder="0X XXX XXXX"></div>
     <div class="field">
       <label>QR Code ธนาคาร (พร้อมเพย์)</label>
@@ -522,7 +524,10 @@ function buildDays(){
 function fmtHM(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 // ===== SELFIE OBLIGATOIRE AU DÉBUT DU TRAVAIL =====
 function selfieKey(day){ return getKey()+'_selfie_'+day.dataset.d; }
+function nameIsEn(){ const v=(document.getElementById('name').value||'').trim(); return !!v && /^[A-Za-z][A-Za-z .'-]*$/.test(v); }
+function checkNameEn(){ const v=(document.getElementById('name').value||'').trim(), w=document.getElementById('nameWarn'); if(w) w.style.display = (v && !nameIsEn()) ? 'block' : 'none'; }
 function startWork(btn){
+  if(!nameIsEn()){ checkNameEn(); alert('⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z) ก่อนเริ่มงาน'); document.getElementById('name').focus(); return; }
   // ouvre directement la caméra frontale ; l'heure est enregistrée au moment de la photo
   btn.closest('.day').querySelector('.selfieInput').click();
 }
@@ -570,7 +575,8 @@ function daySummaryText(day){
   const late=day.querySelector('.c-l1529').checked||day.querySelector('.c-l3059').checked||day.querySelector('.c-l60').checked;
   const pen=day.querySelector('.pen').value||0;
   let flags=[]; if(abs) flags.push('ขาดงาน'); if(med) flags.push('ใบรับรองแพทย์'); if(late) flags.push('มาสาย');
-  return `1 เลดี้ 600 ${solo} · 2 เลดี้ 800 ${duo8} · Happy Hour 600 ${duo}${flags.length?' · '+flags.join(', '):''} · ค่าปรับ ${pen} ฿`;
+  let corrTag=''; try{ const dd=dayDate(+day.dataset.d); if(dd && corrGet()[isoD(dd)]) corrTag=' · ✏️ แก้ไขโดยหัวหน้า'; }catch(e){}
+  return `1 เลดี้ 600 ${solo} · 2 เลดี้ 800 ${duo8} · Happy Hour 600 ${duo}${flags.length?' · '+flags.join(', '):''} · ค่าปรับ ${pen} ฿${corrTag}`;
 }
 function collapseDay(day){
   day.querySelector('.dayBody').style.display='none';
@@ -704,14 +710,14 @@ function markSent(id){ const m=sheetSent(); m[id]=1; try{ localStorage.setItem('
 function dayPayload(day){
   const q=s=>day.querySelector(s), dd=dayDate(+day.dataset.d); if(!dd) return null;
   // 2 lady : chaque lady saisit 1 → compte 1/2 massage (l'autre lady saisit aussi 1)
-  const l1=+q('.solo').value||0, l2=(+q('.duo8').value||0)*0.5, hh=+q('.duo').value||0;
+  const l1=+q('.solo').value||0, l2=(+q('.duo8').value||0)*0.5, hh=(+q('.duo').value||0)*0.5;
   let sit=[]; if(q('.c-abs').checked) sit.push(q('.c-med').checked?'Absence justifiée':'Absent');
   if(q('.c-l1529').checked) sit.push('Retard 15-29'); if(q('.c-l3059').checked) sit.push('Retard 30-59'); if(q('.c-l60').checked) sit.push('Retard 60+');
   const name=document.getElementById('name').value||'-', phone=document.getElementById('phone').value||'';
   const date=isoD(dd);
   return { id:(empKey()||name)+'|'+date, date, name, phone, contract: N===10?'Freelance 10 j':'Mensuel 30 j',
            l1, l2, hh, ca: l1*PRICE_1L + l2*PRICE_2L + hh*PRICE_HH,
-           arrival:q('.arrival').value||'', finish:q('.finish').value||'', situation: sit.join(', ')||'OK', penalty:+q('.pen').value||0, ...cycleInfo() };
+           arrival:q('.arrival').value||'', finish:q('.finish').value||'', situation: sit.join(', ')||'OK', penalty:+q('.pen').value||0, v:2, ...cycleInfo() };
 }
 function cycleInfo(){
   const sv=document.getElementById('startDate').value; if(!sv) return {};
@@ -812,6 +818,8 @@ function showNextMsg(){
 }
 function ackMsg(){
   if(!msgCur) return;
+  if(msgCur.quiet){ const seen=seenGet(); seen[msgCur.id]=Date.now(); try{ localStorage.setItem('pointage_msg_seen', JSON.stringify(seen)); }catch(e){}
+    document.getElementById('msgGate').style.display='none'; msgCur=null; setTimeout(showNextMsg, 250); return; }
   if(msgCur.local){ document.getElementById('msgGate').style.display='none'; msgCur=null; goValidate(); setTimeout(showNextMsg, 250); return; }
   const m=msgCur, seen=seenGet(); seen[m.id]=Date.now(); try{ localStorage.setItem('pointage_msg_seen', JSON.stringify(seen)); }catch(e){}
   document.getElementById('msgGate').style.display='none'; msgCur=null;
@@ -820,6 +828,31 @@ function ackMsg(){
   setTimeout(showNextMsg, 250);
 }
 setInterval(()=>{ if(!document.hidden) checkBlocked(false); }, 120000);
+
+// ===== ✏️ CORRECTIONS DU PATRON (onglet « Massages » de Google) → la journée validée est corrigée sur la fiche =====
+function corrGet(){ try{ return JSON.parse(localStorage.getItem('pointage_corr')||'{}'); }catch(e){ return {}; } }
+function applyCorrections(rows){
+  if(!Array.isArray(rows) || !rows.length) return;
+  const byDate={}; rows.forEach(r=>byDate[r.d]=r);
+  const corr=corrGet(); let changed=false;
+  document.querySelectorAll('.day[data-locked="1"]').forEach(day=>{
+    const dd=dayDate(+day.dataset.d); if(!dd) return; const iso=isoD(dd), g=byDate[iso]; if(!g) return;
+    const q=s=>day.querySelector(s);
+    const cur={l1:+q('.solo').value||0, l2:(+q('.duo8').value||0)*0.5, hh:(+q('.duo').value||0)*0.5, pen:+q('.pen').value||0};
+    const diff=['l1','l2','hh','pen'].filter(k=>Math.abs((+g[k]||0)-cur[k])>0.001);
+    if(!diff.length) return;
+    const avant='1 เลดี้ '+cur.l1+' · 2 เลดี้ '+(cur.l2*2)+' · HH '+(cur.hh*2)+' · ค่าปรับ '+cur.pen+' ฿';
+    q('.solo').value=+g.l1||0; q('.duo8').value=Math.round((+g.l2||0)*2*100)/100; q('.duo').value=Math.round((+g.hh||0)*2*100)/100; q('.pen').value=+g.pen||0;
+    const apres='1 เลดี้ '+(+g.l1||0)+' · 2 เลดี้ '+Math.round((+g.l2||0)*200)/100+' · HH '+Math.round((+g.hh||0)*200)/100+' · ค่าปรับ '+(+g.pen||0)+' ฿';
+    corr[iso]=1; changed=true;
+    const id='corr|'+iso+'|'+g.l1+'|'+g.l2+'|'+g.hh+'|'+g.pen;
+    if(!seenGet()[id] && !msgQueue.some(x=>x.id===id))
+      msgQueue.push({id, quiet:true, icon:'✏️', title:'หัวหน้าแก้ไขข้อมูลวันทำงาน', date:fmtDate(dd), text:'ก่อน: '+avant+'\nใหม่: '+apres, red:false});
+  });
+  if(changed){ try{ localStorage.setItem('pointage_corr', JSON.stringify(corr)); }catch(e){}
+    document.querySelectorAll('.day[data-locked="1"]').forEach(d=>collapseDay(d));
+    calc(); updateDayDates(); saveState(); }
+}
 
 // ===== 📅 ALARMES DANS LE CALENDRIER DU TÉLÉPHONE (1 h et 15 min avant le shift) =====
 function calParams(){
@@ -905,6 +938,7 @@ function reminderCheck(){
 setInterval(()=>{ if(!document.hidden) reminderCheck(); }, 60000);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(reminderCheck, 800); });
 setTimeout(reminderCheck, 2500);
+setTimeout(()=>{ try{ checkNameEn(); }catch(e){} }, 600);
 
 // ===== EMPLOYÉ BLOQUÉ PAR LE PATRON (onglet « Employés » de la feuille Google) =====
 function setBlocked(on){
@@ -924,7 +958,7 @@ async function checkBlocked(manual){
     let txt=(await r.text()).trim();
     if(txt[0]==='{'){ try{ const j=JSON.parse(txt); txt=j.s;
       const nv=JSON.stringify(j.tel||[]); if(nv!==(localStorage.getItem('pointage_tel_inf')||'[]')){ localStorage.setItem('pointage_tel_inf', nv); calc(); }
-      if(j.s!=='blocked') queueMessages(j.msg); }catch(e){} }
+      if(j.s!=='blocked'){ applyCorrections(j.cor); queueMessages(j.msg); } }catch(e){} }
     if(txt==='blocked'){ setBlocked(true); if(manual && msg) msg.textContent='🚫 ยังถูกระงับอยู่'; }
     else if(txt==='ok'){ const was=(()=>{try{return localStorage.getItem('pointage_blocked')==='1'}catch(e){return false}})(); setBlocked(false); if(was) syncSheet(); }
   }catch(e){ if(manual && msg) msg.textContent='⚠️ ไม่มีอินเทอร์เน็ต'; }
