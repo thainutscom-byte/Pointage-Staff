@@ -171,6 +171,12 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
         <label class="chk" style="margin-top:9px;"><input type="checkbox" id="pkg" onchange="calc()"> <span id="pkgLabel">มี — 1,300 ฿ (10 วัน)</span></label>
       </div>
     </div>
+    <div class="row2">
+      <div class="field"><label>👖 กางเกงขาสั้นดำ <b>200 ฿</b></label>
+        <select id="uniShort" onchange="calc()"><option value="0">ไม่ซื้อ</option><option value="1">1 ตัว — 200 ฿</option><option value="2">2 ตัว — 400 ฿</option></select></div>
+      <div class="field"><label>👕 เสื้อยืด <b>250 ฿</b></label>
+        <select id="uniTee" onchange="calc()"><option value="0">ไม่ซื้อ</option><option value="1">1 ตัว — 250 ฿</option><option value="2">2 ตัว — 500 ฿</option></select></div>
+    </div>
 
     <div class="field"><label>วันที่เริ่มรอบ</label><input id="startDate" type="date"></div>
     <div class="row2">
@@ -289,6 +295,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div class="summary-row"><span>จำนวนนวดรวม (ถ่วงน้ำหนัก)</span><span id="sMass">0</span></div>
     <div class="summary-row"><span>ระดับที่ทำได้</span><span id="sRate">-</span></div>
     <div class="summary-row"><span>แพ็กเกจที่พัก</span><span id="sPkg">0 ฿</span></div>
+    <div class="summary-row" id="rowUni" style="display:none;"><span>👕 ชุดยูนิฟอร์ม</span><span id="sUni">0 ฿</span></div>
     <div class="summary-row"><span>ค่าปรับรวม</span><span id="sPen">0 ฿</span></div>
     <div class="summary-row" id="rowTel" style="display:none;color:var(--red);"><span>📵 ค่าปรับโทรศัพท์</span><span id="sTel">0 ฿</span></div>
     <div id="telList" class="small" style="display:none;margin:-2px 0 6px;color:var(--red);font-weight:700;"></div>
@@ -806,6 +813,13 @@ async function syncSheet(){
   const el=document.getElementById('sheetInfo');
   if(el){ if(pending) el.textContent='⏳ รอส่งข้อมูลให้หัวหน้า '+pending+' วัน — จะลองส่งใหม่อัตโนมัติ'; else if(okN) el.textContent='📤 ส่งข้อมูลให้หัวหน้าแล้ว'; }
 }
+// ===== 👕 UNIFORME : short noir 200 ฿, T-shirt 250 ฿ (1 ou 2 pièces), retenu sur le salaire =====
+function uniInfo(){
+  const a=+(document.getElementById('uniShort')||{}).value||0, b=+(document.getElementById('uniTee')||{}).value||0;
+  const t=[], e=[]; if(a){ t.push('กางเกง '+a+' ตัว'); e.push(a+' black short'); } if(b){ t.push('เสื้อ '+b+' ตัว'); e.push(b+' T-shirt'); }
+  return {amount:a*200+b*250, txt:t.join(' + '), en:e.join(' + ')};
+}
+
 // ===== 📵 TÉLÉPHONE DEVANT LA VITRINE : infractions validées par le patron dans Google (onglet « 📵 Téléphone ») =====
 const TEL_SANCTIONS=[
   {amt:0,   th:'ตักเตือนอย่างเป็นทางการ', en:'Formal warning'},
@@ -1188,7 +1202,7 @@ function calc(){
   const pkg = pkgOn ? pkgAmount : 0;
   const rs = restartInfo();
   const lx = leaveExtraInfo();
-  const net = massPay - pkg - penTot - rs.amount - lx.amount - tel.amount;
+  const net = massPay - pkg - penTot - rs.amount - lx.amount - tel.amount - uniInfo().amount;
   document.getElementById('rowTel').style.display = tel.count ? 'flex' : 'none';
   document.getElementById('sTel').textContent = (tel.amount?'-':'')+tel.amount.toLocaleString('en-US')+' ฿ ('+tel.count+' ครั้ง)';
   { const tl=document.getElementById('telList'); tl.style.display = tel.count ? 'block' : 'none';
@@ -1207,6 +1221,8 @@ function calc(){
   document.getElementById('sMass').textContent = mass.toFixed(1);
   document.getElementById('sRate').textContent = guillotine ? 'กิโยติน ('+urgence+' ฿/รอบ)' : niveau;
   document.getElementById('sPkg').textContent = (pkg>0?'-':'')+pkg+' ฿';
+  { const u=uniInfo(); document.getElementById('rowUni').style.display = u.amount ? 'flex' : 'none';
+    document.getElementById('sUni').textContent = '-'+u.amount.toLocaleString('en-US')+' ฿ ('+u.txt+')'; }
   document.getElementById('sPen').textContent = penTot+' ฿';
   document.getElementById('sNet').textContent = net.toFixed(0)+' ฿';
   document.querySelectorAll('.day').forEach(d=>{ const j=d.querySelector('.c-just'); if(j && j.checked) showCert(d); });
@@ -1229,6 +1245,7 @@ function saveState(){
     const state={
       name:document.getElementById('name').value, phone:document.getElementById('phone').value,
       contract:document.getElementById('contract').value, pkg:document.getElementById('pkg').checked,
+      uniShort:document.getElementById('uniShort').value, uniTee:document.getElementById('uniTee').value,
       rate:document.getElementById('rate').value, rateUrg:document.getElementById('rateUrg').value,
       startDate:document.getElementById('startDate').value, shiftGlobal:document.getElementById('shiftGlobal').value, qrDataUrl,
       shiftGlobalMonthly:document.getElementById('shiftGlobalMonthly').value,
@@ -1249,6 +1266,7 @@ function loadState(){
     document.getElementById('phone').value=s.phone||'';
     document.getElementById('contract').value=s.contract||'10';
     document.getElementById('pkg').checked = !!s.pkg;
+    document.getElementById('uniShort').value = s.uniShort||'0'; document.getElementById('uniTee').value = s.uniTee||'0';
     document.getElementById('rate').value=s.rate||135;
     document.getElementById('rateUrg').value=s.rateUrg||100;
     document.getElementById('startDate').value=s.startDate||'';
@@ -1413,6 +1431,7 @@ function buildPDF(){
   sumRow('Level / ระดับ', window.pdfNiveau||'-');
   sumRow('', document.getElementById('sRate').textContent);
   sumRow('Housing package / แพ็กเกจที่พัก', document.getElementById('sPkg').textContent);
+  { const u=uniInfo(); if(u.amount) sumRow('Uniform / ชุดยูนิฟอร์ม ('+u.en+')', '-'+u.amount.toLocaleString('en-US')+' ฿', [200,30,30]); }
   sumRow('Total penalties / ค่าปรับรวม', document.getElementById('sPen').textContent);
   { const tl=telInfo(); if(tl.count){ sumRow('Phone at shop window / ใช้โทรศัพท์หน้าตู้กระจก ('+tl.count+'x)', '-'+tl.amount.toLocaleString('en-US')+' ฿', [200,30,30]);
       tl.list.forEach(x=>sumRow('   CCTV '+x.d.split('-').reverse().join('/')+(x.t?' '+x.t:'')+'  #'+x.n, x.en, [200,30,30])); } }
