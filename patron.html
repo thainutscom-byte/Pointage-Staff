@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#dc2626">
+<title>📵 Patron</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--redbg:#fee2e2;--green:#16a34a;--border:#e5e7eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:460px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 30px;}
+  h1{font-size:1.25rem;margin:4px 0 12px;text-align:center}
+  .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  h2{font-size:1rem;margin:0 0 8px}
+  .emp{display:block;width:100%;text-align:left;border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px;margin:0 0 8px;font-size:1.05rem;color:var(--text)}
+  .emp small{color:var(--muted);font-size:.8rem}
+  .emp.svc{border-left:7px solid var(--green)}
+  .emp.on{border-color:var(--red);background:var(--redbg)}
+  .emp.blk{opacity:.5}
+  .sep{font-size:.8rem;color:var(--muted);margin:8px 0 6px}
+  .pen{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pen button{border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px 8px;font-size:.95rem;text-align:left;color:var(--text)}
+  .pen button.on{border-color:var(--red);background:var(--redbg);font-weight:800}
+  .big{width:100%;border:none;border-radius:14px;padding:16px;font-size:1.15rem;font-weight:800;color:#fff;background:var(--red)}
+  .big:disabled{background:#9ca3af}
+  .big.green{background:var(--green)}
+  input{width:100%;font-size:1.6rem;text-align:center;letter-spacing:6px;padding:12px;border-radius:12px;border:2px solid var(--border)}
+  #msg{margin-top:10px;font-weight:700;text-align:center;min-height:20px}
+  a.sms{display:block;text-align:center;margin-top:10px;background:var(--green);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px}
+  .small{font-size:.8rem;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📵 Téléphone devant la vitrine</h1>
+
+  <div id="pinBox" class="card" style="display:none">
+    <h2>🔑 Code patron</h2>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">
+    <div style="height:10px"></div>
+    <button class="big" onclick="savePin()">Entrer</button>
+    <div class="small" style="margin-top:8px">Le code se choisit dans Google Sheets : menu 📵 Téléphone → 🔑 Code patron</div>
+  </div>
+
+  <div id="main" style="display:none">
+    <div class="card">
+      <h2>1️⃣ Employée <span style="font-weight:normal;color:var(--green);font-size:.8rem">● en service aujourd'hui</span></h2>
+      <div id="liste">Chargement…</div>
+    </div>
+    <div class="card">
+      <h2>2️⃣ Pénalité</h2>
+      <div class="pen" id="pen"></div>
+    </div>
+    <button class="big" id="ok" disabled onclick="valider()">✔ Valider</button>
+    <div id="msg"></div>
+    <div id="smsBox"></div>
+    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();return false">🔄 Actualiser</a> · <a href="#" onclick="logout();return false">🔒 Changer de code</a></div>
+  </div>
+</div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const CH=[['1','Avertissement formel'],['2','-200 ฿'],['3','-500 ฿ + garantie annulée'],['4','-500 ฿ + guillotine']];
+let emps=[],sel=null,n=1;
+const $=id=>document.getElementById(id);
+function getPin(){ try{ return localStorage.getItem('patron_pin')||''; }catch(e){ return ''; } }
+function savePin(){ const v=$('pin').value.trim(); if(!v) return; try{ localStorage.setItem('patron_pin',v); }catch(e){} start(); }
+function logout(){ try{ localStorage.removeItem('patron_pin'); }catch(e){} start(); }
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+function start(){ if(!getPin()){ $('pinBox').style.display='block'; $('main').style.display='none'; return; } $('pinBox').style.display='none'; $('main').style.display='block'; charger(); }
+async function charger(){
+  $('liste').textContent='Chargement…';
+  try{
+    const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&_='+Date.now()); const j=JSON.parse(await readTxt(r));
+    if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
+    emps=j.emps||[]; sel=null; draw();
+  }catch(e){ $('liste').textContent='⚠️ Pas de connexion — réessayez'; }
+}
+function draw(){
+  const L=$('liste'); L.innerHTML=''; let sep=false;
+  emps.forEach((e,i)=>{
+    if(!e.service && !sep){ sep=true; const d=document.createElement('div'); d.className='sep'; d.textContent='Autres employées'; L.appendChild(d); }
+    const b=document.createElement('button'); b.className='emp'+(e.service?' svc':'')+(sel===i?' on':'')+(e.bloque?' blk':'');
+    b.innerHTML='<b></b> <small></small>'; b.querySelector('b').textContent=e.nom;
+    b.querySelector('small').textContent=e.tel+(e.depuis?' · ▶️ '+e.depuis:'')+(e.bloque?' · 🚫 bloquée':'');
+    b.onclick=()=>{ sel=i; n=e.prochain||1; draw(); }; L.appendChild(b);
+  });
+  if(!emps.length) L.innerHTML='<i>Aucune employée</i>';
+  const P=$('pen'); P.innerHTML='';
+  CH.forEach(c=>{ const b=document.createElement('button'); b.className=(+c[0]===n?'on':''); b.innerHTML='<b>'+c[0]+'</b> — '+c[1]; b.onclick=()=>{ n=+c[0]; draw(); }; P.appendChild(b); });
+  $('ok').disabled = sel===null;
+  $('ok').textContent = sel===null ? '✔ Valider' : '✔ Valider : '+emps[sel].nom+' — infraction '+n;
+}
+async function valider(){
+  if(sel===null) return; const e=emps[sel]; const b=$('ok'); b.disabled=true; b.textContent='⏳ …'; $('smsBox').innerHTML='';
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify({type:'infraction',pin:getPin(),label:e.label,n})}); const j=JSON.parse(await readTxt(r));
+    if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
+    $('msg').style.color='var(--green)'; $('msg').textContent='✅ '+j.msg;
+    if(j.sms){ const a=document.createElement('a'); a.className='sms'; a.href=j.sms; a.textContent='📱 Envoyer aussi le SMS à '+e.nom; $('smsBox').appendChild(a); }
+    charger();
+  }catch(err){ $('msg').style.color='var(--red)'; $('msg').textContent='❌ Pas envoyé — vérifiez internet et réessayez'; draw(); }
+}
+start();
+</script>
+</body>
+</html>
