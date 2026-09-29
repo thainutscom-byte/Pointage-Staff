@@ -1,137 +1,138 @@
 <!doctype html>
-<html lang="th">
+<html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light only">
-<meta name="theme-color" content="#16a34a">
-<title>📝 จองวันทำงาน</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#dc2626">
+<title>📵 Patron</title>
 <style>
-  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--border:#e5e7eb;--blue:#2563eb;}
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--redbg:#fee2e2;--green:#16a34a;--border:#e5e7eb;}
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
   .wrap{max-width:460px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 30px;}
-  h1{font-size:1.3rem;margin:4px 0 4px;text-align:center}
-  .sub{text-align:center;color:var(--muted);margin:0 0 14px;font-size:.9rem}
+  h1{font-size:1.25rem;margin:4px 0 12px;text-align:center}
   .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
-  label{display:block;font-weight:700;margin:10px 0 4px;font-size:.95rem}
-  input,select{width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)}
-  .warn{color:var(--red);font-weight:700;font-size:.85rem;margin-top:4px;display:none}
-  .sh{display:block;width:100%;text-align:left;border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px;margin:0 0 8px;font-size:1rem;color:var(--text)}
-  .sh small{float:right;font-weight:800}
-  .sh.on{border-color:var(--green);background:#dcfce7}
-  .sh:disabled{opacity:.5}
-  .big{width:100%;border:none;border-radius:14px;padding:16px;font-size:1.2rem;font-weight:800;color:#fff;background:var(--green)}
+  h2{font-size:1rem;margin:0 0 8px}
+  .emp{display:block;width:100%;text-align:left;border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px;margin:0 0 8px;font-size:1.05rem;color:var(--text)}
+  .emp small{color:var(--muted);font-size:.8rem}
+  .emp.svc{border-left:7px solid var(--green)}
+  .emp.on{border-color:var(--red);background:var(--redbg)}
+  .emp.blk{opacity:.5}
+  .sep{font-size:.8rem;color:var(--muted);margin:8px 0 6px}
+  .pen{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pen button{border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px 8px;font-size:.95rem;text-align:left;color:var(--text)}
+  .pen button.on{border-color:var(--red);background:var(--redbg);font-weight:800}
+  .big{width:100%;border:none;border-radius:14px;padding:16px;font-size:1.15rem;font-weight:800;color:#fff;background:var(--red)}
   .big:disabled{background:#9ca3af}
-  .ok{text-align:center}
-  .ok .ic{font-size:3rem}
-  .sum{background:#f3f4f6;border-radius:12px;padding:12px;text-align:left;line-height:1.7;margin:10px 0}
-  a.btn{display:block;text-align:center;background:var(--blue);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px;margin-top:10px}
-  .small{font-size:.8rem;color:var(--muted)}
+  .big.green{background:var(--green)}
+  input{width:100%;font-size:1.6rem;text-align:center;letter-spacing:6px;padding:12px;border-radius:12px;border:2px solid var(--border)}
+  #msg{margin-top:10px;font-weight:700;text-align:center;min-height:20px}
+  a.sms{display:block;text-align:center;margin-top:10px;background:var(--green);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px}
+  .small{font-size:.8rem;color:var(--muted);text-align:center}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>📝 จองวันเริ่มงาน</h1>
-  <p class="sub">เลือกวันเริ่มงานและช่วงเวลาล่วงหน้า · หัวหน้าจะได้รับแจ้งทันที</p>
+  <h1>📵 Téléphone devant la vitrine</h1>
 
-  <div id="form">
-    <div class="card">
-      <label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label>
-      <input id="name" placeholder="เช่น Noi, Ploy, Mint" autocomplete="off" autocapitalize="words">
-      <div id="nameWarn" class="warn">⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z)</div>
-      <label>เบอร์โทรศัพท์</label>
-      <input id="phone" type="tel" inputmode="numeric" placeholder="08X XXX XXXX">
-      <div id="telWarn" class="warn">⚠️ เบอร์โทรไม่ถูกต้อง (10 หลัก)</div>
-      <label>ประเภทสัญญา</label>
-      <select id="contract"><option value="10">ฟรีแลนซ์ (10 วัน)</option><option value="30">รายเดือน (30 วัน)</option></select>
-      <label>วันที่เริ่มงาน</label>
-      <input id="start" type="date">
-      <div class="small" id="endTxt" style="margin-top:4px"></div>
-    </div>
-    <div class="card">
-      <label style="margin-top:0">ช่วงเวลาทำงาน <span class="small">(สูงสุด 5 คน ต่อช่วงเวลา)</span></label>
-      <div id="shifts" class="small">เลือกวันที่เริ่มงานก่อน</div>
-    </div>
-    <button class="big" id="go" disabled onclick="reserver()">📝 จองเลย</button>
-    <div id="msg" class="warn" style="text-align:center;margin-top:10px"></div>
+  <div id="pinBox" class="card" style="display:none">
+    <h2>🔑 Code patron</h2>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">
+    <div style="height:10px"></div>
+    <button class="big" onclick="savePin()">Entrer</button>
+    <div class="small" style="margin-top:8px">Le code se choisit dans Google Sheets : menu 📵 Téléphone → 🔑 Code patron</div>
   </div>
 
-  <div id="done" class="card ok" style="display:none">
-    <div class="ic">✅</div>
-    <h2 style="margin:6px 0">จองเรียบร้อยแล้ว</h2>
-    <div class="sum" id="sum"></div>
-    <div class="small">วันเริ่มงาน: เปิดแอปลงเวลา แล้วใช้ <b>ชื่อเล่นและเบอร์โทรเดิม</b> — ข้อมูลการจองจะถูกกรอกให้อัตโนมัติ</div>
-    <a class="btn" href="./">📱 เปิดแอปลงเวลา</a>
+  <div id="main" style="display:none">
+    <div class="card">
+      <h2>1️⃣ Employée <span style="font-weight:normal;color:var(--green);font-size:.8rem">● en service aujourd'hui</span></h2>
+      <div id="liste">Chargement…</div>
+    </div>
+    <div class="card">
+      <h2>2️⃣ Pénalité</h2>
+      <div class="pen" id="pen"></div>
+    </div>
+    <button class="big" id="ok" disabled onclick="valider()">✔ Valider</button>
+    <div id="msg"></div>
+    <div id="smsBox"></div>
+    <div class="card" style="margin-top:14px">
+      <h2>📝 Réservations reçues</h2>
+      <div id="resa" class="small">Chargement…</div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>🗓️ Places disponibles <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(5 max par horaire)</span></h2>
+      <div id="places">Chargement…</div>
+    </div>
+    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();places();return false">🔄 Actualiser</a></div>
   </div>
 </div>
 <script>
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
-const SH={ '10':[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],['16h-22h','16:00-22:00 น.'],['19h-01h','19:00-01:00 น.'],['21h-03h','21:00-03:00 น.']],
-           '30':[['09:00-17:00','09:00-17:00 น.'],['17:00-01:00','17:00-01:00 น.']] };
-let choix='', res={};
+const CH=[['1','Avertissement formel'],['2','-200 ฿'],['3','-500 ฿ + garantie annulée'],['4','-500 ฿ + guillotine']];
+let emps=[],sel=null,n=1;
 const $=id=>document.getElementById(id);
-const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-const dm=s=>s.split('-').reverse().join('/');
+function getPin(){ return 'x'; }   // plus de code patron
+function savePin(){ const v=$('pin').value.trim(); if(!v) return; try{ localStorage.setItem('patron_pin',v); }catch(e){} start(); }
+function logout(){ try{ localStorage.removeItem('patron_pin'); }catch(e){} start(); }
 async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
-function nomOk(){ return /^[A-Za-z][A-Za-z .'-]*$/.test($('name').value.trim()); }
-function telOk(){ return /^0\d{9}$/.test($('phone').value.replace(/\D/g,'')); }
-function fin(){ const s=$('start').value; if(!s) return ''; const d=new Date(s+'T00:00:00'); d.setDate(d.getDate()+(+$('contract').value)-1); return iso(d); }
-function check(){
-  $('nameWarn').style.display = $('name').value.trim() && !nomOk() ? 'block' : 'none';
-  $('telWarn').style.display = $('phone').value.trim() && !telOk() ? 'block' : 'none';
-  $('endTxt').textContent = $('start').value ? 'ถึงวันที่ '+dm(fin())+' ('+$('contract').value+' วัน)' : '';
-  $('go').disabled = !(nomOk() && telOk() && $('start').value && choix);
-}
+function start(){ if(!getPin()){ $('pinBox').style.display='block'; $('main').style.display='none'; return; } $('pinBox').style.display='none'; $('main').style.display='block'; charger(); }
 async function charger(){
-  choix=''; check();
-  const S=$('shifts'), s=$('start').value, n=$('contract').value;
-  if(!s){ S.textContent='เลือกวันที่เริ่มงานก่อน'; return; }
-  S.textContent='⏳ กำลังโหลด…';
+  $('liste').textContent='Chargement…';
   try{
-    const r=await fetch(API+'?plan=1&emp='+encodeURIComponent($('name').value.trim()||'__resa__')+'&tel='+encodeURIComponent($('phone').value.replace(/\D/g,'')||'0')+
-      '&s='+s+'&n='+n+'&sh='+encodeURIComponent(SH[n].map(x=>x[0]).join(','))+'&_='+Date.now());
-    res=JSON.parse(await readTxt(r));
-  }catch(e){ S.textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; return; }
-  draw();
+    const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&_='+Date.now()); const j=JSON.parse(await readTxt(r));
+    if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
+    emps=j.emps||[]; sel=null; draw();
+    const R=$('resa'); R.innerHTML='';
+    if(!(j.resa||[]).length) R.textContent='Aucune réservation pour le moment.';
+    (j.resa||[]).forEach(x=>{ const d=document.createElement('div'); d.style.cssText='border-top:1px solid var(--border);padding:8px 0;font-size:.95rem;color:var(--text)';
+      d.innerHTML='<b></b> <span class="small"></span><br><span></span>'; d.querySelector('b').textContent='🆕 '+x.nom;
+      d.querySelector('.small').textContent=x.tel+' · reçu '+x.recu; d.querySelectorAll('span')[1].textContent='🕐 '+x.sh+' · 🗓️ '+x.deb+' → '+x.fin+' · '+x.contrat; R.appendChild(d); });
+  }catch(e){ $('liste').textContent='⚠️ Pas de connexion — réessayez'; }
 }
 function draw(){
-  const S=$('shifts'), n=$('contract').value; S.innerHTML='';
-  SH[n].forEach(([k,l])=>{
-    const x=res[k]||{v:'',max:0}, libre=Math.max(0,5-(+x.max||0));
-    const b=document.createElement('button'); b.className='sh'+(choix===k?' on':'');
-    let etat = x.v ? (x.v.startsWith('plein')?'🔴 เต็ม':x.v.startsWith('meme')?'⛔ มีคนเริ่มวันนี้แล้ว':'🔄 ต้องเปลี่ยน') : '✅ ว่าง '+libre+'/5';
-    b.innerHTML='<span></span><small></small>'; b.querySelector('span').textContent=l; b.querySelector('small').textContent=etat;
-    b.querySelector('small').style.color = x.v ? 'var(--red)' : 'var(--green)';
-    b.disabled=!!x.v; b.onclick=()=>{ choix=k; draw(); check(); };
-    S.appendChild(b);
+  const L=$('liste'); L.innerHTML=''; let sep=false;
+  emps.forEach((e,i)=>{
+    if(!e.service && !sep){ sep=true; const d=document.createElement('div'); d.className='sep'; d.textContent='Autres employées'; L.appendChild(d); }
+    const b=document.createElement('button'); b.className='emp'+(e.service?' svc':'')+(sel===i?' on':'')+(e.bloque?' blk':'');
+    b.innerHTML='<b></b> <small></small>'; b.querySelector('b').textContent=e.nom;
+    b.querySelector('small').textContent=e.tel+(e.depuis?' · ▶️ '+e.depuis:'')+(e.bloque?' · 🚫 bloquée':'');
+    b.onclick=()=>{ sel=i; n=e.prochain||1; draw(); }; L.appendChild(b);
   });
+  if(!emps.length) L.innerHTML='<i>Aucune employée</i>';
+  const P=$('pen'); P.innerHTML='';
+  CH.forEach(c=>{ const b=document.createElement('button'); b.className=(+c[0]===n?'on':''); b.innerHTML='<b>'+c[0]+'</b> — '+c[1]; b.onclick=()=>{ n=+c[0]; draw(); }; P.appendChild(b); });
+  $('ok').disabled = sel===null;
+  $('ok').textContent = sel===null ? '✔ Valider' : '✔ Valider : '+emps[sel].nom+' — infraction '+n;
 }
-async function reserver(){
-  if($('go').disabled) return;
-  const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
-  const p={type:'cycle', booking:true, name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), sh:choix,
-           cycleStart:$('start').value, cycleEnd:fin(), contract:$('contract').value==='30'?'Mensuel 30 j':'Freelance 10 j'};
+async function valider(){
+  if(sel===null) return; const e=emps[sel]; const b=$('ok'); b.disabled=true; b.textContent='⏳ …'; $('smsBox').innerHTML='';
   try{
-    const r=await fetch(API,{method:'POST',body:JSON.stringify(p)}); const t=await readTxt(r);
-    if(t==='ok'){
-      try{ localStorage.setItem('pointage_booking', JSON.stringify({...p, contractN:$('contract').value})); }catch(e){}
-      const lab=SH[$('contract').value].find(x=>x[0]===choix)[1];
-      $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>📄 <span id="s2"></span><br>🗓️ <span id="s3"></span><br>🕐 <span id="s4"></span>';
-      $('sum').querySelector('b').textContent=p.name; $('s1').textContent=p.phone; $('s2').textContent=$('contract').value==='30'?'รายเดือน (30 วัน)':'ฟรีแลนซ์ (10 วัน)';
-      $('s3').textContent=dm(p.cycleStart)+' → '+dm(p.cycleEnd); $('s4').textContent=lab;
-      $('form').style.display='none'; $('done').style.display='block';
-    } else {
-      const q=t.split('|');
-      $('msg').textContent = q[1]==='plein'?'🔴 ช่วงเวลานี้เต็มแล้ว — เลือกช่วงเวลาอื่น':q[1]==='meme'?'⛔ มีคนเริ่มวันเดียวกันแล้ว — เลือกวันหรือช่วงเวลาอื่น':q[1]==='roulement'?'🔄 ต้องเปลี่ยนช่วงเวลา':'⚠️ จองไม่ได้ — ลองใหม่';
-      $('msg').style.display='block'; b.textContent='📝 จองเลย'; charger();
-    }
-  }catch(e){ $('msg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; $('msg').style.display='block'; b.textContent='📝 จองเลย'; b.disabled=false; }
+    const r=await fetch(API,{method:'POST',body:JSON.stringify({type:'infraction',pin:getPin(),label:e.label,n})}); const j=JSON.parse(await readTxt(r));
+    if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
+    $('msg').style.color='var(--green)'; $('msg').textContent='✅ '+j.msg;
+    if(j.sms){ const a=document.createElement('a'); a.className='sms'; a.href=j.sms; a.textContent='📱 Envoyer aussi le SMS à '+e.nom; $('smsBox').appendChild(a); }
+    charger();
+  }catch(err){ $('msg').style.color='var(--red)'; $('msg').textContent='❌ Pas envoyé — vérifiez internet et réessayez'; draw(); }
 }
-// dates possibles : de demain à +60 jours
-(()=>{ const a=new Date(); a.setDate(a.getDate()+1); const z=new Date(); z.setDate(z.getDate()+60); $('start').min=iso(a); $('start').max=iso(z); })();
-['name','phone'].forEach(id=>$(id).addEventListener('input',check));
-$('start').addEventListener('change',charger); $('contract').addEventListener('change',charger);
+// 🗓️ places libres par horaire : aujourd'hui et sur les 10 prochains jours (jour le plus chargé)
+const SH=[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],['16h-22h','16:00-22:00 น.'],['19h-01h','19:00-01:00 น.'],['21h-03h','21:00-03:00 น.'],['09:00-17:00','09:00-17:00 น. (mensuel)'],['17:00-01:00','17:00-01:00 น. (mensuel)']];
+function isoJ(o){ const d=new Date(Date.now()-6*3600e3); d.setDate(d.getDate()+(o||0)); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+async function places(){
+  const P=$('places'); P.textContent='Chargement…';
+  try{
+    const q=n=>fetch(API+'?plan=1&emp=__patron__&tel=0&s='+isoJ(0)+'&n='+n+'&sh='+encodeURIComponent(SH.map(x=>x[0]).join(','))+'&_='+Date.now()).then(readTxt).then(JSON.parse);
+    const [a,b]=await Promise.all([q(1),q(10)]);
+    const col=l=>l<=0?'var(--red)':l===1?'#ea580c':'var(--green)';
+    let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
+    SH.forEach(([k,l])=>{ const la=5-((a[k]||{}).max||0), lb=5-((b[k]||{}).max||0);
+      h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px 0">'+l+'</td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/5</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/5</td></tr>'; });
+    P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
+  }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
+}
+start(); places();
 </script>
 </body>
 </html>
