@@ -45,7 +45,13 @@ input,select{width:100%;padding:9px 10px;border-radius:9px;border:1px solid var(
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .field{margin-bottom:10px;}
 .day{border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:10px;}
-.day h3{margin:0 0 8px;font-size:.9rem;}
+.day h3{margin:0 0 10px;font-size:1.3rem;font-weight:800;text-align:center;line-height:1.35;}
+.day h3 .dayDate{font-size:inherit !important;font-weight:800 !important;}
+.day.pastDay{background:#f3f4f6;border-color:var(--border) !important;border-width:1px !important;padding:6px 10px;margin-bottom:6px;}
+.day.pastDay h3{font-size:.9rem;font-weight:700;color:var(--muted);margin:0 0 2px;text-align:left;cursor:default !important;}
+.day.pastDay h3 .dayDate{color:var(--muted) !important;}
+.day.pastDay .daySummary{font-size:.8rem;}
+.day.pastDay .dayArrow{display:none;}
 .yellow input{background:var(--yellow);border-color:var(--yellow-b);font-weight:600;}
 .grid4{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .chkgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;}
@@ -89,7 +95,13 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
   <div style="max-width:380px;margin:0 auto;padding:calc(60px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
     <div style="font-size:3.5rem;">🚫</div>
     <h2 style="margin:10px 0 6px;font-size:1.3rem;color:var(--red);">บัญชีของคุณถูกระงับชั่วคราว</h2>
-    <div class="small" style="font-size:.95rem;margin-bottom:20px;">กรุณาติดต่อหัวหน้า</div>
+    <div class="small" style="font-size:.95rem;margin-bottom:18px;">กรุณาติดต่อหัวหน้า</div>
+    <div style="border:2px solid var(--red);border-radius:14px;padding:16px;margin-bottom:22px;background:#fff;">
+      <div class="small" style="font-size:.85rem;">ชื่อ / Name</div>
+      <div id="blockName" style="font-size:1.5rem;font-weight:800;margin-bottom:10px;word-break:break-word;"></div>
+      <div class="small" style="font-size:.85rem;">โทรศัพท์ / Phone</div>
+      <div id="blockTel" style="font-size:1.5rem;font-weight:800;letter-spacing:1px;"></div>
+    </div>
     <button onclick="checkBlocked(true)" style="width:100%;background:var(--blue);color:#fff;border:none;padding:14px;border-radius:12px;font-size:1.05rem;font-weight:700;">🔄 ตรวจสอบอีกครั้ง</button>
     <div id="blockMsg" class="small" style="margin-top:10px;"></div>
   </div>
@@ -232,6 +244,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <input type="hidden" id="penRate60a" value="500"><input type="hidden" id="penRate60b" value="2000">
   </div>
 
+  <div id="dayOnlyMsg" class="card small" style="display:none;text-align:center;font-weight:700;font-size:.95rem;"></div>
   <div id="days"></div>
 
   <div class="card summary">
@@ -282,8 +295,11 @@ function fmtDate(d){ return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2
 // ===== DATE RÉELLE DE CHAQUE JOUR (d'après la date de début du cycle) =====
 const TH_DAYS=['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
 function dayDate(i){ const sv=document.getElementById('startDate').value; if(!sv) return null; const d=new Date(sv+'T00:00:00'); d.setDate(d.getDate()+i-1); return d; }
+// la journée de travail change à 06:00 (les shifts 19h-01h et 21h-03h finissent après minuit)
+const DAY_SWITCH_H=6;
+function workToday(){ const t=new Date(Date.now()-DAY_SWITCH_H*3600000); t.setHours(0,0,0,0); return t; }
 function updateDayDates(){
-  const today=new Date(); today.setHours(0,0,0,0);
+  const today=workToday();
   document.querySelectorAll('.day').forEach(day=>{
     const sp=day.querySelector('.dayDate'); if(!sp) return;
     const d=dayDate(+day.dataset.d);
@@ -294,7 +310,40 @@ function updateDayDates(){
     day.style.borderColor=isToday?'var(--blue)':'';
     day.style.borderWidth=isToday?'2px':'';
   });
+  showOnlyToday();
 }
+// ===== PENDANT LE CYCLE : n'afficher QUE le jour de travail d'aujourd'hui =====
+function showOnlyToday(){
+  const msg=document.getElementById('dayOnlyMsg'), all=document.querySelectorAll('.day');
+  const sv=document.getElementById('startDate').value;
+  const today=workToday();
+  let show=null, text='';
+  if(!sv){ show='none'; text='📅 กรุณาเลือกวันเริ่มงานก่อน'; }
+  else{
+    const s=new Date(sv+'T00:00:00'), idx=Math.round((today-s)/86400000)+1;
+    if(idx<1){ show='none'; text='⏳ ยังไม่ถึงวันเริ่มงาน ('+fmtDate(s)+')'; }
+    else if(idx<=N){ show=idx; }
+    // après la fin du cycle : tous les jours restent visibles
+  }
+  all.forEach(d=>{
+    const n=+d.dataset.d, past = show!==null && show!=='none' && n<show;
+    const wasPast = d.classList.contains('pastDay');
+    d.classList.toggle('pastDay', past);
+    d.style.display = (show===null || n===show || past) ? '' : 'none';
+    if(past){
+      d.querySelector('.dayBody').style.display='none';
+      const sum=d.querySelector('.daySummary'); sum.style.display='block';
+      sum.textContent = d.dataset.locked==='1' ? '🔒 '+daySummaryText(d) : '⚠️ ไม่ได้ยืนยันวันนี้';
+      d.querySelector('.dayArrow').textContent='';
+    } else if(wasPast){
+      if(d.dataset.locked==='1') collapseDay(d);
+      else { d.querySelector('.dayBody').style.display='block'; d.querySelector('.daySummary').style.display='none'; }
+    }
+  });
+  if(msg){ msg.style.display=text?'block':'none'; msg.textContent=text; }
+}
+setInterval(showOnlyToday, 60000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) updateDayDates(); });
 function updateDates(){
   const startVal = document.getElementById('startDate').value;
   const endEl = document.getElementById('endDate'), payEl = document.getElementById('payDate');
@@ -528,6 +577,7 @@ function toggleManualMode(link){
 }
 function toggleDay(h3){
   const day = h3.closest('.day');
+  if(day.classList.contains('pastDay')) return; // jour passé : lecture seule
   const body = day.querySelector('.dayBody');
   const open = body.style.display !== 'none';
   if(open){
@@ -584,6 +634,7 @@ function toggleJust(cb){
   if(!cb.checked){ delete day.dataset.cert; delete day.dataset.certAt; delete day.dataset.certLate; day.querySelector('.c-med').checked=false; }
   showCert(day);
   calc();
+  setTimeout(syncSheet, 500);
 }
 function fileName(inp){ const sp=inp.closest('div').querySelector('.fileName'); if(sp) sp.textContent = inp.files && inp.files[0] ? '✅ เลือกแล้ว' : 'ยังไม่ได้เลือกไฟล์'; }
 function showCert(day){
@@ -622,7 +673,7 @@ function handleJustFile(inp){
       day.dataset.certAt=now.toISOString();
       if(now>dl){ day.dataset.certLate='1'; day.querySelector('.c-med').checked=false; }
       else { delete day.dataset.certLate; day.querySelector('.c-med').checked=true; }
-      showCert(day); calc();
+      showCert(day); calc(); setTimeout(syncSheet, 500);
     };
     im.src=e.target.result;
   };
@@ -643,7 +694,26 @@ function dayPayload(day){
   const date=isoD(dd);
   return { id:(empKey()||name)+'|'+date, date, name, phone, contract: N===10?'Freelance 10 j':'Mensuel 30 j',
            l1, l2, hh, ca: l1*PRICE_1L + l2*PRICE_2L + hh*PRICE_HH,
-           arrival:q('.arrival').value||'', finish:q('.finish').value||'', situation: sit.join(', ')||'OK', penalty:+q('.pen').value||0 };
+           arrival:q('.arrival').value||'', finish:q('.finish').value||'', situation: sit.join(', ')||'OK', penalty:+q('.pen').value||0, ...cycleInfo() };
+}
+function cycleInfo(){
+  const sv=document.getElementById('startDate').value; if(!sv) return {};
+  const s=new Date(sv+'T00:00:00'), o={cycleStart:sv, cycleEnd:isoD(addDays(s,N-1))};
+  if(N===30){ try{ const ev=leaveEval(); if(ev && !ev.error){ o.congeStart=isoD(ev.start); o.congeEnd=isoD(ev.end); } }catch(e){} }
+  return o;
+}
+// absence cochée : Google est prévenu (délai du certificat = 4 h après le début du shift)
+function absSent(){ try{ return JSON.parse(localStorage.getItem('sheet_abs_v1')||'{}'); }catch(e){ return {}; } }
+function absPayloads(){
+  const out=[];
+  document.querySelectorAll('.day').forEach(day=>{
+    if(day.dataset.locked==='1' || !day.querySelector('.c-just').checked) return;
+    const dd=dayDate(+day.dataset.d), dl=justDeadline(day); if(!dd || !dl) return;
+    const cert=!!day.dataset.cert && day.dataset.certLate!=='1';
+    out.push({type:'abs', id:(empKey()||'-')+'|'+isoD(dd)+'|'+(cert?1:0), date:isoD(dd), deadline:dl.toISOString(), cert,
+              name:document.getElementById('name').value||'-', phone:document.getElementById('phone').value||''});
+  });
+  return out;
 }
 let sheetBusy=false;
 async function syncSheet(){
@@ -658,7 +728,14 @@ async function syncSheet(){
          else pending++; }
     catch(e){ pending++; }
   }
+  const as=absSent();
+  for(const a of absPayloads()){
+    if(as[a.id]) continue;
+    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(a)}); const t=(await r.text()).trim();
+         if(r.ok && (t==='ok'||t==='blocked')){ as[a.id]=1; try{ localStorage.setItem('sheet_abs_v1', JSON.stringify(as)); }catch(e){} } }catch(e){}
+  }
   sheetBusy=false;
+  checkBlocked(false);
   const el=document.getElementById('sheetInfo');
   if(el){ if(pending) el.textContent='⏳ รอส่งข้อมูลให้หัวหน้า '+pending+' วัน — จะลองส่งใหม่อัตโนมัติ'; else if(okN) el.textContent='📤 ส่งข้อมูลให้หัวหน้าแล้ว'; }
 }
@@ -666,6 +743,9 @@ async function syncSheet(){
 function setBlocked(on){
   try{ if(on) localStorage.setItem('pointage_blocked','1'); else localStorage.removeItem('pointage_blocked'); }catch(e){}
   const g=document.getElementById('blockGate'); if(g) g.style.display = on ? 'block' : 'none';
+  if(on){ const nn=document.getElementById('name'), tt=document.getElementById('phone');
+    document.getElementById('blockName').textContent = (nn && nn.value.trim()) || '—';
+    document.getElementById('blockTel').textContent  = (tt && tt.value.trim()) || '—'; }
   document.body.style.overflow = on ? 'hidden' : '';
 }
 async function checkBlocked(manual){
