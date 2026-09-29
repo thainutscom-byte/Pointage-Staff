@@ -805,7 +805,7 @@ function telInfo(){
   const L=telGet().filter(x=>x.d>=si && x.d<=ei).sort((a,b)=>a.d<b.d?-1:1);   // comptées dans le cycle en cours
   // numéro d'infraction choisi par le patron dans Google (1 à 4)
   L.forEach((x,i)=>{ const n=Math.min(4,Math.max(1,+x.n||(i+1))), S=TEL_SANCTIONS[n-1];
-    out.list.push({d:x.d,n,th:S.th,en:S.en}); out.amount+=S.amt; if(n>=3) out.noGuarantee=true; if(n>=4) out.guillotine=true; });
+    out.list.push({d:x.d,t:x.t||'',n,th:S.th,en:S.en}); out.amount+=S.amt; if(n>=3) out.noGuarantee=true; if(n>=4) out.guillotine=true; });
   out.count=L.length;
   return out;
 }
@@ -821,7 +821,8 @@ function queueMessages(msgs){
   telGet().forEach(x=>{ const n=Math.min(4,Math.max(1,+x.n||1)), id='tel|'+x.d+'|'+n;
     if(seen[id] || msgQueue.some(q=>q.id===id) || (msgCur && msgCur.id===id)) return;
     const S=TEL_SANCTIONS[n-1];
-    msgQueue.push({id, icon:'📵', title:'ใช้โทรศัพท์หน้าตู้กระจกร้าน', date:x.d.split('-').reverse().join('/'), text:'ครั้งที่ '+n+'\n'+S.th, red:true}); });
+    msgQueue.push({id, icon:'📹', title:'กล้องวงจรปิดตรวจพบ', date:x.d.split('-').reverse().join('/')+(x.t?'  เวลา '+x.t+' น.':''),
+      text:'📹 ระบบกล้องวงจรปิด (CCTV) ตรวจพบว่าคุณเล่นโทรศัพท์หน้าตู้กระจกร้าน\n\n📵 ครั้งที่ '+n+' : '+S.th, red:true}); });
   showNextMsg();
 }
 function showNextMsg(){
@@ -1107,7 +1108,7 @@ function calc(){
   document.getElementById('rowTel').style.display = tel.count ? 'flex' : 'none';
   document.getElementById('sTel').textContent = (tel.amount?'-':'')+tel.amount.toLocaleString('en-US')+' ฿ ('+tel.count+' ครั้ง)';
   { const tl=document.getElementById('telList'); tl.style.display = tel.count ? 'block' : 'none';
-    tl.innerHTML = tel.list.map(x=>'📵 '+x.d.split('-').reverse().join('/')+' — ครั้งที่ '+x.n+' : '+x.th).join('<br>'); }
+    tl.innerHTML = tel.list.map(x=>'📹 '+x.d.split('-').reverse().join('/')+(x.t?' '+x.t:'')+' — ครั้งที่ '+x.n+' : '+x.th).join('<br>'); }
   document.getElementById('rowLeave').style.display = lx.amount ? 'flex' : 'none';
   document.getElementById('sLeave').textContent = lx.amount ? '-'+lx.amount.toLocaleString('en-US')+' ฿ ('+lx.days+' วัน)' : '0 ฿';
   document.getElementById('rowRestart').style.display = rs.amount ? 'flex' : 'none';
@@ -1321,7 +1322,7 @@ function buildPDF(){
   sumRow('Housing package / แพ็กเกจที่พัก', document.getElementById('sPkg').textContent);
   sumRow('Total penalties / ค่าปรับรวม', document.getElementById('sPen').textContent);
   { const tl=telInfo(); if(tl.count){ sumRow('Phone at shop window / ใช้โทรศัพท์หน้าตู้กระจก ('+tl.count+'x)', '-'+tl.amount.toLocaleString('en-US')+' ฿', [200,30,30]);
-      tl.list.forEach(x=>sumRow('   '+x.d.split('-').reverse().join('/')+'  #'+x.n, x.en, [200,30,30])); } }
+      tl.list.forEach(x=>sumRow('   CCTV '+x.d.split('-').reverse().join('/')+(x.t?' '+x.t:'')+'  #'+x.n, x.en, [200,30,30])); } }
   { const lx=leaveExtraInfo(); if(lx.amount) sumRow('Extra day off / ค่าลาเกิน 4 วัน ('+lx.days+' วัน)', '-'+lx.amount.toLocaleString('en-US')+' ฿', [200,30,30]); }
   { const rs=restartInfo(); if(rs.amount) sumRow('Late restart / ค่าปรับเริ่มรอบช้า ('+rs.days+' วัน)', '-'+rs.amount.toLocaleString('en-US')+' ฿', [200,30,30]); }
   y+=1; doc.setFillColor(219,234,254); doc.rect(15,y-6,180,11,'F');
