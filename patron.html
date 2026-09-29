@@ -58,7 +58,11 @@
     <button class="big" id="ok" disabled onclick="valider()">✔ Valider</button>
     <div id="msg"></div>
     <div id="smsBox"></div>
-    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();return false">🔄 Actualiser</a></div>
+    <div class="card" style="margin-top:14px">
+      <h2>🗓️ Places disponibles <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(5 max par horaire)</span></h2>
+      <div id="places">Chargement…</div>
+    </div>
+    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();places();return false">🔄 Actualiser</a></div>
   </div>
 </div>
 <script>
@@ -104,7 +108,22 @@ async function valider(){
     charger();
   }catch(err){ $('msg').style.color='var(--red)'; $('msg').textContent='❌ Pas envoyé — vérifiez internet et réessayez'; draw(); }
 }
-start();
+// 🗓️ places libres par horaire : aujourd'hui et sur les 10 prochains jours (jour le plus chargé)
+const SH=[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],['16h-22h','16:00-22:00 น.'],['19h-01h','19:00-01:00 น.'],['21h-03h','21:00-03:00 น.'],['09:00-17:00','09:00-17:00 น. (mensuel)'],['17:00-01:00','17:00-01:00 น. (mensuel)']];
+function isoJ(o){ const d=new Date(Date.now()-6*3600e3); d.setDate(d.getDate()+(o||0)); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+async function places(){
+  const P=$('places'); P.textContent='Chargement…';
+  try{
+    const q=n=>fetch(API+'?plan=1&emp=__patron__&tel=0&s='+isoJ(0)+'&n='+n+'&sh='+encodeURIComponent(SH.map(x=>x[0]).join(','))+'&_='+Date.now()).then(readTxt).then(JSON.parse);
+    const [a,b]=await Promise.all([q(1),q(10)]);
+    const col=l=>l<=0?'var(--red)':l===1?'#ea580c':'var(--green)';
+    let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
+    SH.forEach(([k,l])=>{ const la=5-((a[k]||{}).max||0), lb=5-((b[k]||{}).max||0);
+      h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px 0">'+l+'</td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/5</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/5</td></tr>'; });
+    P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
+  }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
+}
+start(); places();
 </script>
 </body>
 </html>
