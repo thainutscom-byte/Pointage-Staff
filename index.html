@@ -1163,6 +1163,38 @@ function setBlocked(on){
     document.getElementById('blockTel').textContent  = (tt && tt.value.trim()) || '—'; }
   document.body.style.overflow = on ? 'hidden' : '';
 }
+// ===== 📥 FICHE VIDE (autre navigateur, QR, nouveau téléphone) : récupérer le contrat et les journées depuis Google =====
+let restoreAsked='';
+async function tryRestore(){
+  try{
+    const n=document.getElementById('name').value.trim(), t=document.getElementById('phone').value.replace(/\D/g,''), k=empKey();
+    if(!SHEET_URL || !n || !/^0\d{9}$/.test(t) || restoreAsked===k) return;
+    if(typeof accessOK==='function' && !accessOK()) return;
+    if(document.querySelector('.day[data-locked="1"]')) return;          // fiche déjà utilisée : rien à récupérer
+    restoreAsked=k;
+    const j=JSON.parse(await readTxt(await fetch(SHEET_URL+'?restore=1&emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&_='+Date.now())));
+    if(!j || !j.deb) return;
+    if(document.getElementById('startDate').value===j.deb && !j.nom && !j.jours.length) return;   // déjà la même fiche
+    const dm=s=>s.split('-').reverse().slice(0,2).join('/');
+    if(!confirm('📥 พบข้อมูลของคุณในระบบ'+(j.nom?' (ชื่อ: '+j.nom+')':'')+'\nสัญญา '+dm(j.deb)+' → '+dm(j.fin)+' · '+j.sh+'\nวันที่ยืนยันแล้ว '+j.jours.length+' วัน\n\nกู้คืนข้อมูล?')) return;
+    saveState();
+    const key=getKey(), st=JSON.parse(localStorage.getItem(key)||'{}'), n2=j.mensuel?30:10;
+    st.name=j.nom||n; st.phone=document.getElementById('phone').value.trim(); st.contract=String(n2); st.startDate=j.deb;
+    if(j.mensuel) st.shiftGlobalMonthly=j.sh; else st.shiftGlobal=j.sh;
+    const days=[]; for(let i=0;i<n2;i++) days.push({});
+    const sent=sheetSent(), base=new Date(j.deb+'T00:00:00');
+    j.jours.forEach(x=>{ const i=Math.round((new Date(x.d+'T00:00:00')-base)/86400000); if(i<0||i>=n2) return;
+      days[i]={solo:String(x.l1||''), duo8:String(Math.round(x.l2*2*100)/100||''), duo:String(Math.round(x.hh*2*100)/100||''), arrival:x.arr||'', finish:x.fin||'',
+        abs:/Absent|Absence/.test(x.sit), med:/justifi/.test(x.sit), l1529:/15-29/.test(x.sit), l3059:/30-59/.test(x.sit), l60:/60\+/.test(x.sit), pen:String(x.pen||0), locked:true};
+      sent[(j.nom?j.nom.trim().toLowerCase().replace(/\s+/g,' ')+'|'+t:k)+'|'+x.d]=1; });
+    st.days=days;
+    localStorage.setItem(key, JSON.stringify(st)); localStorage.setItem('sheet_sent_v3', JSON.stringify(sent));
+    location.reload();
+  }catch(e){}
+}
+['name','phone'].forEach(id=>document.getElementById(id).addEventListener('change', ()=>setTimeout(tryRestore,300)));
+setTimeout(tryRestore, 2500);
+
 // 🔓 le patron débloque l'employée sur son téléphone avec le code du jour
 async function bossUnblock(){
   const v=prompt('👑 Code patron / รหัสหัวหน้า'); if(v===null) return;
@@ -1707,7 +1739,7 @@ function bossCancel(){
 let accessFails=0;
 function checkAccess(){
   const v=(document.getElementById('accessCode').value||'').trim();
-  try{ if(localStorage.getItem('pointage_access_stop')===new Date().toDateString()){ document.getElementById('accessMsg').textContent='⛔ ลองใหม่พรุ่งนี้'; document.getElementById('accessCode').value=''; return; } }catch(e){}
+  try{ const st=+localStorage.getItem('pointage_access_stop')||0; if(Date.now()<st){ document.getElementById('accessMsg').textContent='⛔ รอ '+Math.ceil((st-Date.now())/60000)+' นาที แล้วลองใหม่'; document.getElementById('accessCode').value=''; return; } }catch(e){}
   if(v===todayCode()){
     appScan('✅ bon code → accès à l\'app');
     try{ localStorage.setItem('pointage_access_ok','1'); }catch(e){}
@@ -1718,7 +1750,7 @@ function checkAccess(){
     document.getElementById('accessMsg').textContent='❌ รหัสไม่ถูกต้อง';
     document.getElementById('accessCode').value='';
     accessFails++; appScan('❌ mauvais code ('+accessFails+')');
-    if(accessFails>=5){ try{ localStorage.setItem('pointage_access_stop', new Date().toDateString()); }catch(e){} document.getElementById('accessMsg').textContent='⛔ ผิด 5 ครั้ง — ลองใหม่พรุ่งนี้'; }
+    if(accessFails>=5){ accessFails=0; try{ localStorage.setItem('pointage_access_stop', String(Date.now()+15*60000)); }catch(e){} document.getElementById('accessMsg').textContent='⛔ ผิด 5 ครั้ง — รอ 15 นาที แล้วลองใหม่'; }
   }
 }
 (function(){
