@@ -117,6 +117,13 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div id="blockMsg" class="small" style="margin-top:10px;"></div>
   </div>
 </div>
+<div id="bossBar" style="display:none;position:fixed;left:0;right:0;top:0;z-index:9999;background:#f59e0b;color:#111827;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;box-shadow:0 4px 12px rgba(0,0,0,.2);">
+  <div style="max-width:560px;margin:0 auto;display:flex;align-items:center;gap:8px;">
+    <div style="flex:1;font-weight:800;line-height:1.2;">👑 MODE PATRON<br><span id="bossLeft" style="font-weight:600;font-size:.8rem;"></span></div>
+    <button onclick="bossSave()" style="border:none;background:#16a34a;color:#fff;font-weight:800;padding:10px 12px;border-radius:10px;">💾 Enregistrer</button>
+    <button onclick="bossCancel()" style="border:none;background:#fff;color:#111827;font-weight:800;padding:10px 12px;border-radius:10px;">✖</button>
+  </div>
+</div>
 <div id="accessGate" style="display:none;position:fixed;inset:0;z-index:99999;background:var(--bg);overflow:auto;">
   <div style="max-width:380px;margin:0 auto;padding:calc(48px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
     <div style="font-size:3rem;">🔐</div>
@@ -303,6 +310,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       <button style="background:#06c755;" onclick="sharePDF()">💬 ส่ง PDF ทาง LINE</button>
       <button style="background:#9ca3af;" onclick="if(confirm('เริ่มรอบใหม่?\nจะล้างเฉพาะข้อมูลวันทำงาน\n(ชื่อ เบอร์โทร QR สัญญา ช่วงเวลา ยังอยู่เหมือนเดิม)')) resetCycle()">🗑️ รอบใหม่</button>
     </div>
+    <div style="text-align:right;margin:-2px 0 6px;"><a href="#" onclick="bossMode();return false;" style="font-size:.8rem;color:var(--muted);text-decoration:none;">👑 หัวหน้า</a></div>
     <div id="summaryBody" style="display:none;">
     <div class="summary-row"><span>จำนวนนวดรวม (ถ่วงน้ำหนัก)</span><span id="sMass">0</span></div>
     <div class="summary-row"><span>ระดับที่ทำได้</span><span id="sRate">-</span></div>
@@ -366,6 +374,7 @@ function updateDayDates(){
 }
 // ===== PENDANT LE CYCLE : n'afficher QUE le jour de travail d'aujourd'hui =====
 function showOnlyToday(){
+  if(window.__BOSS) return;          // 👑 mode patron : tous les jours restent visibles
   const msg=document.getElementById('dayOnlyMsg'), all=document.querySelectorAll('.day');
   const sv=document.getElementById('startDate').value;
   const today=workToday();
@@ -675,6 +684,7 @@ function toggleDay(h3){
 let bossUnlocked=false, bossTimer=null;
 function setupDone(){ const sh = N===10 ? document.getElementById('shiftGlobal').value : document.getElementById('shiftGlobalMonthly').value; return !!sh; }
 function applyFreeze(){
+  if(window.__BOSS) return;          // 👑 mode patron : tout reste modifiable
   // plus de clé 🔑 : contrat et horaire modifiables librement
   const anyLocked = !!document.querySelector('.day[data-locked="1"]');
   ['startDate','pkg'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=anyLocked; });
@@ -939,12 +949,53 @@ function applyCorrections(rows){
     calc(); updateDayDates(); saveState(); }
 }
 
+// ===== ⏰ HEURE D'ARRIVÉE VALIDÉE PAR LE PATRON : remplace l'heure du selfie, retard + amende recalculés =====
+function applyArrivals(rows){
+  if(!Array.isArray(rows) || !rows.length) return;
+  let changed=false, resend=false; const sent=sheetSent();
+  rows.forEach(a=>{
+    document.querySelectorAll('.day').forEach(day=>{
+      const dd=dayDate(+day.dataset.d); if(!dd || isoD(dd)!==a.d) return;
+      const q=s=>day.querySelector(s); if(q('.arrival').value===a.h) return;
+      const avant=q('.arrival').value||'-', locked=day.dataset.locked==='1';
+      q('.arrival').value=a.h;
+      const b=q('button[onclick^="startWork"]'); if(b){ b.disabled=true; b.textContent='✅ เริ่มงาน '+a.h; }
+      ['.c-l1529','.c-l3059','.c-l60'].forEach(c=>q(c).checked=false); q('.pen').value=0;
+      if(locked){ day.dataset.locked='0'; calc(); day.dataset.locked='1'; delete sent[(empKey()||'')+'|'+a.d]; resend=true; }
+      changed=true;
+      const id='arr|'+a.d+'|'+a.h;
+      if(!seenGet()[id] && !msgQueue.some(x=>x.id===id))
+        msgQueue.push({id, quiet:true, icon:'⏰', title:'หัวหน้ายืนยันเวลาเริ่มงาน', date:fmtDate(dd), text:'เวลาเริ่มงาน: '+avant+' → '+a.h, red:false});
+    });
+  });
+  if(!changed) return;
+  calc(); saveState();
+  document.querySelectorAll('.day[data-locked="1"]').forEach(d=>collapseDay(d)); updateDayDates();
+  if(resend){ try{ localStorage.setItem('sheet_sent_v3', JSON.stringify(sent)); }catch(e){} setTimeout(syncSheet, 500); }
+}
+
 // ===== 🕐 CHANGER D'HORAIRE : une fois choisi pour le contrat, seulement si le patron l'autorise (Employés → « ✔ Peut changer les horaires ») =====
 function shiftLocked(){ try{ const c=JSON.parse(localStorage.getItem('pointage_hor')||'null'); const sv=document.getElementById('startDate').value;
   return !!(c && c.s===sv && ((c.force && curShift()===c.force) || (c.sh && !c.ok && curShift()===c.sh))); }catch(e){ return false; } }
+function moveStart(oldIso, newIso){
+  try{
+    const k=getKey(), st=JSON.parse(localStorage.getItem(k)||'null'); if(!st || st.startDate!==oldIso) return;
+    const off=Math.round((new Date(newIso+'T00:00:00')-new Date(oldIso+'T00:00:00'))/86400000), n=(st.days||[]).length||N;
+    const old=st.days||[], sf=[];
+    for(let i=1;i<=n;i++){ sf[i]=localStorage.getItem(k+'_selfie_'+i); }
+    st.days=[]; for(let j=0;j<n;j++){ st.days.push(old[j+off]||{}); }
+    for(let j=1;j<=n;j++){ const v=sf[j+off]; try{ if(v) localStorage.setItem(k+'_selfie_'+j, v); else localStorage.removeItem(k+'_selfie_'+j); }catch(e){} }
+    st.startDate=newIso; localStorage.setItem(k, JSON.stringify(st));
+    const p=newIso.split('-');
+    alert('👑 หัวหน้าแก้ไขวันเริ่มงานของคุณเป็น '+p[2]+'/'+p[1]+'/'+p[0]+'\nแอปจะอัปเดตข้อมูลให้อัตโนมัติ');
+    location.reload();
+  }catch(e){}
+}
 function applyShiftRight(c){
   if(!c) return;
   const sv0=document.getElementById('startDate').value;
+  // 👑 le patron a corrigé la date de début du contrat → la fiche est décalée (les journées gardent leur vraie date)
+  if(!c.s && c.deb && sv0 && c.deb!==sv0 && /^\d{4}-\d{2}-\d{2}$/.test(c.deb)){ moveStart(sv0, c.deb); return; }
   if(!c.s) c.s=sv0;                        // réponse du serveur : vaut pour le contrat affiché
   // 👑 le patron a changé l'horaire : on l'applique sur la fiche
   let chg=false;
@@ -1120,7 +1171,7 @@ async function checkBlocked(manual){
     let txt=await readTxt(r);
     if(txt[0]==='{'){ try{ const j=JSON.parse(txt); txt=j.s;
       const nv=JSON.stringify(j.tel||[]); if(nv!==(localStorage.getItem('pointage_tel_inf')||'[]')){ localStorage.setItem('pointage_tel_inf', nv); calc(); }
-      if(j.s!=='blocked'){ applyCorrections(j.cor); queueMessages(j.msg); startResync(j.rs); applyShiftRight(j.hor); } }catch(e){} }
+      if(j.s!=='blocked'){ applyCorrections(j.cor); applyArrivals(j.arr); queueMessages(j.msg); startResync(j.rs); applyShiftRight(j.hor); } }catch(e){} }
     if(txt==='blocked'){ setBlocked(true); if(manual && msg) msg.textContent='🚫 ยังถูกระงับอยู่'; }
     else if(txt==='ok'){ const was=(()=>{try{return localStorage.getItem('pointage_blocked')==='1'}catch(e){return false}})(); setBlocked(false); if(was) syncSheet(); }
   }catch(e){ if(manual && msg) msg.textContent='⚠️ ไม่มีอินเทอร์เน็ต'; }
@@ -1577,6 +1628,67 @@ function appScan(res){
     const model=/iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':m?('Android '+m):(/Android/.test(ua)?'Android':(/Windows|Macintosh/.test(ua)?'Ordinateur':'?'));
     fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'app',src:new URLSearchParams(location.search).get('src')||'',lang:l,tz,model,thai:/^th(-|,|$)/i.test(l)||l==='fr-FR,th-TH,en-GB,en-US',res})}).catch(()=>{});
   }catch(e){}
+}
+// ===== 👑 MODE PATRON SUR LE TÉLÉPHONE DE L'EMPLOYÉE (code du jour) =====
+// Tout devient modifiable 10 minutes : heures d'arrivée / départ, massages, amendes, journées validées,
+// date de début, contrat, horaire. « Enregistrer » renvoie les journées modifiées à Google.
+function bossMode(){
+  if(window.__BOSS) return;
+  const v=prompt('👑 Code patron / รหัสหัวหน้า'); if(v===null) return;
+  if(v.trim()!==todayCode()){ alert('❌ รหัสไม่ถูกต้อง'); return; }
+  let snap=null; try{ snap=localStorage.getItem(getKey()); }catch(e){}
+  window.__BOSS={snap, until:Date.now()+10*60000, dirty:new Set(), t:null};
+  ['startDate','pkg','contract','shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ const e=document.getElementById(id); if(e) e.disabled=false; });
+  const fn=document.getElementById('freezeNote'); if(fn) fn.textContent='';
+  const hn=document.getElementById('horNote'); if(hn) hn.textContent='👑 mode patron : horaire modifiable';
+  const om=document.getElementById('dayOnlyMsg'); if(om) om.style.display='none';
+  document.querySelectorAll('.day').forEach(day=>{
+    day.classList.remove('pastDay'); day.style.display='';
+    day.querySelector('.dayBody').style.display='block'; day.querySelector('.daySummary').style.display='none';
+    day.querySelectorAll('input,button').forEach(x=>{ if(!x.classList.contains('selfieInput') && !x.classList.contains('justFile')) x.disabled=false; });
+    let r=day.querySelector('.bossRow');
+    if(!r){ r=document.createElement('div'); r.className='bossRow';
+      r.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 8px;padding:8px;border:2px dashed #f59e0b;border-radius:10px;background:#fffbeb;';
+      r.innerHTML='<label class="small" style="font-weight:700;">👑 เริ่มงาน / arrivée<input type="time" class="bArr"></label><label class="small" style="font-weight:700;">👑 เลิกงาน / départ<input type="time" class="bFin"></label>';
+      day.querySelector('.dayBody').prepend(r); }
+    r.style.display='grid';
+    const a=r.querySelector('.bArr'), f=r.querySelector('.bFin');
+    a.value=day.querySelector('.arrival').value; f.value=day.querySelector('.finish').value;
+    a.oninput=()=>bossArr(day,a.value);
+    f.oninput=()=>{ day.querySelector('.finish').value=f.value; const b=day.querySelector('button[onclick^="finishWork"]'); if(b) b.textContent=f.value?'✅ เลิกงาน '+f.value:'⏹️ เลิกงาน'; bossDirty(day); saveState(); };
+    if(!day.dataset.bossL){ day.dataset.bossL='1'; day.querySelector('.dayBody').addEventListener('input',()=>bossDirty(day)); }
+  });
+  document.getElementById('bossBar').style.display='block'; document.body.style.paddingTop='64px';
+  const tick=()=>{ const s=Math.max(0,Math.round((window.__BOSS.until-Date.now())/1000));
+    document.getElementById('bossLeft').textContent='encore '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+' — tout est modifiable';
+    if(!s) bossSave(); };
+  tick(); window.__BOSS.t=setInterval(tick,1000);
+}
+function bossDirty(day){ if(window.__BOSS) window.__BOSS.dirty.add(day); }
+function bossArr(day,h){
+  const q=s=>day.querySelector(s); q('.arrival').value=h;
+  const b=q('button[onclick^="startWork"]'); if(b) b.textContent=h?'✅ เริ่มงาน '+h:'▶️ เริ่มงาน';
+  ['.c-l1529','.c-l3059','.c-l60'].forEach(c=>q(c).checked=false);
+  if(!q('.c-just').checked) q('.c-abs').checked=false;
+  q('.pen').value=0;
+  if(day.dataset.locked==='1'){ day.dataset.locked='0'; calc(); day.dataset.locked='1'; } else calc();
+  bossDirty(day);
+}
+async function bossSave(){
+  const B=window.__BOSS; if(!B || B.saving) return; B.saving=true; clearInterval(B.t);
+  document.getElementById('bossLeft').textContent='⏳ envoi à Google…';
+  calc(); saveState();
+  const sent=sheetSent(), k=empKey()||document.getElementById('name').value.trim();
+  B.dirty.forEach(day=>{ const dd=dayDate(+day.dataset.d); if(dd) delete sent[k+'|'+isoD(dd)]; });
+  try{ localStorage.setItem('sheet_sent_v3', JSON.stringify(sent)); }catch(e){}
+  for(let i=0;i<30 && sheetBusy;i++) await new Promise(r=>setTimeout(r,300));
+  try{ await syncSheet(); }catch(e){}
+  window.__BOSS=null; location.reload();
+}
+function bossCancel(){
+  const B=window.__BOSS; if(!B) return; clearInterval(B.t);
+  try{ if(B.snap!==null) localStorage.setItem(getKey(), B.snap); }catch(e){}
+  window.__BOSS=null; location.reload();
 }
 let accessFails=0;
 function checkAccess(){

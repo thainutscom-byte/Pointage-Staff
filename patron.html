@@ -76,6 +76,15 @@
     <div id="msg"></div>
     <div id="smsBox"></div>
     <div class="card" style="margin-top:14px">
+      <h2>⏰ Valider l'heure d'arrivée <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(aujourd'hui)</span></h2>
+      <select id="arrEmp" onchange="arrDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
+      <div id="arrInfo" class="small" style="text-align:left;margin:8px 0"></div>
+      <input id="arrH" type="time" style="letter-spacing:0;font-size:1.5rem;padding:10px">
+      <div style="height:10px"></div>
+      <button class="big green" id="arrOk" disabled onclick="arrValider()">✔ Valider l'arrivée</button>
+      <div id="arrMsg" class="small" style="margin-top:6px"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
       <h2>🕐 Changer l'horaire d'une employée</h2>
       <select id="horEmp" onchange="horDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
       <div id="horInfo" class="small" style="text-align:left;margin:8px 0"></div>
@@ -111,7 +120,7 @@ async function charger(){
     const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); const j=JSON.parse(await readTxt(r));
     if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
     emps=j.emps||[]; sel=null; draw();
-    HOR=j.hor||{}; horListe();
+    HOR=j.hor||{}; horListe(); ARR=j.arr||{}; arrListe();
     if(j.moi && !moiTouche){ ['l1','l2','hh'].forEach(k=>$(k).value=j.moi[k]||0); moiAff(); }
     const R=$('resa'); R.innerHTML='';
     if(!(j.resa||[]).length) R.textContent='Aucune réservation pour le moment.';
@@ -177,6 +186,36 @@ async function moiEnvoyer(){
   b.disabled=false; b.textContent='💾 Enregistrer mes massages';
 }
 (()=>{ const p=isoJ(0).split('-'); $('moiDate').textContent='('+p[2]+'/'+p[1]+')'; })();
+// ===== ⏰ HEURE D'ARRIVÉE : le patron valide l'heure réelle → le téléphone recalcule le retard =====
+let ARR={};
+const cleE=l=>{ const p=l.split(' — '); return p.slice(0,-1).join(' — ').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(p[p.length-1]).replace(/\D/g,''); };
+const debutSh=sh=>{ const m=String(sh||'').match(/^(\d{1,2})[h:](\d{2})?/); return m?('0'+m[1]).slice(-2)+':'+(m[2]||'00'):''; };
+function arrListe(){
+  const S=$('arrEmp'), v=S.value; S.innerHTML='<option value="">— choisir l\'employée —</option>';
+  emps.forEach(e=>{ const o=document.createElement('option'); o.value=e.label; const ok=ARR[cleE(e.label)];
+    o.textContent=(e.service?'● ':'')+e.nom+(e.service&&e.depuis?' · ▶️ '+e.depuis:'')+(ok?' · ✔ '+ok:''); S.appendChild(o); });
+  S.value=emps.some(e=>e.label===v)?v:''; arrDraw();
+}
+function arrDraw(){
+  const k=$('arrEmp').value; $('arrOk').disabled=!k; $('arrMsg').textContent='';
+  if(!k){ $('arrInfo').textContent=''; return; }
+  const e=emps.find(x=>x.label===k)||{}, h=HOR[k], ok=ARR[cleE(k)];
+  $('arrInfo').textContent=(h?'Horaire '+h.sh+' · ':'')+(e.service&&e.depuis?'selfie à '+e.depuis:'pas de selfie aujourd\'hui')+(ok?' · ✔ déjà validé à '+ok:'');
+  $('arrH').value=ok||(h?debutSh(h.sh):'')||e.depuis||'';
+  $('arrOk').textContent='✔ Valider : '+(e.nom||'')+' arrivée à '+($('arrH').value||'…');
+}
+$('arrH').addEventListener('input',()=>{ const e=emps.find(x=>x.label===$('arrEmp').value); if(e) $('arrOk').textContent='✔ Valider : '+e.nom+' arrivée à '+$('arrH').value; });
+async function arrValider(){
+  const k=$('arrEmp').value, h=$('arrH').value; if(!k||!h) return; const b=$('arrOk'); b.disabled=true; const t0=b.textContent; b.textContent='⏳ …';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'bossarrivee',label:k,date:isoJ(0),heure:h})})));
+    if(!j.ok) throw 0;
+    ARR[cleE(k)]=j.heure; $('arrMsg').style.color='var(--green)';
+    $('arrMsg').textContent='✅ Arrivée de '+j.nom+' validée à '+j.heure+' — son téléphone recalcule le retard à la prochaine ouverture';
+    const v=k; arrListe(); $('arrEmp').value=v; $('arrInfo').textContent+=' ';
+  }catch(e){ $('arrMsg').style.color='var(--red)'; $('arrMsg').textContent='❌ Pas envoyé — réessayez'; }
+  b.disabled=false; b.textContent=t0;
+}
 // ===== 🕐 CHANGER L'HORAIRE : contrat en cours (ou le prochain) → envoyé au téléphone de l'employée =====
 let HOR={}, horChoix='';
 const dmy=s=>String(s||'').split('-').reverse().slice(0,2).join('/');
