@@ -1814,9 +1814,9 @@ function plVerifier(){
   plPre(false);
   if(e.ouvert){ if(g.style.display==='block'){ g.style.display='none'; document.body.style.overflow=''; } return; }
   const r=Math.max(0,e.prochain-nowT()), h=Math.floor(r/3600000), m=Math.floor(r%3600000/60000), sec=Math.floor(r%60000/1000), o=new Date(e.prochain);
-  document.getElementById('plOuv').textContent='แอปจะเปิดให้ใช้ตั้งแต่ '+fmtHM(o)+' น.';
+  document.getElementById('plOuv').innerHTML='<div style="font-size:1.1rem;font-weight:700;">แอปจะเปิดให้ใช้ตั้งแต่</div><div style="font-size:4.2rem;font-weight:900;line-height:1.1;color:#fbbf24;">'+fmtHM(o)+' <span style="font-size:1.8rem;">น.</span></div>';
   document.getElementById('plReste').textContent=(h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(sec).padStart(2,'0');
-  document.getElementById('plInfo').innerHTML='📅 '+TH_DAYS[o.getDay()]+' '+fmtDate(o)+' · ช่วงเวลา '+curShift()+'<br>เปิดก่อนเวลาเริ่มงาน 1 ชั่วโมง · ปิด 15 นาทีหลังกดเลิกงาน';
+  document.getElementById('plInfo').innerHTML='<div style="font-size:1.1rem;color:#d1d5db;">📅 '+TH_DAYS[o.getDay()]+' '+fmtDate(o)+'</div><div style="font-size:1rem;color:#d1d5db;margin-top:14px;">ช่วงเวลาทำงานของคุณ</div><div style="font-size:2.8rem;font-weight:900;color:#fff;line-height:1.15;">'+curShift()+'</div>';
   if(g.style.display!=='block'){ g.style.display='block'; document.body.style.overflow='hidden'; }
 }
 
