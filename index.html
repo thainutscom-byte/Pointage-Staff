@@ -1657,7 +1657,10 @@ async function sharePDF(){
 // ===== CODE D'ACCÈS (une seule fois par téléphone) =====
 // Code du jour = JJ + AA  (ex. 28/09/2026 -> 2826)
 function todayCode(){ const d=new Date(); return String(d.getDate()).padStart(2,'0') + String(d.getFullYear()%100).padStart(2,'0'); }
+// ⏸️ code d'accès suspendu 3 jours (demande du patron) : pas de code jusqu'au 03/10/2026 inclus
+const NO_CODE_UNTIL=new Date('2026-10-03T23:59:59+07:00').getTime();
 function accessOK(){
+  if(Date.now()<NO_CODE_UNTIL) return true;
   try{
     if(localStorage.getItem('pointage_access_ok')==='1') return true;
     // téléphones déjà utilisés avant la mise à jour : pas de code demandé
