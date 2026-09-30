@@ -115,6 +115,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     </div>
     <button onclick="checkBlocked(true)" style="width:100%;background:var(--blue);color:#fff;border:none;padding:14px;border-radius:12px;font-size:1.05rem;font-weight:700;">🔄 ตรวจสอบอีกครั้ง</button>
     <div id="blockMsg" class="small" style="margin-top:10px;"></div>
+    <div style="margin-top:28px;"><a href="#" onclick="bossUnblock();return false;" style="font-size:.85rem;color:var(--muted);text-decoration:none;">👑 หัวหน้า — ปลดล็อก / Débloquer</a></div>
   </div>
 </div>
 <div id="bossBar" style="display:none;position:fixed;left:0;right:0;top:0;z-index:9999;background:#f59e0b;color:#111827;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;box-shadow:0 4px 12px rgba(0,0,0,.2);">
@@ -1161,6 +1162,19 @@ function setBlocked(on){
     document.getElementById('blockName').textContent = (nn && nn.value.trim()) || '—';
     document.getElementById('blockTel').textContent  = (tt && tt.value.trim()) || '—'; }
   document.body.style.overflow = on ? 'hidden' : '';
+}
+// 🔓 le patron débloque l'employée sur son téléphone avec le code du jour
+async function bossUnblock(){
+  const v=prompt('👑 Code patron / รหัสหัวหน้า'); if(v===null) return;
+  const msg=document.getElementById('blockMsg');
+  if(v.trim()!==todayCode()){ alert('❌ รหัสไม่ถูกต้อง'); return; }
+  msg.textContent='⏳ …';
+  try{
+    const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'debloquer',code:v.trim(),name:document.getElementById('name').value.trim(),phone:document.getElementById('phone').value.trim()})});
+    const t=await readTxt(r);
+    if(t==='ok'){ msg.textContent='✅ ปลดล็อกแล้ว'; await checkBlocked(true); }
+    else msg.textContent= t==='code' ? '❌ รหัสไม่ถูกต้อง' : '⚠️ ลองใหม่อีกครั้ง';
+  }catch(e){ msg.textContent='⚠️ ไม่มีอินเทอร์เน็ต'; }
 }
 async function checkBlocked(manual){
   const n=document.getElementById('name').value, t=document.getElementById('phone').value;
