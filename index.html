@@ -1267,11 +1267,12 @@ async function tryRestore(){
   try{
     const n=document.getElementById('name').value.trim(), t=document.getElementById('phone').value.replace(/\D/g,''), k=empKey();
     if(!SHEET_URL || !n || !/^0\d{9}$/.test(t) || restoreAsked===k) return;
-    if(typeof accessOK==='function' && !accessOK()) return;
+    if(typeof accessOK==='function' && !accessOK() && !window.__autoRestore) return;
     if(document.querySelector('.day[data-locked="1"]')) return;          // fiche déjà utilisée : rien à récupérer
     restoreAsked=k;
     const j=JSON.parse(await readTxt(await fetch(SHEET_URL+'?restore=1&emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&_='+Date.now())));
-    if(!j || !j.deb) return;
+    if(!j || !j.deb){ if(window.__autoRestore) essaiAccueil(); return; }   // raccourci inconnu → écran d'accueil
+    if(window.__autoRestore){ try{ localStorage.setItem('pointage_access_ok','1'); }catch(e){} }   // reconnue par Google → pas de code
     j.brouillons=j.brouillons||[];
     if(document.getElementById('startDate').value===j.deb && !j.nom && !j.jours.length) return;   // déjà la même fiche
     const dm=s=>s.split('-').reverse().slice(0,2).join('/');
@@ -1293,8 +1294,10 @@ async function tryRestore(){
     st.days=days; st.perte = j.perte ? {deb:j.deb, avant:j.perte} : null;
     localStorage.setItem(key, JSON.stringify(st)); localStorage.setItem('sheet_sent_v3', JSON.stringify(sent));
     location.reload();
-  }catch(e){}
+  }catch(e){ if(window.__autoRestore) essaiAccueil(); }
 }
+// raccourci (?u=&t=) que Google ne reconnaît pas → on repasse par l'écran d'accueil
+function essaiAccueil(){ try{ if(accessOK()) return; window.__autoRestore=false; document.getElementById('welcomeGate').style.display='block'; document.body.style.overflow='hidden'; }catch(e){} }
 ['name','phone'].forEach(id=>document.getElementById(id).addEventListener('change', ()=>setTimeout(tryRestore,300)));
 setTimeout(tryRestore, window.__autoRestore ? 800 : 2500);
 
@@ -1990,7 +1993,7 @@ function checkAccess(){
 }
 (function(){
   if(accessOK()){ if(new URLSearchParams(location.search).get('src')==='qr') appScan('ouvert par QR (déjà autorisé)'); return; }
-  if(document.getElementById('welcomeGate').style.display==='block' || document.getElementById('essaiGate').style.display==='block') return;   // 👋 accueil / 🧪 essai
+  if(document.getElementById('welcomeGate').style.display==='block' || document.getElementById('essaiGate').style.display==='block' || window.__autoRestore) return;   // 👋 accueil / 🧪 essai / 📲 raccourci
   appScan('ouvert → demande le code');
   document.getElementById('accessGate').style.display='block';
   document.body.style.overflow='hidden';
