@@ -89,6 +89,20 @@ button.mini{width:100%;background:var(--green);color:#fff;border:none;padding:8p
 </head>
 <body>
 <script>
+// 📲 ouvert dans LINE (scan du QR) : LINE ne peut pas créer de raccourci → on rouvre dans Safari / Chrome
+(function(){ try{
+  if(!/\bLine\//i.test(navigator.userAgent)) return;
+  var u=new URL(location.href);
+  if(u.searchParams.get('openExternalBrowser')==='1'){   // LINE n'a pas ouvert le navigateur : bandeau d'aide
+    document.addEventListener('DOMContentLoaded',function(){ var d=document.createElement('div');
+      d.style.cssText='position:sticky;top:0;z-index:99999;background:#06c755;color:#fff;padding:12px 14px;font-weight:700;line-height:1.5;text-align:center;';
+      d.innerHTML='📲 แตะ <b>⋮</b> หรือ <b>⤴</b> มุมขวา → <b>เปิดในเบราว์เซอร์</b> (Safari / Chrome)<br><span style="font-weight:400;font-size:.85rem">แล้วกด “เพิ่มไปยังหน้าจอหลัก”</span>';
+      document.body.prepend(d); });
+    return; }
+  u.searchParams.set('openExternalBrowser','1'); location.replace(u.toString());
+}catch(e){} })();
+</script>
+<script>
 // avant le démarrage de la fiche : ce téléphone avait-il déjà des données ?
 window.__hadData=false;
 try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf('pointage_fiche')===0){ window.__hadData=true; break; } } }catch(e){}
@@ -1174,9 +1188,10 @@ async function tryRestore(){
     restoreAsked=k;
     const j=JSON.parse(await readTxt(await fetch(SHEET_URL+'?restore=1&emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&_='+Date.now())));
     if(!j || !j.deb) return;
+    j.brouillons=j.brouillons||[];
     if(document.getElementById('startDate').value===j.deb && !j.nom && !j.jours.length) return;   // déjà la même fiche
     const dm=s=>s.split('-').reverse().slice(0,2).join('/');
-    if(!confirm('📥 พบข้อมูลของคุณในระบบ'+(j.nom?' (ชื่อ: '+j.nom+')':'')+'\nสัญญา '+dm(j.deb)+' → '+dm(j.fin)+' · '+j.sh+'\nวันที่ยืนยันแล้ว '+j.jours.length+' วัน\n\nกู้คืนข้อมูล?')) return;
+    if(!(window.__autoRestore && !j.nom) && !confirm('📥 พบข้อมูลของคุณในระบบ'+(j.nom?' (ชื่อ: '+j.nom+')':'')+'\nสัญญา '+dm(j.deb)+' → '+dm(j.fin)+' · '+j.sh+'\nวันที่ยืนยันแล้ว '+j.jours.length+' วัน'+(j.brouillons.length?' + ยังไม่ยืนยัน '+j.brouillons.length+' วัน':'')+'\n\nกู้คืนข้อมูล?')) return;
     saveState();
     const key=getKey(), st=JSON.parse(localStorage.getItem(key)||'{}'), n2=j.mensuel?30:10;
     st.name=j.nom||n; st.phone=document.getElementById('phone').value.trim(); st.contract=String(n2); st.startDate=j.deb;
@@ -1187,13 +1202,17 @@ async function tryRestore(){
       days[i]={solo:String(x.l1||''), duo8:String(Math.round(x.l2*2*100)/100||''), duo:String(Math.round(x.hh*2*100)/100||''), arrival:x.arr||'', finish:x.fin||'',
         abs:/Absent|Absence/.test(x.sit), med:/justifi/.test(x.sit), l1529:/15-29/.test(x.sit), l3059:/30-59/.test(x.sit), l60:/60\+/.test(x.sit), pen:String(x.pen||0), locked:true};
       sent[(j.nom?j.nom.trim().toLowerCase().replace(/\s+/g,' ')+'|'+t:k)+'|'+x.d]=1; });
+    // journées pas encore validées (copie de sécurité)
+    (j.brouillons||[]).forEach(bz=>{ const i=Math.round((new Date(bz.d+'T00:00:00')-base)/86400000); if(i<0||i>=n2||days[i].locked) return; days[i]={...days[i], ...bz.data, locked:false}; });
+    // journée commencée aujourd'hui (selfie déjà pris sur l'autre navigateur) : heure d'arrivée reprise
+    if(j.enCours){ const i=Math.round((new Date(j.enCours.d+'T00:00:00')-base)/86400000); if(i>=0 && i<n2 && !days[i].locked && !days[i].arrival) days[i]={...days[i], arrival:j.enCours.arr}; }
     st.days=days;
     localStorage.setItem(key, JSON.stringify(st)); localStorage.setItem('sheet_sent_v3', JSON.stringify(sent));
     location.reload();
   }catch(e){}
 }
 ['name','phone'].forEach(id=>document.getElementById(id).addEventListener('change', ()=>setTimeout(tryRestore,300)));
-setTimeout(tryRestore, 2500);
+setTimeout(tryRestore, window.__autoRestore ? 800 : 2500);
 
 // 🔓 le patron débloque l'employée sur son téléphone avec le code du jour
 async function bossUnblock(){
@@ -1395,8 +1414,42 @@ function saveState(){
       days
     };
     localStorage.setItem(getKey(), JSON.stringify(state));
+    urlIdentite(); brouillonBientot();
     const info=document.getElementById('saveInfo');
     info.textContent='💾 บันทึกแล้ว '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){}
+}
+// ===== 📲 RACCOURCI ÉCRAN D'ACCUEIL (iPhone) : Safari et l'icône n'ont pas la même mémoire =====
+// → le nom + téléphone sont gardés dans l'adresse ; l'icône s'ouvre avec, et la fiche est récupérée depuis Google.
+// 📝 copie de sécurité des journées en cours (pas encore validées) dans Google, 8 s après la dernière saisie
+let brT=null;
+function brouillonBientot(){ clearTimeout(brT); brT=setTimeout(envoyerBrouillons, 8000); }
+async function envoyerBrouillons(){
+  try{
+    if(!SHEET_URL || location.protocol.indexOf('http')!==0) return;
+    const n=(document.getElementById('name').value||'').trim(), t=(document.getElementById('phone').value||'').trim(); if(!n || !t) return;
+    let sentBr={}; try{ sentBr=JSON.parse(localStorage.getItem('pointage_br_sent')||'{}'); }catch(e){}
+    const today=workToday();
+    for(const day of document.querySelectorAll('.day')){
+      if(day.dataset.locked==='1') continue;
+      const dd=dayDate(+day.dataset.d); if(!dd || dd>today || (today-dd)>2*86400000) continue;
+      const q=s=>day.querySelector(s);
+      const data={solo:q('.solo').value, duo:q('.duo').value, duo8:q('.duo8').value, arrival:q('.arrival').value, finish:q('.finish').value, pen:q('.pen').value,
+        abs:q('.c-abs').checked, med:q('.c-med').checked, just:q('.c-just').checked, l1529:q('.c-l1529').checked, l3059:q('.c-l3059').checked, l60:q('.c-l60').checked};
+      if(!data.solo && !data.duo && !data.duo8 && !data.arrival && !data.finish && !data.abs) continue;
+      const id=(empKey()||n)+'|'+isoD(dd), h=JSON.stringify(data); if(sentBr[id]===h) continue;
+      const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'brouillon',name:n,phone:t,date:isoD(dd),data})});
+      if(r.ok){ sentBr[id]=h; try{ localStorage.setItem('pointage_br_sent', JSON.stringify(sentBr)); }catch(e){} }
+    }
+  }catch(e){}
+}
+function urlIdentite(){
+  try{
+    if(location.protocol.indexOf('http')!==0) return;
+    const n=(document.getElementById('name').value||'').trim(), t=(document.getElementById('phone').value||'').replace(/\D/g,'');
+    if(!n || !/^0\d{9}$/.test(t)) return;
+    const q='?u='+encodeURIComponent(n)+'&t='+t;
+    if(location.search!==q) history.replaceState(null,'',location.pathname+q);
   }catch(e){}
 }
 function loadState(){
@@ -1499,6 +1552,11 @@ document.getElementById('name').addEventListener('change', calc);
 document.getElementById('phone').addEventListener('input', saveState);
 document.getElementById('phone').addEventListener('change', calc);
 if(!loadState()) buildDays();
+// 📲 ouverte depuis le raccourci (?u=nom&t=téléphone) avec une fiche vide → nom + téléphone remplis, fiche récupérée automatiquement
+try{ const qp=new URLSearchParams(location.search), u=(qp.get('u')||'').trim(), t=(qp.get('t')||'').replace(/\D/g,'');
+  if(u && /^0\d{9}$/.test(t) && !document.getElementById('name').value.trim() && !document.querySelector('.day[data-locked="1"]')){
+    document.getElementById('name').value=u; document.getElementById('phone').value=t; saveState(); window.__autoRestore=true; }
+}catch(e){}
 // 📝 réservation faite sur booking.html : on remplit la fiche automatiquement (seulement si la fiche est vide)
 try{ const bk=JSON.parse(localStorage.getItem('pointage_booking')||'null');
   if(bk && !document.getElementById('name').value.trim() && !document.getElementById('startDate').value){
@@ -1745,6 +1803,7 @@ function checkAccess(){
   try{ const st=+localStorage.getItem('pointage_access_stop')||0; if(Date.now()<st){ document.getElementById('accessMsg').textContent='⛔ รอ '+Math.ceil((st-Date.now())/60000)+' นาที แล้วลองใหม่'; document.getElementById('accessCode').value=''; return; } }catch(e){}
   if(v===todayCode()){
     appScan('✅ bon code → accès à l\'app');
+    setTimeout(()=>{ try{ tryRestore(); }catch(e){} }, 300);
     try{ localStorage.setItem('pointage_access_ok','1'); }catch(e){}
     try{ sessionStorage.setItem('pointage_access_ok','1'); }catch(e){}
     document.getElementById('accessGate').style.display='none';

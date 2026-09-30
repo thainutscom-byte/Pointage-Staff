@@ -34,6 +34,20 @@
 </style>
 </head>
 <body>
+<script>
+// 📲 ouvert dans LINE (scan du QR) : LINE ne peut pas créer de raccourci → on rouvre dans Safari / Chrome
+(function(){ try{
+  if(!/\bLine\//i.test(navigator.userAgent)) return;
+  var u=new URL(location.href);
+  if(u.searchParams.get('openExternalBrowser')==='1'){   // LINE n'a pas ouvert le navigateur : bandeau d'aide
+    document.addEventListener('DOMContentLoaded',function(){ var d=document.createElement('div');
+      d.style.cssText='position:sticky;top:0;z-index:99999;background:#06c755;color:#fff;padding:12px 14px;font-weight:700;line-height:1.5;text-align:center;';
+      d.innerHTML='📲 แตะ <b>⋮</b> หรือ <b>⤴</b> มุมขวา → <b>เปิดในเบราว์เซอร์</b> (Safari / Chrome)<br><span style="font-weight:400;font-size:.85rem">แล้วกด “เพิ่มไปยังหน้าจอหลัก”</span>';
+      document.body.prepend(d); });
+    return; }
+  u.searchParams.set('openExternalBrowser','1'); location.replace(u.toString());
+}catch(e){} })();
+</script>
 <div class="wrap">
   <h1>📝 จองวันเริ่มงาน</h1>
   <p class="sub">เลือกวันเริ่มงานและช่วงเวลาล่วงหน้า · หัวหน้าจะได้รับแจ้งทันที</p>
