@@ -941,10 +941,14 @@ function applyCorrections(rows){
 
 // ===== 🕐 CHANGER D'HORAIRE : une fois choisi pour le contrat, seulement si le patron l'autorise (Employés → « ✔ Peut changer les horaires ») =====
 function shiftLocked(){ try{ const c=JSON.parse(localStorage.getItem('pointage_hor')||'null'); const sv=document.getElementById('startDate').value;
-  return !!(c && c.sh && !c.ok && c.s===sv && curShift()===c.sh); }catch(e){ return false; } }
+  return !!(c && c.s===sv && ((c.force && curShift()===c.force) || (c.sh && !c.ok && curShift()===c.sh))); }catch(e){ return false; } }
 function applyShiftRight(c){
   if(!c) return;
-  c.s=document.getElementById('startDate').value;
+  const sv0=document.getElementById('startDate').value;
+  if(!c.s) c.s=sv0;                        // réponse du serveur : vaut pour le contrat affiché
+  // 👑 le patron a changé l'horaire : on l'applique sur la fiche
+  let chg=false;
+  if(c.force && c.s===sv0){ const e=shiftSel(); if(e && [...e.options].some(o=>o.value===c.force) && e.value!==c.force){ e.value=c.force; e.dataset.prev=c.force; chg=true; } }
   try{ localStorage.setItem('pointage_hor', JSON.stringify(c)); }catch(e){}
   const lock=shiftLocked();
   ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ const e=document.getElementById(id); if(e) e.disabled=lock; });
@@ -952,7 +956,10 @@ function applyShiftRight(c){
   let n=document.getElementById('horNote');
   if(!n){ n=document.createElement('div'); n.id='horNote'; n.className='small'; n.style.cssText='font-weight:700;margin-top:4px;'; }
   sel.after(n);
-  if(c.sh && !c.ok){ n.style.color='var(--muted)'; n.textContent='🔒 เปลี่ยนช่วงเวลาได้เมื่อหัวหน้าอนุญาตเท่านั้น'; }
+  if(chg){ try{ saveState(); calUpdate(); planRefreshSoon(); }catch(e){}
+    try{ alert('👑 หัวหน้าเปลี่ยนช่วงเวลาทำงานของคุณเป็น '+c.force+'\nกรุณามาทำงานตามเวลาใหม่'); }catch(e){} }
+  if(c.force && curShift()===c.force){ n.style.color='var(--blue)'; n.textContent='👑 ช่วงเวลานี้หัวหน้าเป็นผู้กำหนด — เปลี่ยนเองไม่ได้'; }
+  else if(c.sh && !c.ok){ n.style.color='var(--muted)'; n.textContent='🔒 เปลี่ยนช่วงเวลาได้เมื่อหัวหน้าอนุญาตเท่านั้น'; }
   else if(c.sh && c.ok){ n.style.color='var(--green)'; n.textContent='✅ หัวหน้าอนุญาตให้เปลี่ยนช่วงเวลาได้ 1 ครั้ง'; }
   else n.textContent='';
 }
@@ -967,6 +974,7 @@ function planMsg(v){
   if(p[0]==='plein') return '🔴 ช่วงเวลานี้เต็มแล้ว (5 คน) วันที่ '+String(p[1]||'').split('-').reverse().slice(0,2).join('/');
   if(p[0]==='meme') return '⛔ มีคนเริ่มรอบวันเดียวกันในช่วงเวลานี้แล้ว — เลือกช่วงเวลาอื่น หรือวันเริ่มอื่น';
   if(p[0]==='roulement') return '🔄 ทำช่วงเวลานี้ครบ 2 รอบติดกันแล้ว — ต้องเปลี่ยนช่วงเวลา';
+  if(p[0]==='impose') return '👑 หัวหน้ากำหนดช่วงเวลาให้คุณแล้ว ('+(p[1]||'')+') — เปลี่ยนเองไม่ได้';
   if(p[0]==='verrou') return '🔒 เปลี่ยนช่วงเวลาไม่ได้ — ต้องให้หัวหน้าอนุญาตก่อน (ช่วงเวลาเดิม: '+(p[1]||'')+')';
   return '⚠️ เลือกไม่ได้';
 }

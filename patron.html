@@ -76,6 +76,15 @@
     <div id="msg"></div>
     <div id="smsBox"></div>
     <div class="card" style="margin-top:14px">
+      <h2>🕐 Changer l'horaire d'une employée</h2>
+      <select id="horEmp" onchange="horDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
+      <div id="horInfo" class="small" style="text-align:left;margin:8px 0"></div>
+      <div class="pen" id="horSh"></div>
+      <div style="height:10px"></div>
+      <button class="big green" id="horOk" disabled onclick="horValider()">✔ Changer l'horaire</button>
+      <div id="horMsg" class="small" style="margin-top:6px"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
       <h2>📝 Réservations reçues</h2>
       <div id="resa" class="small">Chargement…</div>
     </div>
@@ -102,6 +111,7 @@ async function charger(){
     const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); const j=JSON.parse(await readTxt(r));
     if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
     emps=j.emps||[]; sel=null; draw();
+    HOR=j.hor||{}; horListe();
     if(j.moi && !moiTouche){ ['l1','l2','hh'].forEach(k=>$(k).value=j.moi[k]||0); moiAff(); }
     const R=$('resa'); R.innerHTML='';
     if(!(j.resa||[]).length) R.textContent='Aucune réservation pour le moment.';
@@ -167,6 +177,35 @@ async function moiEnvoyer(){
   b.disabled=false; b.textContent='💾 Enregistrer mes massages';
 }
 (()=>{ const p=isoJ(0).split('-'); $('moiDate').textContent='('+p[2]+'/'+p[1]+')'; })();
+// ===== 🕐 CHANGER L'HORAIRE : contrat en cours (ou le prochain) → envoyé au téléphone de l'employée =====
+let HOR={}, horChoix='';
+const dmy=s=>String(s||'').split('-').reverse().slice(0,2).join('/');
+function horListe(){
+  const S=$('horEmp'), v=S.value; S.innerHTML='<option value="">— choisir l\'employée —</option>';
+  Object.keys(HOR).sort().forEach(k=>{ const o=document.createElement('option'); o.value=k; const f=SH.find(x=>x[0]===HOR[k].sh); o.textContent=k.split(' — ')[0]+' · '+(f?f[1].replace(' (mensuel)',''):HOR[k].sh); S.appendChild(o); });
+  if(!Object.keys(HOR).length){ const o=document.createElement('option'); o.textContent='Aucun contrat en cours'; S.appendChild(o); }
+  S.value=HOR[v]?v:''; horDraw();
+}
+function horDraw(){
+  const k=$('horEmp').value, c=HOR[k], B=$('horSh'); B.innerHTML=''; horChoix=''; $('horOk').disabled=true;
+  if(!c){ $('horInfo').textContent=''; return; }
+  $('horInfo').textContent='Contrat '+(c.mensuel?'mensuel':'freelance')+' du '+dmy(c.deb)+' au '+dmy(c.fin)+(c.impose?' · 👑 horaire déjà changé par vous':'');
+  SH.filter(x=>c.mensuel ? /mensuel/.test(x[1]) : !/mensuel/.test(x[1])).forEach(([sh,l])=>{
+    const b=document.createElement('button'); b.textContent=(sh===c.sh?'● ':'')+l.replace(' (mensuel)','');
+    if(sh===c.sh){ b.style.fontWeight='800'; b.disabled=true; }
+    b.onclick=()=>{ horChoix=sh; [...B.children].forEach(x=>x.classList.remove('on')); b.classList.add('on'); $('horOk').disabled=false; $('horOk').textContent='✔ Changer : '+k.split(' — ')[0]+' → '+l.replace(' (mensuel)',''); };
+    B.appendChild(b); });
+}
+async function horValider(){
+  const k=$('horEmp').value; if(!k||!horChoix) return; const b=$('horOk'); b.disabled=true; b.textContent='⏳ …';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'bosshoraire',label:k,sh:horChoix})})));
+    if(!j.ok) throw j.err||'x';
+    $('horMsg').style.color='var(--green)'; $('horMsg').textContent='✅ Horaire changé — le téléphone de '+k.split(' — ')[0]+' se met à jour à la prochaine ouverture'+(j.alerte?' · ⚠️ '+j.alerte:'');
+    HOR[k]={...HOR[k],sh:j.sh,impose:true}; horListe(); places();
+  }catch(e){ $('horMsg').style.color='var(--red)'; $('horMsg').textContent=e==='contrat'?'❌ Pas de contrat en cours pour cette employée':'❌ Pas envoyé — réessayez'; }
+  b.textContent='✔ Changer l\'horaire';
+}
 start(); places();
 </script>
 </body>
