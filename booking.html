@@ -148,7 +148,7 @@ const SIG=(()=>{ const l=(navigator.languages&&navigator.languages.length?naviga
   let tz=''; try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||''; }catch(e){}
   const ua=navigator.userAgent, m=(ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build|\))/)||[])[1];
   const model=/iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':m?('Android '+m):(/Android/.test(ua)?'Android':(/Windows|Macintosh/.test(ua)?'Ordinateur':'?'));
-  return {lang:l, tz, model, thai:/(^|,)th/i.test(l), bkk:/Asia\/(Bangkok|Vientiane|Phnom_Penh)/.test(tz)}; })();
+  return {lang:l, tz, model, thai:/^th(-|,|$)/i.test(l)||l==='fr-FR,th-TH,en-GB,en-US', bkk:/Asia\/(Bangkok|Vientiane|Phnom_Penh)/.test(tz)}; })();
 const SRC=new URLSearchParams(location.search).get('src')||'';
 function ctl(){ return (SIG.thai?'✅ ภาษาไทย':'⚠️ langue '+(SIG.lang||'?'))+' · '+(SIG.bkk?'heure BKK':'⚠️ '+(SIG.tz||'?'))+' · '+SIG.model+' · quiz ✅'; }
 function scan(res){ try{ fetch(API,{method:'POST',body:JSON.stringify({type:'scan',page:'booking',src:SRC,lang:SIG.lang,tz:SIG.tz,model:SIG.model,thai:SIG.thai,res})}).catch(()=>{}); }catch(e){} }

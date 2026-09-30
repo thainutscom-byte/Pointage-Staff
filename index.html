@@ -1567,7 +1567,7 @@ function appScan(res){
     let tz=''; try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||''; }catch(e){}
     const ua=navigator.userAgent, m=(ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build|\))/)||[])[1];
     const model=/iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':m?('Android '+m):(/Android/.test(ua)?'Android':(/Windows|Macintosh/.test(ua)?'Ordinateur':'?'));
-    fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'app',src:new URLSearchParams(location.search).get('src')||'',lang:l,tz,model,thai:/(^|,)th/i.test(l),res})}).catch(()=>{});
+    fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'app',src:new URLSearchParams(location.search).get('src')||'',lang:l,tz,model,thai:/^th(-|,|$)/i.test(l)||l==='fr-FR,th-TH,en-GB,en-US',res})}).catch(()=>{});
   }catch(e){}
 }
 let accessFails=0;
