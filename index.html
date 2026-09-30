@@ -208,6 +208,41 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
   </div>
   <div id="rgVoile" style="display:none;position:fixed;inset:0;z-index:5;background:#111827;color:#fff;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;text-align:center;padding:20px;">🔒 กลับมาที่แอปเพื่ออ่านต่อ</div>
 </div>
+<div id="renouvGate" style="display:none;position:fixed;inset:0;z-index:99989;background:#f3f4f6;color:#111827;overflow:auto;">
+  <div style="max-width:400px;margin:0 auto;padding:calc(40px + env(safe-area-inset-top,0px)) 18px 30px;">
+    <div style="text-align:center;font-size:3rem;">🔒</div>
+    <div style="text-align:center;font-size:1.15rem;font-weight:800;margin:6px 0 2px;">สัญญาจบแล้ว</div>
+    <div id="rnFin" style="text-align:center;font-size:.9rem;color:#6b7280;margin-bottom:14px;"></div>
+    <div style="background:#fff;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+      <div style="font-weight:800;margin-bottom:10px;">📄 เลือกสัญญาใหม่</div>
+      <label style="font-size:.85rem;font-weight:700;">ประเภทสัญญา</label>
+      <div style="display:flex;gap:8px;margin:6px 0 12px;">
+        <button type="button" id="rnT10" onclick="rnType(10)" style="flex:1;padding:12px;border-radius:10px;border:2px solid #d1d5db;background:#fff;font-weight:800;">🗓️ 10 วัน</button>
+        <button type="button" id="rnT30" onclick="rnType(30)" style="flex:1;padding:12px;border-radius:10px;border:2px solid #d1d5db;background:#fff;font-weight:800;">📅 1 เดือน</button>
+      </div>
+      <label style="font-size:.85rem;font-weight:700;">วันที่เริ่มสัญญาใหม่</label>
+      <input id="rnDate" type="date" onchange="rnInfo()" style="width:100%;padding:10px;border-radius:10px;border:2px solid #d1d5db;font-size:1rem;margin:6px 0 4px;box-sizing:border-box;">
+      <div id="rnFree" style="font-size:.8rem;color:#374151;"></div>
+      <div id="rnPen" style="font-size:.85rem;font-weight:700;margin:2px 0 12px;"></div>
+      <label style="font-size:.85rem;font-weight:700;">ช่วงเวลาทำงาน</label>
+      <select id="rnShift" style="width:100%;padding:10px;border-radius:10px;border:2px solid #d1d5db;font-size:1rem;margin:6px 0 14px;background:#fff;"></select>
+      <div id="rnErr" style="color:#dc2626;font-weight:700;font-size:.85rem;margin-bottom:8px;"></div>
+      <button type="button" id="rnOk" onclick="rnValider()" style="width:100%;padding:14px;border:none;border-radius:12px;background:#16a34a;color:#fff;font-size:1.05rem;font-weight:800;">✅ ยืนยันสัญญาใหม่</button>
+    </div>
+    <div style="text-align:center;font-size:.8rem;color:#6b7280;margin-top:12px;line-height:1.5;">แอปจะเปิดใช้งานอีกครั้ง 1 ชั่วโมง ก่อนเวลาเริ่มงาน<br>ในวันแรกของสัญญาใหม่</div>
+    <div style="text-align:center;margin-top:20px;"><a href="#" onclick="bossMode();return false;" style="color:#9ca3af;font-size:.85rem;text-decoration:none;">👑 หัวหน้า</a></div>
+  </div>
+</div>
+<div id="plageGate" style="display:none;position:fixed;inset:0;z-index:99990;background:#111827;color:#fff;overflow:auto;">
+  <div style="max-width:380px;margin:0 auto;padding:calc(70px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
+    <div style="font-size:3.4rem;">🔒</div>
+    <div style="font-size:1.1rem;font-weight:700;margin:10px 0 4px;">แอปปิดอยู่นอกเวลาทำงาน</div>
+    <div id="plOuv" style="font-size:1.35rem;font-weight:800;margin:14px 0 6px;"></div>
+    <div id="plReste" style="font-size:2.4rem;font-weight:800;color:#34d399;letter-spacing:1px;"></div>
+    <div id="plInfo" style="font-size:.9rem;color:#9ca3af;margin-top:10px;line-height:1.6;"></div>
+    <div style="margin-top:26px;"><a href="#" onclick="bossMode();return false;" style="color:#6b7280;font-size:.85rem;text-decoration:none;">👑 หัวหน้า</a></div>
+  </div>
+</div>
 <div id="bossBar" style="display:none;position:fixed;left:0;right:0;top:0;z-index:9999;background:#f59e0b;color:#111827;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;box-shadow:0 4px 12px rgba(0,0,0,.2);">
   <div style="max-width:560px;margin:0 auto;display:flex;align-items:center;gap:8px;">
     <div style="flex:1;font-weight:800;line-height:1.2;">👑 MODE PATRON<br><span id="bossLeft" style="font-weight:600;font-size:.8rem;"></span></div>
@@ -537,6 +572,7 @@ function renderNextBox(){
 function remindNextCycle(){
   try{
     if(localStorage.getItem('pointage_access_ok')!=='1') return;
+    return;   // remplacé par l'écran 🔒 « nouveau contrat »
     if(N!==10 || !cycleFinished() || document.getElementById('nextStart').value) return;
     const k='pointage_remind_'+getKey()+'_'+isoD(new Date());
     if(localStorage.getItem(k)) return; localStorage.setItem(k,'1');
@@ -704,6 +740,7 @@ function handleSelfie(inp){
   reader.readAsDataURL(file);
 }
 function finishWork(btn){
+  try{ localStorage.setItem('pointage_depart', JSON.stringify({d:isoD(workToday()), at:nowT()})); }catch(e){}
   const day = btn.closest('.day');
   const hm = fmtHM(new Date());
   day.querySelector('.finish').value = hm;
@@ -1323,7 +1360,8 @@ async function checkBlocked(manual){
     let txt=await readTxt(r);
     if(txt[0]==='{'){ try{ const j=JSON.parse(txt); txt=j.s;
       const nv=JSON.stringify(j.tel||[]); if(nv!==(localStorage.getItem('pointage_tel_inf')||'[]')){ localStorage.setItem('pointage_tel_inf', nv); calc(); }
-      window.__srvBr = j.br===1;           // le script Google sait garder les brouillons
+      window.__srvBr = j.br===1;
+      if(j.now){ const off=j.now-Date.now(); try{ localStorage.setItem('pointage_offset', String(Math.abs(off)>120000?off:0)); }catch(e){} }           // le script Google sait garder les brouillons
       if(j.s!=='blocked'){ applyCorrections(j.cor); applyArrivals(j.arr); queueMessages(j.msg); startResync(j.rs); applyShiftRight(j.hor); } }catch(e){} }
     if(txt==='blocked'){ setBlocked(true); if(manual && msg) msg.textContent='🚫 ยังถูกระงับอยู่'; }
     else if(txt==='ok'){ const was=(()=>{try{return localStorage.getItem('pointage_blocked')==='1'}catch(e){return false}})(); setBlocked(false); if(was) syncSheet(); }
@@ -1698,6 +1736,146 @@ async function eSuite(choix){
 }
 function eQuitter(){ if(!confirm('จบการทดลองงาน?')) return; eEnvoyer(); try{ localStorage.removeItem('pointage_essai'); }catch(x){} location.href=location.pathname; }
 
+// ===== 🕐 APP OUVERTE SEULEMENT AUTOUR DE L'HORAIRE =====
+// Ouverture 1 h avant le début de l'horaire · fermeture 15 min après « ⏹️ เลิกงาน » (heure de départ),
+// au plus tard 2 h après la fin de l'horaire → la journée est alors validée et envoyée automatiquement.
+// Toujours ouverte : sans contrat / sans horaire / contrat terminé (choisir le suivant), compte Boss, 👑 mode patron.
+const PL_AVANT=60, PL_APRES_DEPART=15, PL_MAX_APRES=120;
+function nowT(){ let o=0; try{ o=+localStorage.getItem('pointage_offset')||0; }catch(e){} return Date.now()+o; }
+function plFinShift(str){ const p=String(str||'').split('-'); if(p.length<2) return null; const x=p[1].trim(); let h,m=0; if(x.includes(':')){ const q=x.split(':'); h=+q[0]; m=+q[1]; } else h=parseInt(x.replace('h','')); return h*60+m; }
+function plFenetre(dd){   // dd = date (00:00) d'un jour du contrat → {ouv, ferm} en ms
+  const sh=curShift(), sm=parseShiftStart(sh); let em=plFinShift(sh); if(sm===null || em===null) return null; if(em<=sm) em+=1440;
+  const base=new Date(dd); base.setHours(0,0,0,0); const b=base.getTime();
+  let ferm=b+(em+PL_MAX_APRES)*60000;
+  try{ const dep=JSON.parse(localStorage.getItem('pointage_depart')||'null'); if(dep && dep.d===isoD(base)) ferm=Math.min(ferm, dep.at+PL_APRES_DEPART*60000); }catch(e){}
+  return {ouv:b+(sm-PL_AVANT)*60000, ferm, debut:b+sm*60000};
+}
+function plEtat(){
+  if(window.__BOSS || window.__essai) return {ouvert:true};
+  const nom=(document.getElementById('name').value||'').trim().toLowerCase(), sv=document.getElementById('startDate').value;
+  if(!nom || nom==='boss' || !sv) return {ouvert:true};
+  const now=nowT(), s0=new Date(sv+'T00:00:00'), fin=addDays(s0,N-1);
+  if(cycleFinished()) return {ouvert:false, fini:true};           // contrat terminé : seulement le choix du nouveau contrat
+  if(!curShift()){ const t=new Date(now); t.setHours(0,0,0,0);    // horaire pas encore choisi : avant le début, seulement contrat/date/horaire
+    return t<s0 ? {ouvert:false, avant:true, prochain:s0.getTime(), dd:s0} : {ouvert:true}; }
+  // jour de travail en cours (la veille pour les horaires de nuit) puis le prochain jour du contrat
+  for(let k=-1;k<=N;k++){
+    const t0=new Date(now); t0.setHours(0,0,0,0); const dd=addDays(t0,k); if(dd<s0 || dd>fin) continue;
+    const f=plFenetre(dd); if(!f) return {ouvert:true};
+    if(now>=f.ouv && now<f.ferm) return {ouvert:true, dd, f};
+    if(now<f.ouv) return {ouvert:false, prochain:f.ouv, dd, avant: dd.getTime()===s0.getTime()};
+  }
+  return {ouvert:true};
+}
+function plAutoValider(){   // à la fermeture : la journée commencée mais pas validée est validée et envoyée
+  try{
+    const now=nowT(); let fait=false;
+    document.querySelectorAll('.day').forEach(day=>{
+      if(day.dataset.locked==='1') return; const dd=dayDate(+day.dataset.d); if(!dd) return; const f=plFenetre(dd); if(!f || now<f.ferm) return;
+      const q=s=>day.querySelector(s); const rempli=q('.arrival').value||q('.solo').value||q('.duo').value||q('.duo8').value||q('.finish').value;
+      if(!rempli || (q('.c-just').checked && !day.dataset.cert)) return;
+      if(!q('.finish').value){ const d=new Date(f.ferm-PL_MAX_APRES*60000); q('.finish').value=fmtHM(d); }
+      day.querySelectorAll('input,button').forEach(i=>i.disabled=true); const b=q('button.mini[onclick^="lockDay"]'); if(b) b.style.display='none';
+      q('.lockedTag').style.display='block'; day.dataset.locked='1'; collapseDay(day); fait=true;
+    });
+    if(fait){ calc(); saveState(); syncSheet(); }
+  }catch(e){}
+}
+// ⏳ AVANT LE DÉBUT DU CONTRAT : seulement le type de contrat, l'horaire et la date de début sont visibles
+let plPreCaches=null;
+function plPre(on, e){
+  const note=document.getElementById('plPreNote');
+  if(on){
+    if(!plPreCaches){
+      const keepIds=['contract','startDate','freelanceNote','monthlyCard'];
+      const keep=new Set(keepIds.map(id=>{ const el=document.getElementById(id); return el && (el.closest('.field')&&id!=='freelanceNote'&&id!=='monthlyCard' ? el.closest('.field') : el); }).filter(Boolean));
+      const card=document.getElementById('contract').closest('.card');
+      let n=document.getElementById('plPreNote'); if(!n){ n=document.createElement('div'); n.id='plPreNote'; n.style.cssText='background:#dbeafe;border:2px solid #2563eb;border-radius:12px;padding:10px;margin-bottom:12px;font-weight:700;text-align:center;line-height:1.6;color:#111827;'; card.prepend(n); }
+      keep.add(n);
+      const chemin=new Set(); keep.forEach(k=>{ let x=k; while(x && x!==document.body){ chemin.add(x); x=x.parentElement; } });
+      plPreCaches=[];
+      chemin.forEach(x=>{ if(keep.has(x)) return; [...x.children].forEach(c=>{ if(chemin.has(c) || keep.has(c) || c.tagName==='SCRIPT' || c.tagName==='STYLE' || /Gate$|Bar$|Banner$/.test(c.id||'')) return;
+        plPreCaches.push([c, c.style.display]); c.style.display='none'; }); });
+      [...document.body.children].forEach(c=>{ if(chemin.has(c) || c.tagName==='SCRIPT' || c.tagName==='STYLE' || /Gate$|Bar$|Banner$/.test(c.id||'')) return; plPreCaches.push([c, c.style.display]); c.style.display='none'; });
+    }
+    const o=new Date(e.prochain);
+    document.getElementById('plPreNote').innerHTML='⏳ สัญญาเริ่มวันที่ '+fmtDate(new Date(e.dd))+(curShift() ? '<br>แอปจะเปิดใช้งานเต็มรูปแบบ '+TH_DAYS[o.getDay()]+' '+fmtDate(o).slice(0,5)+' เวลา '+fmtHM(o)+' น.' : '<br><span style="color:#dc2626;">⚠️ กรุณาเลือกช่วงเวลาทำงาน</span>')+'<br><span style="font-weight:400;font-size:.85rem;">ตอนนี้เลือกได้เฉพาะ ประเภทสัญญา · วันที่เริ่มรอบ · ช่วงเวลาทำงาน</span>';
+  } else if(plPreCaches){
+    plPreCaches.forEach(([c,d])=>c.style.display=d); plPreCaches=null; if(note) note.remove();
+  }
+}
+function plVerifier(){
+  plAutoValider();
+  const e=plEtat(), g=document.getElementById('plageGate'); if(!g) return;
+  const rg=document.getElementById('renouvGate');
+  if(e.fini){ if(g.style.display==='block') g.style.display='none'; plPre(false); rnMontrer(); return; }
+  if(rg && rg.style.display==='block'){ rg.style.display='none'; document.body.style.overflow=''; }
+  if(!e.ouvert && e.avant){ if(g.style.display==='block'){ g.style.display='none'; document.body.style.overflow=''; } plPre(true, e); return; }
+  plPre(false);
+  if(e.ouvert){ if(g.style.display==='block'){ g.style.display='none'; document.body.style.overflow=''; } return; }
+  const r=Math.max(0,e.prochain-nowT()), h=Math.floor(r/3600000), m=Math.floor(r%3600000/60000), sec=Math.floor(r%60000/1000), o=new Date(e.prochain);
+  document.getElementById('plOuv').textContent='แอปจะเปิดให้ใช้ตั้งแต่ '+fmtHM(o)+' น.';
+  document.getElementById('plReste').textContent=(h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(sec).padStart(2,'0');
+  document.getElementById('plInfo').innerHTML='📅 '+TH_DAYS[o.getDay()]+' '+fmtDate(o)+' · ช่วงเวลา '+curShift()+'<br>เปิดก่อนเวลาเริ่มงาน 1 ชั่วโมง · ปิด 15 นาทีหลังกดเลิกงาน';
+  if(g.style.display!=='block'){ g.style.display='block'; document.body.style.overflow='hidden'; }
+}
+
+// 🔒 CONTRAT TERMINÉ : l'app ne s'ouvre que pour choisir le NOUVEAU contrat (10 jours ou 1 mois), la date et l'horaire
+const RN_SHIFTS={10:['10h-16h','13h-19h','16h-22h','19h-01h','21h-03h'], 30:['09:00-17:00','17:00-01:00']};
+let rnT=null, rnBusy=false;
+function rnMontrer(){
+  const g=document.getElementById('renouvGate'); if(!g) return;
+  if(g.style.display!=='block'){
+    const fin=cycleEndDate(), f1=addDays(fin,1), f2=addDays(fin,2);
+    document.getElementById('rnFin').textContent='สัญญา '+(N===10?'10 วัน':'1 เดือน')+' สิ้นสุดวันที่ '+fmtDate(fin);
+    const d=document.getElementById('rnDate'); d.min=isoD(f1); const t=new Date(); t.setHours(0,0,0,0); if(t>f1) d.min=isoD(t);
+    if(!d.value) d.value=document.getElementById('nextStart').value||'';
+    document.getElementById('rnFree').textContent='เริ่มได้โดยไม่มีค่าปรับ: '+TH_DAYS[f1.getDay()]+' '+fmtDate(f1)+' หรือ '+TH_DAYS[f2.getDay()]+' '+fmtDate(f2);
+    rnType(rnT||N, true); document.getElementById('rnErr').textContent='';
+    g.style.display='block'; document.body.style.overflow='hidden';
+  }
+}
+function rnType(n, garder){
+  rnT=n; const cur=curShift();
+  ['10','30'].forEach(k=>{ const b=document.getElementById('rnT'+k), on=(+k===n); b.style.background=on?'#2563eb':'#fff'; b.style.color=on?'#fff':'#111827'; b.style.borderColor=on?'#2563eb':'#d1d5db'; });
+  const sel=document.getElementById('rnShift'), prev=sel.value||(garder?cur:'');
+  sel.innerHTML='<option value="">-- เลือก --</option>'+RN_SHIFTS[n].map(h=>'<option>'+h+'</option>').join('');
+  if(RN_SHIFTS[n].includes(prev)) sel.value=prev;
+  rnInfo();
+}
+function rnInfo(){
+  const v=document.getElementById('rnDate').value, el=document.getElementById('rnPen');
+  if(!v){ el.style.color='#dc2626'; el.textContent='⏳ ยังไม่ได้เลือกวันเริ่ม'; return; }
+  const d=(rnT===10 && N===10) ? lateRestartDays(cycleEndDate(), new Date(v+'T00:00:00')) : 0;
+  el.style.color=d?'#dc2626':'#16a34a';
+  el.textContent=d ? '⚠️ เริ่มช้า '+d+' วัน = ค่าปรับ '+(d*RESTART_FEE).toLocaleString('en-US')+' ฿ (หักในรอบถัดไป)' : '✅ ไม่มีค่าปรับ';
+}
+async function rnValider(){
+  if(rnBusy) return;
+  const v=document.getElementById('rnDate').value, h=document.getElementById('rnShift').value, err=document.getElementById('rnErr');
+  if(!rnT){ err.textContent='❌ กรุณาเลือกประเภทสัญญา'; return; }
+  if(!v){ err.textContent='❌ กรุณาเลือกวันที่เริ่ม'; return; }
+  if(v<document.getElementById('rnDate').min){ err.textContent='❌ วันที่เริ่มต้องหลังวันสิ้นสุดสัญญาเดิม'; return; }
+  if(!h){ err.textContent='❌ กรุณาเลือกช่วงเวลาทำงาน'; return; }
+  err.textContent=''; rnBusy=true; const b=document.getElementById('rnOk'); b.disabled=true; b.textContent='⏳ ...';
+  try{
+    try{ await syncSheet(); }catch(e){}                       // l'ancien contrat est bien envoyé avant d'effacer les jours
+    document.getElementById('nextStart').value=v;
+    resetCycle();
+    const c=document.getElementById('contract');
+    if(+c.value!==rnT){ c.value=String(rnT); c.dispatchEvent(new Event('change')); }
+    document.getElementById('startDate').value=v; updateDates(); calc();
+    const sel=document.getElementById(rnT===10?'shiftGlobal':'shiftGlobalMonthly'); sel.dataset.prev=''; sel.value=h;
+    saveState(); try{ calUpdate(); }catch(e){}
+    await shiftChosen(sel);                                  // enregistre le nouveau contrat chez le patron (ou refus si complet)
+    saveState();
+  }finally{ rnBusy=false; b.disabled=false; b.textContent='✅ ยืนยันสัญญาใหม่'; }
+  if(!curShift()){ document.getElementById('renouvGate').style.display='none'; return; }
+  document.getElementById('renouvGate').style.display='none'; document.body.style.overflow='';
+  plVerifier();
+}
+setInterval(plVerifier, 1000); setTimeout(plVerifier, 1200);
+
 // ===== 📋 RÈGLEMENT : lecture chapitre par chapitre, texte non sélectionnable / non copiable,
 //        filigrane nom + téléphone + date, écran masqué quand l'app passe en arrière-plan =====
 const REGLES=[{"t": "1. สัญญาและช่วงเวลาทำงาน", "items": [{"tbl": [["สัญญา", "ระยะเวลา", "ช่วงเวลาที่เลือกได้"], ["ฟรีแลนซ์", "10 วัน · วันละ 6 ชั่วโมง", "10:00-16:00 · 13:00-19:00 · 16:00-22:00 · 19:00-01:00 · 21:00-03:00"], ["รายเดือน", "30 วัน", "09:00-17:00 · 17:00-01:00"]], "w": [1800, 2400, 5160]}, {"b": ["สูงสุด 5 คน ต่อช่วงเวลา ต่อวัน", "ห้ามเริ่มงานวันเดียวกันในช่วงเวลาเดียวกัน (วันเดียวกันแต่คนละช่วงเวลาได้)", "ทำช่วงเวลาเดิมครบ 2 สัญญาติดกัน ต้องเปลี่ยนช่วงเวลา"]}]}, {"t": "2. ค่าตอบแทน", "items": [{"p": "การนับรอบนวด: 1 เลดี้ = 1 รอบ · 2 เลดี้ = ½ รอบ · Happy Hour = ½ รอบ · ราคาลูกค้า: 1 เลดี้ 600 ฿ · 2 เลดี้ 800 ฿ · Happy Hour 600 ฿"}, {"p": "ฟรีแลนซ์ (รวม 10 วัน):"}, {"tbl": [["จำนวนรอบใน 10 วัน", "ค่าตอบแทน"], ["50 รอบขึ้นไป", "13,000 ฿ + 135 ฿ ต่อรอบที่เกิน 50"], ["40 – 49 รอบ", "11,500 ฿ + 135 ฿ ต่อรอบที่เกิน 40"], ["30 – 39 รอบ", "10,000 ฿ + 135 ฿ ต่อรอบที่เกิน 30"], ["20 – 29 รอบ", "135 ฿ ต่อรอบ"], ["ต่ำกว่า 20 รอบ", "100 ฿ ต่อรอบ (เรทฉุกเฉิน)"]], "w": [3200, 6160]}, {"p": "รายเดือน (รวม 30 วัน):"}, {"tbl": [["จำนวนรอบใน 30 วัน", "ค่าตอบแทน"], ["90 รอบขึ้นไป", "เหมาจ่าย 15,000 ฿"], ["60 – 89 รอบ", "167 ฿ ต่อรอบ"], ["30 – 59 รอบ", "135 ฿ ต่อรอบ"], ["ต่ำกว่า 30 รอบ", "100 ฿ ต่อรอบ (เรทฉุกเฉิน)"]], "w": [3200, 6160]}, {"b": ["วันจ่ายเงิน: 2 วันหลังจบสัญญา", "วันที่นวด 0 รอบ ไม่ถือว่าผิด แต่ต้องกดยืนยันวันนี้ทุกครั้ง"]}]}, {"t": "3. รายการหักเงิน", "items": [{"tbl": [["รายการ", "จำนวน"], ["แพ็กเกจที่พัก (ถ้าเลือก)", "ฟรีแลนซ์: 1,300 ฿ (100 ฿ × 10 วัน + ค่าทำความสะอาด 300 ฿) · รายเดือน: วันละ 100 ฿"], ["กางเกงขาสั้นยูนิฟอร์ม", "ตัวละ 200 ฿ (0 – 2 ตัว)"], ["เสื้อยืดยูนิฟอร์ม", "ตัวละ 250 ฿ (0 – 2 ตัว)"], ["ค่าปรับ", "มาสาย, โทรศัพท์, เริ่มรอบใหม่ช้า, ลาเกิน (ดูด้านล่าง)"]], "w": [2800, 6560]}]}, {"t": "4. การมาสาย", "items": [{"tbl": [["มาสาย", "ค่าปรับ"], ["น้อยกว่า 15 นาที", "ไม่ปรับ"], ["15 – 30 นาที", "นาทีละ 20 ฿"], ["31 – 59 นาที", "นาทีละ 30 ฿"], ["60 นาทีขึ้นไป ครั้งที่ 1", "ปรับ 500 ฿"], ["60 นาทีขึ้นไป ครั้งที่ 2", "นับเป็นวันลา (2,000 ฿)"], ["เกิน 3 ชั่วโมง", "นับเป็นขาดงาน"]], "w": [3600, 5760]}, {"b": ["เวลาเริ่มงาน = เวลาที่ถ่ายเซลฟี่ตอนกด “▶️ เริ่มงาน”"]}]}, {"t": "5. กฎกิโยติน", "items": [{"p": "ถ้าในสัญญามี มาสาย 3 ครั้ง หรือ ขาดงาน 1 วัน (ไม่มีใบรับรองแพทย์) หรือ ใช้โทรศัพท์หน้าตู้กระจกครั้งที่ 4 → ทุกรอบนวดในสัญญาจ่าย 100 ฿ ต่อรอบ (เรทฉุกเฉิน)"}]}, {"t": "6. การขาดงานและใบรับรองแพทย์", "items": [{"b": ["ขาดงานมีใบรับรองแพทย์ (ถ่ายรูปในแอป) = ไม่ปรับ ไม่กิโยติน", "ต้องส่งใบรับรองแพทย์ภายใน 4 ชั่วโมงหลังเวลาเริ่มงาน มิฉะนั้นนับเป็นขาดงาน"]}]}, {"t": "7. ใช้โทรศัพท์หน้าตู้กระจกร้าน (กล้องวงจรปิด)", "items": [{"tbl": [["ครั้งที่ (นับต่อสัญญา)", "บทลงโทษ"], ["1", "ตักเตือนอย่างเป็นทางการ"], ["2", "ปรับ 200 ฿"], ["3", "ปรับ 500 ฿ + ยกเลิกค่าการันตีรายวัน (จ่าย 135 ฿ ต่อรอบ)"], ["4", "ปรับ 500 ฿ + กฎกิโยติน"]], "w": [3200, 6160]}]}, {"t": "8. เริ่มสัญญาฟรีแลนซ์รอบใหม่", "items": [{"b": ["เริ่มรอบใหม่ได้ฟรีภายใน 2 วันหลังจบรอบ 10 วัน", "หลังจากนั้นปรับวันละ 1,000 ฿ (สูงสุด 7 วัน)"]}]}, {"t": "9. การลา (สัญญารายเดือน)", "items": [{"b": ["ลาได้ 4 วันติดต่อกันฟรี · เกิน 4 วัน ปรับวันละ 1,000 ฿ (เกินได้สูงสุด 7 วัน)", "ต้องแจ้งล่วงหน้าอย่างน้อย 15 วัน และไม่เกิน 2 เดือน", "วันห้ามลา: 01/01 – 20/04, 10/02, 12/02, 14/02, 24/02, 06/04, 13/04, 01/05, 05/05, 22/05, 03/06, 01/07, 20/07, 28/07, 15/08, 13/10, 23/10, 15/11, 05/12, 10/12, 20/12 – 31/12"]}]}, {"t": "10. การเปลี่ยนช่วงเวลาระหว่างสัญญา", "items": [{"b": ["เปลี่ยนช่วงเวลาได้ แต่จะเสียค่าตอบแทนการนวดทั้งหมดก่อนหน้านี้ รวมถึงวันที่เปลี่ยน (เริ่มได้เงินอีกครั้งวันถัดไป) — แอปจะแจ้งเตือนสีแดงก่อนยืนยัน"]}]}, {"t": "11. การทำงานในแต่ละวัน", "items": [{"b": ["เริ่มงาน: กด “▶️ เริ่มงาน” แล้วถ่ายเซลฟี่ · เลิกงาน: กด “⏹️ เลิกงาน”", "ต้องกด “✔️ ยืนยันวันนี้” ทุกวัน · ยืนยันแล้วแก้ไขไม่ได้", "ถ้ายังไม่ยืนยัน แอปจะแจ้งเตือน 2 ชั่วโมงหลังเลิกงาน", "ใช้แอปจากไอคอนบนหน้าจอหลักเสมอ"]}]}, {"t": "12. การระงับบัญชีอัตโนมัติ", "items": [{"tbl": [["กรณี", "ตรวจสอบเมื่อ"], ["ไม่ยืนยันวันทำงาน 2 วันติดต่อกันระหว่างสัญญา (ละทิ้งงาน)", "ทุกวัน 08:00 น."], ["ขาดงานโดยไม่มีใบรับรองแพทย์", "เมื่อส่งข้อมูลวันทำงาน"], ["ไม่ส่งใบรับรองแพทย์ภายใน 4 ชั่วโมง", "ทุกชั่วโมง"], ["ค่าปรับรวมในเดือนเกิน 2,000 ฿", "ทุกวันทำงาน"], ["มาสาย 5 ครั้งในสัญญาเดียวกัน", "ทุกวันทำงาน"]], "w": [6560, 2800]}]}, {"t": "13. ทดลองงาน 1 วัน", "items": [{"b": ["12:00 – 20:00 น. (8 ชั่วโมง) · รับประกัน 500 ฿ หากไม่มีลูกค้าเลยทั้งวัน · ไม่มีประสบการณ์ ฝึกงานฟรี", "รับวันละ 1 คน · จองผ่านลิงก์ / QR code", "วันทดลองงาน: กรอกจำนวนนวดในแอป (Miss Essai) · จบวันเลือกได้ว่าจะทำสัญญา 10 วัน หรือไม่"]}]}, {"t": "14. การจอง", "items": [{"b": ["ต้องตอบคำถามภาษาไทย 2 ข้อ", "ต้องใช้เบอร์โทรศัพท์ไทย (06 / 08 / 09) และเขียนชื่อเล่นเป็นภาษาอังกฤษ"]}]}];
@@ -1978,6 +2156,7 @@ function bossMode(){
     if(!day.dataset.bossL){ day.dataset.bossL='1'; day.querySelector('.dayBody').addEventListener('input',()=>bossDirty(day)); }
   });
   document.getElementById('bossBar').style.display='block'; document.body.style.paddingTop='64px';
+  { const pg=document.getElementById('plageGate'); if(pg) pg.style.display='none'; }
   const tick=()=>{ const s=Math.max(0,Math.round((window.__BOSS.until-Date.now())/1000));
     document.getElementById('bossLeft').textContent='encore '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+' — tout est modifiable';
     if(!s) bossSave(); };
