@@ -80,14 +80,16 @@
       <div id="telWarn" class="warn">⚠️ เบอร์โทรไม่ถูกต้อง (10 หลัก)</div>
       <label class="modeC">ประเภทสัญญา</label>
       <select id="contract" class="modeC"><option value="10">ฟรีแลนซ์ (10 วัน)</option><option value="30">รายเดือน (30 วัน)</option></select>
-      <label id="startLbl">วันที่เริ่มงาน</label>
-      <input id="start" type="date">
+      <label id="startLbl" class="modeC">วันที่เริ่มงาน</label>
+      <input id="start" type="date" class="modeC">
       <div class="small" id="endTxt" style="margin-top:4px"></div>
     </div>
     <div class="card" id="essaiCard" style="display:none">
       <label style="margin-top:0">🧪 วันทดลองงาน</label>
       <div style="font-size:1.1rem;font-weight:800">⏰ 12:00 – 20:00 น. · 💰 รับประกัน 500 ฿</div>
-      <div id="essaiDispo" class="small" style="margin-top:6px">เลือกวันก่อน</div>
+      <div class="small" style="margin:8px 0 6px;font-weight:700;color:var(--text)">📅 เลือกวันทดลองงาน (1 คน ต่อวัน)</div>
+      <div id="essaiJours" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">⏳ …</div>
+      <div id="essaiDispo" class="small" style="margin-top:8px"></div>
     </div>
     <div class="card modeC">
       <label style="margin-top:0">ช่วงเวลาทำงาน <span class="small">(สูงสุด 5 คน ต่อช่วงเวลา)</span></label>
@@ -127,13 +129,20 @@ function choisirMode(m){
   $('go').textContent = m==='essai' ? '🧪 จองวันทดลองงาน' : '📝 จองเลย';
   $('msg').style.display='none'; charger();
 }
+// 📅 calendrier des jours d'essai : 1 personne par jour — les jours déjà pris sont grisés
+let essaiPris=[];
 async function chargerEssai(){
-  essaiOk=false; check(); const D=$('essaiDispo'), s=$('start').value;
-  if(!s){ D.textContent='เลือกวันก่อน'; D.style.color=''; return; }
-  D.textContent='⏳ กำลังโหลด…';
-  try{ const j=JSON.parse(await readTxt(await fetch(API+'?essai=1&d='+s+'&_='+Date.now()))); essaiOk=true; D.textContent='✅ จองได้'+((j.n||0)?' · มีคนจองแล้ว '+j.n+' คน':''); D.style.color='var(--green)'; D.style.fontWeight='800';
-  }catch(e){ D.textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; }
-  check();
+  essaiOk=false; $('start').value=''; check(); const G=$('essaiJours'); G.textContent='⏳ กำลังโหลด…'; $('essaiDispo').textContent='';
+  try{ const j=JSON.parse(await readTxt(await fetch(API+'?essais=1&_='+Date.now()))); essaiPris=j.pris||[]; }catch(e){ G.textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; return; }
+  dessinerJours();
+}
+function dessinerJours(){
+  const G=$('essaiJours'); G.innerHTML=''; const JT=['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  for(let i=1;i<=30;i++){ const d=new Date(); d.setDate(d.getDate()+i); const k=iso(d), pris=essaiPris.includes(k);
+    const b=document.createElement('button'); b.className='sh'+($('start').value===k?' on':''); b.style.cssText='margin:0;padding:8px 4px;text-align:center;font-size:.9rem;line-height:1.3';
+    b.innerHTML=JT[d.getDay()]+' <b>'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'</b><br>'+(pris?'<span style="color:var(--red)">🔴 เต็ม</span>':'<span style="color:var(--green)">✅ ว่าง</span>');
+    b.disabled=pris; b.onclick=()=>{ $('start').value=k; essaiOk=true; dessinerJours(); $('essaiDispo').textContent='✅ '+dm(k)+' · 12:00 – 20:00 น.'; $('essaiDispo').style.color='var(--green)'; $('essaiDispo').style.fontWeight='800'; check(); };
+    G.appendChild(b); }
 }
 async function reserverEssai(){
   const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
@@ -147,7 +156,7 @@ async function reserverEssai(){
       const a=document.querySelector('#done a.btn'); if(a) a.style.display='none';
       $('form').style.display='none'; $('done').style.display='block';
     } else {
-      const q=t.split('|'); $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 วันนี้เต็มแล้ว — เลือกวันอื่น':'⚠️ จองไม่ได้ — ลองใหม่';
+      const q=t.split('|'); $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 วันนี้มีคนจองแล้ว — เลือกวันอื่น':'⚠️ จองไม่ได้ — ลองใหม่';
       $('msg').style.display='block'; b.textContent='🧪 จองวันทดลองงาน'; chargerEssai();
     }
   }catch(e){ $('msg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; $('msg').style.display='block'; b.textContent='🧪 จองวันทดลองงาน'; b.disabled=false; }
