@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#dc2626">
+<title>📵 Patron</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--redbg:#fee2e2;--green:#16a34a;--border:#e5e7eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:460px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 30px;}
+  h1{font-size:1.25rem;margin:4px 0 12px;text-align:center}
+  .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  h2{font-size:1rem;margin:0 0 8px}
+  .emp{display:block;width:100%;text-align:left;border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px;margin:0 0 8px;font-size:1.05rem;color:var(--text)}
+  .emp small{color:var(--muted);font-size:.8rem}
+  .emp.svc{border-left:7px solid var(--green)}
+  .emp.on{border-color:var(--red);background:var(--redbg)}
+  .emp.blk{opacity:.5}
+  .sep{font-size:.8rem;color:var(--muted);margin:8px 0 6px}
+  .pen{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pen button{border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px 8px;font-size:.95rem;text-align:left;color:var(--text)}
+  .pen button.on{border-color:var(--red);background:var(--redbg);font-weight:800}
+  .big{width:100%;border:none;border-radius:14px;padding:16px;font-size:1.15rem;font-weight:800;color:#fff;background:var(--red)}
+  .big:disabled{background:#9ca3af}
+  .big.green{background:var(--green)}
+  input{width:100%;font-size:1.6rem;text-align:center;letter-spacing:6px;padding:12px;border-radius:12px;border:2px solid var(--border)}
+  #msg{margin-top:10px;font-weight:700;text-align:center;min-height:20px}
+  a.sms{display:block;text-align:center;margin-top:10px;background:var(--green);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px}
+  .small{font-size:.8rem;color:var(--muted);text-align:center}
+  .moi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .moi>div{border:2px solid #fde68a;background:#fefce8;border-radius:12px;padding:8px 2px;text-align:center;min-width:0}
+  .moi label{display:block;font-size:.8rem;font-weight:700;margin-bottom:4px}
+  .moi .st{display:flex;align-items:center;justify-content:center;gap:2px}
+  .moi .st button{flex:0 0 30px;width:30px;height:34px;padding:0;border-radius:10px;border:none;background:#e5e7eb;font-size:1.2rem;font-weight:800;color:var(--text)}
+  .moi input{width:36px;min-width:0;font-size:1.25rem;letter-spacing:0;padding:4px 0;border:none;background:transparent;font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📵 Téléphone devant la vitrine</h1>
+
+  <div id="pinBox" class="card" style="display:none">
+    <h2>🔑 Code patron</h2>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">
+    <div style="height:10px"></div>
+    <button class="big" onclick="savePin()">Entrer</button>
+    <div class="small" style="margin-top:8px">Le code se choisit dans Google Sheets : menu 📵 Téléphone → 🔑 Code patron</div>
+  </div>
+
+  <div id="main" style="display:none">
+    <div class="card">
+      <h2>👑 Mes massages aujourd'hui <span id="moiDate" style="font-weight:normal;color:var(--muted);font-size:.8rem"></span></h2>
+      <div class="moi">
+        <div><label>1 lady<br>600 ฿</label><div class="st"><button onclick="pm('l1',-1)">−</button><input id="l1" type="number" min="0" inputmode="numeric" value="0" oninput="moiCa()"><button onclick="pm('l1',1)">+</button></div></div>
+        <div><label>2 lady<br>800 ฿</label><div class="st"><button onclick="pm('l2',-1)">−</button><input id="l2" type="number" min="0" inputmode="numeric" value="0" oninput="moiCa()"><button onclick="pm('l2',1)">+</button></div></div>
+        <div><label>Happy Hour<br>600 ฿</label><div class="st"><button onclick="pm('hh',-1)">−</button><input id="hh" type="number" min="0" step="0.5" inputmode="decimal" value="0" oninput="moiCa()"><button onclick="pm('hh',1)">+</button></div></div>
+      </div>
+      <div id="moiCa" style="text-align:center;font-weight:800;margin:10px 0 8px">Total : 0 ฿</div>
+      <button class="big green" id="moiOk" onclick="moiEnvoyer()">💾 Enregistrer mes massages</button>
+      <div id="moiMsg" class="small" style="margin-top:6px"></div>
+    </div>
+    <div class="card">
+      <h2>1️⃣ Employée <span style="font-weight:normal;color:var(--green);font-size:.8rem">● en service aujourd'hui</span></h2>
+      <div id="liste">Chargement…</div>
+    </div>
+    <div class="card">
+      <h2>2️⃣ Pénalité</h2>
+      <div class="pen" id="pen"></div>
+    </div>
+    <button class="big" id="ok" disabled onclick="valider()">✔ Valider</button>
+    <div id="msg"></div>
+    <div id="smsBox"></div>
+    <div class="card" style="margin-top:14px">
+      <h2>📝 Réservations reçues</h2>
+      <div id="resa" class="small">Chargement…</div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>🗓️ Places disponibles <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(5 max par horaire)</span></h2>
+      <div id="places">Chargement…</div>
+    </div>
+    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();places();return false">🔄 Actualiser</a></div>
+  </div>
+</div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const CH=[['1','Avertissement formel'],['2','-200 ฿'],['3','-500 ฿ + garantie annulée'],['4','-500 ฿ + guillotine']];
+let emps=[],sel=null,n=1;
+const $=id=>document.getElementById(id);
+function getPin(){ return 'x'; }   // plus de code patron
+function savePin(){ const v=$('pin').value.trim(); if(!v) return; try{ localStorage.setItem('patron_pin',v); }catch(e){} start(); }
+function logout(){ try{ localStorage.removeItem('patron_pin'); }catch(e){} start(); }
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+function start(){ if(!getPin()){ $('pinBox').style.display='block'; $('main').style.display='none'; return; } $('pinBox').style.display='none'; $('main').style.display='block'; charger(); }
+async function charger(){
+  $('liste').textContent='Chargement…';
+  try{
+    const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); const j=JSON.parse(await readTxt(r));
+    if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
+    emps=j.emps||[]; sel=null; draw();
+    if(j.moi && !moiTouche){ ['l1','l2','hh'].forEach(k=>$(k).value=j.moi[k]||0); moiAff(); }
+    const R=$('resa'); R.innerHTML='';
+    if(!(j.resa||[]).length) R.textContent='Aucune réservation pour le moment.';
+    (j.resa||[]).forEach(x=>{ const d=document.createElement('div'); d.style.cssText='border-top:1px solid var(--border);padding:8px 0;font-size:.95rem;color:var(--text)';
+      d.innerHTML='<b></b> <span class="small"></span><br><span></span>'; d.querySelector('b').textContent='🆕 '+x.nom;
+      d.querySelector('.small').textContent=x.tel+' · reçu '+x.recu; d.querySelectorAll('span')[1].textContent='🕐 '+x.sh+' · 🗓️ '+x.deb+' → '+x.fin+' · '+x.contrat;
+      if(x.th){ const c=document.createElement('div'); c.className='small'; c.style.cssText='text-align:left;font-weight:700;color:'+(/⚠️/.test(x.th)?'var(--red)':'var(--green)'); c.textContent='🇹🇭 '+x.th; d.appendChild(c); }
+      R.appendChild(d); });
+  }catch(e){ $('liste').textContent='⚠️ Pas de connexion — réessayez'; }
+}
+function draw(){
+  const L=$('liste'); L.innerHTML=''; let sep=false;
+  emps.forEach((e,i)=>{
+    if(!e.service && !sep){ sep=true; const d=document.createElement('div'); d.className='sep'; d.textContent='Autres employées'; L.appendChild(d); }
+    const b=document.createElement('button'); b.className='emp'+(e.service?' svc':'')+(sel===i?' on':'')+(e.bloque?' blk':'');
+    b.innerHTML='<b></b> <small></small>'; b.querySelector('b').textContent=e.nom;
+    b.querySelector('small').textContent=e.tel+(e.depuis?' · ▶️ '+e.depuis:'')+(e.bloque?' · 🚫 bloquée':'');
+    b.onclick=()=>{ sel=i; n=e.prochain||1; draw(); }; L.appendChild(b);
+  });
+  if(!emps.length) L.innerHTML='<i>Aucune employée</i>';
+  const P=$('pen'); P.innerHTML='';
+  CH.forEach(c=>{ const b=document.createElement('button'); b.className=(+c[0]===n?'on':''); b.innerHTML='<b>'+c[0]+'</b> — '+c[1]; b.onclick=()=>{ n=+c[0]; draw(); }; P.appendChild(b); });
+  $('ok').disabled = sel===null;
+  $('ok').textContent = sel===null ? '✔ Valider' : '✔ Valider : '+emps[sel].nom+' — infraction '+n;
+}
+async function valider(){
+  if(sel===null) return; const e=emps[sel]; const b=$('ok'); b.disabled=true; b.textContent='⏳ …'; $('smsBox').innerHTML='';
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify({type:'infraction',pin:getPin(),label:e.label,n})}); const j=JSON.parse(await readTxt(r));
+    if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
+    $('msg').style.color='var(--green)'; $('msg').textContent='✅ '+j.msg;
+    if(j.sms){ const a=document.createElement('a'); a.className='sms'; a.href=j.sms; a.textContent='📱 Envoyer aussi le SMS à '+e.nom; $('smsBox').appendChild(a); }
+    charger();
+  }catch(err){ $('msg').style.color='var(--red)'; $('msg').textContent='❌ Pas envoyé — vérifiez internet et réessayez'; draw(); }
+}
+// 🗓️ places libres par horaire : aujourd'hui et sur les 10 prochains jours (jour le plus chargé)
+const SH=[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],['16h-22h','16:00-22:00 น.'],['19h-01h','19:00-01:00 น.'],['21h-03h','21:00-03:00 น.'],['09:00-17:00','09:00-17:00 น. (mensuel)'],['17:00-01:00','17:00-01:00 น. (mensuel)']];
+function isoJ(o){ const d=new Date(Date.now()-6*3600e3); d.setDate(d.getDate()+(o||0)); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+async function places(){
+  const P=$('places'); P.textContent='Chargement…';
+  try{
+    const q=n=>fetch(API+'?plan=1&emp=__patron__&tel=0&s='+isoJ(0)+'&n='+n+'&sh='+encodeURIComponent(SH.map(x=>x[0]).join(','))+'&_='+Date.now()).then(readTxt).then(JSON.parse);
+    const [a,b]=await Promise.all([q(1),q(10)]);
+    const col=l=>l<=0?'var(--red)':l===1?'#ea580c':'var(--green)';
+    let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
+    SH.forEach(([k,l])=>{ const la=5-((a[k]||{}).max||0), lb=5-((b[k]||{}).max||0);
+      h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px 0">'+l+'</td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/5</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/5</td></tr>'; });
+    P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
+  }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
+}
+// ===== 👑 MES MASSAGES (Boss) : 1 ligne par jour dans « Massages », comptée dans les totaux =====
+let moiTouche=false;
+function pm(k,d){ const el=$(k); el.value=Math.max(0,(+el.value||0)+d); moiCa(); }
+function moiAff(){ const v=k=>Math.max(0,+$(k).value||0); $('moiCa').textContent='Total : '+(v('l1')*600+v('l2')*800+v('hh')*600).toLocaleString('en-US')+' ฿'; }
+function moiCa(){ moiTouche=true; moiAff(); $('moiMsg').textContent='⚠️ pas encore enregistré'; $('moiMsg').style.color='#d97706'; }
+async function moiEnvoyer(){
+  const b=$('moiOk'); b.disabled=true; b.textContent='⏳ …';
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify({type:'bossday',date:isoJ(0),l1:+$('l1').value||0,l2:+$('l2').value||0,hh:+$('hh').value||0})});
+    const j=JSON.parse(await readTxt(r)); if(!j.ok) throw 0;
+    moiTouche=false; $('moiMsg').style.color='var(--green)'; $('moiMsg').textContent='✅ Enregistré dans Google ('+j.ca.toLocaleString('en-US')+' ฿)';
+  }catch(e){ $('moiMsg').style.color='var(--red)'; $('moiMsg').textContent='❌ Pas envoyé — vérifiez internet et réessayez'; }
+  b.disabled=false; b.textContent='💾 Enregistrer mes massages';
+}
+(()=>{ const p=isoJ(0).split('-'); $('moiDate').textContent='('+p[2]+'/'+p[1]+')'; })();
+start(); places();
+</script>
+</body>
+</html>

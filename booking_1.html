@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#16a34a">
+<title>📝 จองวันทำงาน</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--border:#e5e7eb;--blue:#2563eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:460px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 30px;}
+  h1{font-size:1.3rem;margin:4px 0 4px;text-align:center}
+  .sub{text-align:center;color:var(--muted);margin:0 0 14px;font-size:.9rem}
+  .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  label{display:block;font-weight:700;margin:10px 0 4px;font-size:.95rem}
+  input,select{width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)}
+  .warn{color:var(--red);font-weight:700;font-size:.85rem;margin-top:4px;display:none}
+  .sh{display:block;width:100%;text-align:left;border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px;margin:0 0 8px;font-size:1rem;color:var(--text)}
+  .sh small{float:right;font-weight:800}
+  .sh.on{border-color:var(--green);background:#dcfce7}
+  .sh:disabled{opacity:.5}
+  .big{width:100%;border:none;border-radius:14px;padding:16px;font-size:1.2rem;font-weight:800;color:#fff;background:var(--green)}
+  .big:disabled{background:#9ca3af}
+  .ok{text-align:center}
+  .ok .ic{font-size:3rem}
+  .sum{background:#f3f4f6;border-radius:12px;padding:12px;text-align:left;line-height:1.7;margin:10px 0}
+  a.btn{display:block;text-align:center;background:var(--blue);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px;margin-top:10px}
+  .small{font-size:.8rem;color:var(--muted)}
+  .qw{font-size:2.6rem;font-weight:800;text-align:center;margin:10px 0 14px}
+  .qc{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .qc button{font-size:2.2rem;padding:14px 0;border-radius:14px;border:2px solid var(--border);background:#fff;color:var(--text)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📝 จองวันเริ่มงาน</h1>
+  <p class="sub">เลือกวันเริ่มงานและช่วงเวลาล่วงหน้า · หัวหน้าจะได้รับแจ้งทันที</p>
+
+  <div id="gate" class="card" style="text-align:center">
+    <div style="font-size:2.4rem">🇹🇭</div>
+    <h2 style="margin:6px 0 2px;font-size:1.15rem">ยืนยันว่าคุณอ่านภาษาไทยได้</h2>
+    <div class="small" id="qn">คำถาม 1/2 — กดรูปที่ตรงกับคำนี้</div>
+    <div class="qw" id="qw"></div>
+    <div class="qc" id="qc"></div>
+    <div class="warn" id="qmsg" style="text-align:center;margin-top:10px"></div>
+  </div>
+  <div id="stop" class="card ok" style="display:none"><div class="ic">⛔</div><h2 style="margin:6px 0">ไม่สามารถจองได้</h2><div class="small">This page is for Thai staff only.</div></div>
+
+  <div id="form" style="display:none">
+    <div class="card">
+      <label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label>
+      <input id="name" placeholder="เช่น Noi, Ploy, Mint" autocomplete="off" autocapitalize="words">
+      <div id="nameWarn" class="warn">⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z)</div>
+      <label>เบอร์โทรศัพท์</label>
+      <input id="phone" type="tel" inputmode="numeric" placeholder="08X XXX XXXX">
+      <div id="telWarn" class="warn">⚠️ เบอร์โทรไม่ถูกต้อง (10 หลัก)</div>
+      <label>ประเภทสัญญา</label>
+      <select id="contract"><option value="10">ฟรีแลนซ์ (10 วัน)</option><option value="30">รายเดือน (30 วัน)</option></select>
+      <label>วันที่เริ่มงาน</label>
+      <input id="start" type="date">
+      <div class="small" id="endTxt" style="margin-top:4px"></div>
+    </div>
+    <div class="card">
+      <label style="margin-top:0">ช่วงเวลาทำงาน <span class="small">(สูงสุด 5 คน ต่อช่วงเวลา)</span></label>
+      <div id="shifts" class="small">เลือกวันที่เริ่มงานก่อน</div>
+    </div>
+    <button class="big" id="go" disabled onclick="reserver()">📝 จองเลย</button>
+    <div id="msg" class="warn" style="text-align:center;margin-top:10px"></div>
+  </div>
+
+  <div id="done" class="card ok" style="display:none">
+    <div class="ic">✅</div>
+    <h2 style="margin:6px 0">จองเรียบร้อยแล้ว</h2>
+    <div class="sum" id="sum"></div>
+    <div class="small">วันเริ่มงาน: เปิดแอปลงเวลา แล้วใช้ <b>ชื่อเล่นและเบอร์โทรเดิม</b> — ข้อมูลการจองจะถูกกรอกให้อัตโนมัติ</div>
+    <a class="btn" href="./">📱 เปิดแอปลงเวลา</a>
+  </div>
+</div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const SH={ '10':[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],['16h-22h','16:00-22:00 น.'],['19h-01h','19:00-01:00 น.'],['21h-03h','21:00-03:00 น.']],
+           '30':[['09:00-17:00','09:00-17:00 น.'],['17:00-01:00','17:00-01:00 น.']] };
+let choix='', res={};
+const $=id=>document.getElementById(id);
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const dm=s=>s.split('-').reverse().join('/');
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+function nomOk(){ return /^[A-Za-z][A-Za-z .'-]*$/.test($('name').value.trim()); }
+function telOk(){ return /^0\d{9}$/.test($('phone').value.replace(/\D/g,'')); }
+function fin(){ const s=$('start').value; if(!s) return ''; const d=new Date(s+'T00:00:00'); d.setDate(d.getDate()+(+$('contract').value)-1); return iso(d); }
+function check(){
+  $('nameWarn').style.display = $('name').value.trim() && !nomOk() ? 'block' : 'none';
+  $('telWarn').style.display = $('phone').value.trim() && !telOk() ? 'block' : 'none';
+  $('endTxt').textContent = $('start').value ? 'ถึงวันที่ '+dm(fin())+' ('+$('contract').value+' วัน)' : '';
+  $('go').disabled = !(nomOk() && telOk() && $('start').value && choix);
+}
+async function charger(){
+  choix=''; check();
+  const S=$('shifts'), s=$('start').value, n=$('contract').value;
+  if(!s){ S.textContent='เลือกวันที่เริ่มงานก่อน'; return; }
+  S.textContent='⏳ กำลังโหลด…';
+  try{
+    const r=await fetch(API+'?plan=1&emp='+encodeURIComponent($('name').value.trim()||'__resa__')+'&tel='+encodeURIComponent($('phone').value.replace(/\D/g,'')||'0')+
+      '&s='+s+'&n='+n+'&sh='+encodeURIComponent(SH[n].map(x=>x[0]).join(','))+'&_='+Date.now());
+    res=JSON.parse(await readTxt(r));
+  }catch(e){ S.textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; return; }
+  draw();
+}
+function draw(){
+  const S=$('shifts'), n=$('contract').value; S.innerHTML='';
+  SH[n].forEach(([k,l])=>{
+    const x=res[k]||{v:'',max:0}, libre=Math.max(0,5-(+x.max||0));
+    const b=document.createElement('button'); b.className='sh'+(choix===k?' on':'');
+    let etat = x.v ? (x.v.startsWith('plein')?'🔴 เต็ม':x.v.startsWith('meme')?'⛔ มีคนเริ่มวันนี้แล้ว':'🔄 ต้องเปลี่ยน') : '✅ ว่าง '+libre+'/5';
+    b.innerHTML='<span></span><small></small>'; b.querySelector('span').textContent=l; b.querySelector('small').textContent=etat;
+    b.querySelector('small').style.color = x.v ? 'var(--red)' : 'var(--green)';
+    b.disabled=!!x.v; b.onclick=()=>{ choix=k; draw(); check(); };
+    S.appendChild(b);
+  });
+}
+async function reserver(){
+  if($('go').disabled) return;
+  const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
+  const p={type:'cycle', booking:true, th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), sh:choix,
+           cycleStart:$('start').value, cycleEnd:fin(), contract:$('contract').value==='30'?'Mensuel 30 j':'Freelance 10 j'};
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify(p)}); const t=await readTxt(r);
+    if(t==='ok'){
+      try{ localStorage.setItem('pointage_booking', JSON.stringify({...p, contractN:$('contract').value})); }catch(e){}
+      const lab=SH[$('contract').value].find(x=>x[0]===choix)[1];
+      $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>📄 <span id="s2"></span><br>🗓️ <span id="s3"></span><br>🕐 <span id="s4"></span>';
+      $('sum').querySelector('b').textContent=p.name; $('s1').textContent=p.phone; $('s2').textContent=$('contract').value==='30'?'รายเดือน (30 วัน)':'ฟรีแลนซ์ (10 วัน)';
+      $('s3').textContent=dm(p.cycleStart)+' → '+dm(p.cycleEnd); $('s4').textContent=lab;
+      $('form').style.display='none'; $('done').style.display='block';
+    } else {
+      const q=t.split('|');
+      $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 ช่วงเวลานี้เต็มแล้ว — เลือกช่วงเวลาอื่น':q[1]==='meme'?'⛔ มีคนเริ่มวันเดียวกันแล้ว — เลือกวันหรือช่วงเวลาอื่น':q[1]==='roulement'?'🔄 ต้องเปลี่ยนช่วงเวลา':'⚠️ จองไม่ได้ — ลองใหม่';
+      $('msg').style.display='block'; b.textContent='📝 จองเลย'; charger();
+    }
+  }catch(e){ $('msg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; $('msg').style.display='block'; b.textContent='📝 จองเลย'; b.disabled=false; }
+}
+// ===== 🇹🇭 CONTRÔLE : téléphone thaï + 2 questions en thaï (les touristes ne peuvent pas réserver) =====
+const Q=[['สาม',['1','3','5','8'],1],['เจ็ด',['2','4','7','9'],2],['ห้า',['5','6','0','2'],0],['สีแดง',['🟢','🔵','🔴','🟡'],2],['สีเขียว',['🟢','🔴','🟡','🔵'],0],
+         ['สีเหลือง',['🔵','🟡','🔴','🟢'],1],['แมว',['🐶','🐘','🐟','🐱'],3],['ช้าง',['🐘','🐱','🐶','🐟'],0],['ปลา',['🐱','🐟','🐘','🐶'],1],['สุนัข',['🐟','🐱','🐶','🐘'],2]];
+const SIG=(()=>{ const l=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'']).join(',');
+  let tz=''; try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||''; }catch(e){}
+  const ua=navigator.userAgent, m=(ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build|\))/)||[])[1];
+  const model=/iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':m?('Android '+m):(/Android/.test(ua)?'Android':(/Windows|Macintosh/.test(ua)?'Ordinateur':'?'));
+  return {lang:l, tz, model, thai:/(^|,)th/i.test(l), bkk:/Asia\/(Bangkok|Vientiane|Phnom_Penh)/.test(tz)}; })();
+const SRC=new URLSearchParams(location.search).get('src')||'';
+function ctl(){ return (SIG.thai?'✅ ภาษาไทย':'⚠️ langue '+(SIG.lang||'?'))+' · '+(SIG.bkk?'heure BKK':'⚠️ '+(SIG.tz||'?'))+' · '+SIG.model+' · quiz ✅'; }
+function scan(res){ try{ fetch(API,{method:'POST',body:JSON.stringify({type:'scan',page:'booking',src:SRC,lang:SIG.lang,tz:SIG.tz,model:SIG.model,thai:SIG.thai,res})}).catch(()=>{}); }catch(e){} }
+const mel=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
+let qi=0, qs=[], rate=0;
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function jour(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function gateStart(){
+  if(lsGet('booking_stop')===jour()){ bloquer(); scan('⛔ déjà bloqué aujourd\'hui'); return; }
+  if(lsGet('booking_th')==='1'){ ouvrir(); scan('ouvert (déjà vérifié)'); return; }
+  scan('ouvert → questions en thaï');
+  qs=mel(Q).slice(0,2); qi=0; poser();
+}
+function poser(){
+  const q=qs[qi]; $('qn').textContent='คำถาม '+(qi+1)+'/2 — กดรูปที่ตรงกับคำนี้'; $('qw').textContent=q[0]; const C=$('qc'); C.innerHTML='';
+  q[1].forEach((t,i)=>{ const b=document.createElement('button'); b.textContent=t; b.onclick=()=>repondre(i); C.appendChild(b); });
+}
+function repondre(i){
+  if(i===qs[qi][2]){ qi++; if(qi<2) return poser(); lsSet('booking_th','1'); scan('✅ questions réussies'); ouvrir(); return; }
+  rate++;
+  if(rate>=2){ lsSet('booking_stop', jour()); scan('⛔ questions ratées → bloqué 24 h'); bloquer(); return; }
+  $('qmsg').textContent='❌ ไม่ถูกต้อง — ลองใหม่อีกครั้ง'; $('qmsg').style.display='block';
+  qs=mel(Q.filter(x=>qs.indexOf(x)<0)).slice(0,2); qi=0; poser();
+}
+function bloquer(){ $('gate').style.display='none'; $('form').style.display='none'; $('stop').style.display='block'; }
+function ouvrir(){ $('gate').style.display='none'; $('form').style.display='block'; }
+gateStart();
+// dates possibles : de demain à +60 jours
+(()=>{ const a=new Date(); a.setDate(a.getDate()+1); const z=new Date(); z.setDate(z.getDate()+60); $('start').min=iso(a); $('start').max=iso(z); })();
+['name','phone'].forEach(id=>$(id).addEventListener('input',check));
+$('start').addEventListener('change',charger); $('contract').addEventListener('change',charger);
+</script>
+</body>
+</html>
