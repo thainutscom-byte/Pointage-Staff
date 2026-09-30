@@ -33,6 +33,8 @@
   .loader .txt{margin-top:16px;font-size:1.15rem;font-weight:800;color:var(--text)}
   .loader .sous{margin-top:4px;font-size:.85rem;color:var(--muted)}
   @keyframes tourne{to{transform:rotate(360deg)}}
+  .adr{border:2px solid #1a73e8;background:#eff6ff;border-radius:14px;padding:12px;margin:12px 0;text-align:center}
+  .adrBtn{display:block;width:100%;text-align:center;color:#fff;text-decoration:none;font-weight:800;padding:12px;border-radius:12px;border:none;font-size:1rem;margin-top:8px}
   .opt{display:block;width:100%;text-align:left;border:3px solid var(--border);background:#fff;border-radius:16px;padding:14px;margin:0 0 10px;color:var(--text);font-size:1rem;line-height:1.45}
   .opt b{font-size:1.15rem}
   .opt.on{border-color:var(--green);background:#dcfce7}
@@ -74,7 +76,7 @@
     <div class="card">
       <label style="margin-top:0">เลือกแบบที่ต้องการ</label>
       <button class="opt on" id="optC" onclick="choisirMode('contrat')"><b>📄 สัญญาฟรีแลนซ์ 10 วัน</b><br>6 ชั่วโมง/วัน · 10,000 – 13,000 ฿<br><span class="small">เงินเดือนคงที่ + ค่าคอมมิชชั่น + ทิป (จ่ายทุกวัน)</span></button>
-      <button class="opt" id="optE" onclick="choisirMode('essai')"><b>🧪 ทดลองงาน 1 วัน</b><br>12:00 – 20:00 น. (8 ชั่วโมง) · รับประกัน 500 ฿<br><span class="small">ฝึกงานฟรีหากไม่มีประสบการณ์</span></button>
+      <button class="opt" id="optE" onclick="choisirMode('essai')"><b>🧪 ทดลองงาน 1 วัน</b><br>12:00 – 20:00 น. (8 ชั่วโมง)<br>💰 รับประกัน 500 ฿ หากไม่มีลูกค้า<br><span class="small">ฝึกงานฟรีหากไม่มีประสบการณ์</span></button>
     </div>
     <div class="card">
       <label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label>
@@ -91,7 +93,7 @@
     </div>
     <div class="card" id="essaiCard" style="display:none">
       <label style="margin-top:0">🧪 วันทดลองงาน</label>
-      <div style="font-size:1.1rem;font-weight:800">⏰ 12:00 – 20:00 น. · 💰 รับประกัน 500 ฿</div>
+      <div style="font-size:1.1rem;font-weight:800">⏰ 12:00 – 20:00 น. · 💰 รับประกัน 500 ฿ หากไม่มีลูกค้า</div>
       <div class="small" style="margin:8px 0 6px;font-weight:700;color:var(--text)">📅 เลือกวันทดลองงาน · 10 วันข้างหน้า (1 คน ต่อวัน)</div>
       <div id="essaiJours" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">⏳ …</div>
       <div id="essaiDispo" class="small" style="margin-top:8px"></div>
@@ -108,7 +110,14 @@
     <div class="ic">✅</div>
     <h2 style="margin:6px 0">จองเรียบร้อยแล้ว</h2>
     <div class="sum" id="sum"></div>
-    <div class="small">วันเริ่มงาน: เปิดแอปลงเวลา แล้วใช้ <b>ชื่อเล่นและเบอร์โทรเดิม</b> — ข้อมูลการจองจะถูกกรอกให้อัตโนมัติ</div>
+    <div class="adr">
+      <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px">📍 ที่อยู่ร้าน</div>
+      <div style="font-size:1.15rem;font-weight:800;margin-bottom:8px">129b Soi Buakhao</div>
+      <div class="small" style="text-align:left;margin-bottom:8px">🚕 มาด้วยแอป <b>Bolt</b>: ใส่ที่อยู่ปลายทาง “129b Soi Buakhao” · หรือกดเปิด Google Maps</div>
+      <button type="button" class="adrBtn" style="background:#34d186" onclick="copierAdr(this)">📋 คัดลอกที่อยู่ (สำหรับ Bolt)</button>
+      <a class="adrBtn" style="background:#1a73e8" href="https://maps.app.goo.gl/gEDqG6UgpVca4pGT6" target="_blank" rel="noopener">🗺️ เปิด Google Maps</a>
+    </div>
+    <div class="small" id="doneNote">วันเริ่มงาน: เปิดแอปลงเวลา แล้วใช้ <b>ชื่อเล่นและเบอร์โทรเดิม</b> — ข้อมูลการจองจะถูกกรอกให้อัตโนมัติ</div>
     <a class="btn" href="./">📱 เปิดแอปลงเวลา</a>
   </div>
 </div>
@@ -128,6 +137,8 @@ function telOk(){ return /^0\d{9}$/.test($('phone').value.replace(/\D/g,'')); }
 function fin(){ const s=$('start').value; if(!s) return ''; const d=new Date(s+'T00:00:00'); d.setDate(d.getDate()+(+$('contract').value)-1); return iso(d); }
 // ===== 2 OPTIONS : contrat 10 jours  /  🧪 jour d'essai (12:00-20:00, garantie 500 ฿) =====
 let MODE='contrat', essaiOk=false;
+function copierAdr(b){ const t='129b Soi Buakhao'; const ok=()=>{ b.textContent='✅ คัดลอกแล้ว — วางใน Bolt'; setTimeout(()=>b.textContent='📋 คัดลอกที่อยู่ (สำหรับ Bolt)',2500); };
+  try{ navigator.clipboard.writeText(t).then(ok,()=>{ prompt('คัดลอกที่อยู่:',t); }); }catch(e){ prompt('คัดลอกที่อยู่:',t); } }
 function choisirMode(m){
   MODE=m; $('optC').classList.toggle('on', m==='contrat'); $('optE').classList.toggle('on', m==='essai');
   document.querySelectorAll('.modeC').forEach(e=>e.style.display = m==='contrat' ? '' : 'none');
@@ -163,9 +174,9 @@ async function reserverEssai(){
   try{
     const t=await readTxt(await fetch(API,{method:'POST',body:JSON.stringify(p)}));
     if(t==='ok'){
-      $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>🧪 ทดลองงาน 1 วัน<br>🗓️ <span id="s3"></span><br>⏰ 12:00 – 20:00 น. · รับประกัน 500 ฿';
+      $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>🧪 ทดลองงาน 1 วัน<br>🗓️ <span id="s3"></span><br>⏰ 12:00 – 20:00 น. · รับประกัน 500 ฿ หากไม่มีลูกค้า';
       $('sum').querySelector('b').textContent=p.name; $('s1').textContent=p.phone; $('s3').textContent=dm(p.date);
-      document.querySelector('#done .small').textContent='กรุณามาถึงร้านก่อน 12:00 น. ในวันที่จอง — หัวหน้าจะติดต่อกลับทาง LINE / โทรศัพท์';
+      $('doneNote').textContent='กรุณามาถึงร้านก่อน 12:00 น. ในวันที่จอง — หัวหน้าจะติดต่อกลับทาง LINE / โทรศัพท์';
       const a=document.querySelector('#done a.btn'); if(a) a.style.display='none';
       $('form').style.display='none'; $('done').style.display='block';
     } else {
