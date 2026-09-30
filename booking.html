@@ -227,6 +227,7 @@ function jour(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)
 function gateStart(){
   if(lsGet('booking_stop')===jour()){ bloquer(); scan('⛔ déjà bloqué aujourd\'hui'); return; }
   if(lsGet('booking_th')==='1'){ ouvrir(); scan('ouvert (déjà vérifié)'); return; }
+  if(new URLSearchParams(location.search).get('mode')==='contrat' && /^0\d{9}$/.test(new URLSearchParams(location.search).get('t')||'')){ lsSet('booking_th','1'); ouvrir(); scan('🧪 après essai → contrat'); return; }
   scan('ouvert → questions en thaï');
   qs=mel(Q).slice(0,2); qi=0; poser();
 }
@@ -242,7 +243,11 @@ function repondre(i){
   qs=mel(Q.filter(x=>qs.indexOf(x)<0)).slice(0,2); qi=0; poser();
 }
 function bloquer(){ $('gate').style.display='none'; $('form').style.display='none'; $('stop').style.display='block'; }
-function ouvrir(){ $('gate').style.display='none'; $('form').style.display='block'; }
+function ouvrir(){ $('gate').style.display='none'; $('form').style.display='block'; preRemplir(); }
+// 🧪 → 📄 venue de la fin du jour d'essai : nom + téléphone déjà remplis, option contrat choisie
+function preRemplir(){ try{ const q=new URLSearchParams(location.search);
+  if(q.get('n') && !$('name').value) $('name').value=q.get('n'); if(q.get('t') && !$('phone').value) $('phone').value=q.get('t');
+  if(q.get('mode')==='essai') choisirMode('essai'); check(); }catch(e){} }
 gateStart();
 // dates possibles : de demain à +60 jours
 (()=>{ const a=new Date(); a.setDate(a.getDate()+1); const z=new Date(); z.setDate(z.getDate()+60); $('start').min=iso(a); $('start').max=iso(z); })();

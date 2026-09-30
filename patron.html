@@ -127,6 +127,7 @@ async function charger(){
     (j.resa||[]).forEach(x=>{ const d=document.createElement('div'); d.style.cssText='border-top:1px solid var(--border);padding:8px 0;font-size:.95rem;color:var(--text)';
       d.innerHTML='<b></b> <span class="small"></span><br><span></span>'; d.querySelector('b').textContent='🆕 '+x.nom;
       d.querySelector('.small').textContent=x.tel+' · reçu '+x.recu; d.querySelectorAll('span')[1].textContent='🕐 '+x.sh+' · 🗓️ '+x.deb+' → '+x.fin+' · '+x.contrat;
+      if(x.suite){ const c=document.createElement('div'); c.className='small'; c.style.cssText='text-align:left;font-weight:800;color:'+(/📄/.test(x.suite)?'var(--green)':'var(--muted)'); c.textContent='🧪 '+x.suite; d.appendChild(c); }
       if(x.th){ const c=document.createElement('div'); c.className='small'; c.style.cssText='text-align:left;font-weight:700;color:'+(/⚠️/.test(x.th)?'var(--red)':'var(--green)'); c.textContent='🇹🇭 '+x.th; d.appendChild(c); }
       R.appendChild(d); });
   }catch(e){ $('liste').textContent='⚠️ Pas de connexion — réessayez'; }

@@ -180,7 +180,14 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       <button class="mini" style="width:100%;margin-top:12px;background:var(--green);font-size:1.05rem;" id="eOk" onclick="eEnvoyer()">💾 ส่งข้อมูลให้หัวหน้า</button>
       <div id="eMsg" class="small" style="text-align:center;margin-top:8px;font-weight:700;"></div>
     </div>
-    <div style="text-align:center;margin-top:10px;"><a href="#" onclick="eQuitter();return false;" style="color:var(--muted);font-size:.85rem;">จบการทดลองงาน / ออก</a></div>
+    <button class="mini" style="width:100%;background:#d97706;font-size:1.05rem;" id="eFinBtn" onclick="eValiderFin()">✔ ยืนยันจบการทดลองงาน</button>
+    <div id="eSuite" class="card" style="display:none;text-align:center;margin-top:12px;border:3px solid var(--green);">
+      <div style="font-size:2rem;">🙏</div>
+      <div style="font-weight:800;font-size:1.15rem;margin:4px 0 12px;">ขอบคุณที่มาทดลองงาน!<br>ต้องการทำงานกับเราต่อไหม?</div>
+      <button class="mini" style="width:100%;background:var(--green);font-size:1.05rem;margin-bottom:8px;" onclick="eSuite('contrat')">📄 สนใจ — จองสัญญา 10 วัน</button>
+      <button class="mini" style="width:100%;background:#9ca3af;font-size:1.05rem;" onclick="eSuite('non')">❌ ไม่สนใจ ขอบคุณ</button>
+      <div id="eSuiteMsg" class="small" style="margin-top:8px;font-weight:700;"></div>
+    </div>
   </div>
 </div>
 <div id="bossBar" style="display:none;position:fixed;left:0;right:0;top:0;z-index:9999;background:#f59e0b;color:#111827;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;box-shadow:0 4px 12px rgba(0,0,0,.2);">
@@ -1670,6 +1677,21 @@ async function eEnvoyer(){
   try{ const t=await readTxt(await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(p)}));
     if(t==='ok'){ m.style.color='var(--green)'; m.textContent='✅ ส่งแล้ว '+fmtHM(new Date()); } else throw 0;
   }catch(x){ m.style.color='var(--red)'; m.textContent='❌ ส่งไม่ได้ — ลองใหม่'; }
+}
+async function eValiderFin(){
+  const e=eSave(); if(!/^0\d{9}$/.test(e.tel||'')){ const m=document.getElementById('eMsg'); m.style.color='var(--red)'; m.textContent='⚠️ กรอกเบอร์โทร 10 หลัก'; return; }
+  if(!e.fin){ e.fin=fmtHM(new Date()); try{ localStorage.setItem('pointage_essai', JSON.stringify(e)); }catch(x){} eBoutons(e); }
+  await eEnvoyer();
+  document.getElementById('eFinBtn').style.display='none'; document.getElementById('eSuite').style.display='block';
+  document.getElementById('eSuite').scrollIntoView({behavior:'smooth'});
+}
+async function eSuite(choix){
+  const e=essaiEtat()||{}, m=document.getElementById('eSuiteMsg'); m.style.color='var(--muted)'; m.textContent='⏳ …';
+  try{ await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'essaifin', tel:e.tel, nom:e.nom||'', date:e.date, suite:choix})}); }catch(x){}
+  try{ localStorage.removeItem('pointage_essai'); }catch(x){}
+  if(choix==='contrat'){ location.href='booking.html?mode=contrat&n='+encodeURIComponent(e.nom||'')+'&t='+encodeURIComponent(e.tel||''); return; }
+  m.style.color='var(--green)'; m.textContent='✅ ขอบคุณค่ะ — โชคดีนะคะ 🙏';
+  setTimeout(()=>{ location.href=location.pathname; }, 2500);
 }
 function eQuitter(){ if(!confirm('จบการทดลองงาน?')) return; eEnvoyer(); try{ localStorage.removeItem('pointage_essai'); }catch(x){} location.href=location.pathname; }
 
