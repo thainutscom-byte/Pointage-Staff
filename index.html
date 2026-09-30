@@ -280,6 +280,18 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <input type="hidden" id="penRate60a" value="500"><input type="hidden" id="penRate60b" value="2000">
   </div>
 
+  <div id="bossCard" class="card" style="display:none;border:2px solid #f59e0b;">
+    <div style="font-weight:800;font-size:1.1rem;margin-bottom:8px;">👑 Boss — mes massages aujourd'hui <span id="bossDate" class="small"></span></div>
+    <div class="grid4 yellow" style="grid-template-columns:1fr 1fr 1fr;">
+      <div><label>1 lady<br>600 ฿</label><input type="number" min="0" inputmode="numeric" id="bL1" value="0" oninput="bossTot(1)"></div>
+      <div><label>2 lady<br>800 ฿</label><input type="number" min="0" inputmode="numeric" id="bL2" value="0" oninput="bossTot(1)"></div>
+      <div><label>Happy Hour<br>600 ฿</label><input type="number" min="0" step="0.5" inputmode="decimal" id="bHH" value="0" oninput="bossTot(1)"></div>
+    </div>
+    <div id="bossCa" style="text-align:center;font-weight:800;margin:8px 0;">Total : 0 ฿</div>
+    <button class="mini" style="width:100%;background:var(--green);" id="bossOk" onclick="bossSend()">💾 Enregistrer mes massages</button>
+    <div id="bossMsg" class="small" style="text-align:center;margin-top:6px;"></div>
+    <div class="small" style="margin-top:6px;">Pas besoin de cycle ni de validation : 1 ligne par jour dans « Massages », comptée dans les totaux.</div>
+  </div>
   <div id="dayOnlyMsg" class="card small" style="display:none;text-align:center;font-weight:700;font-size:.95rem;"></div>
   <div id="days"></div>
 
@@ -547,7 +559,31 @@ function fmtHM(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getM
 // ===== SELFIE OBLIGATOIRE AU DÉBUT DU TRAVAIL =====
 function selfieKey(day){ return getKey()+'_selfie_'+day.dataset.d; }
 function nameIsEn(){ const v=(document.getElementById('name').value||'').trim(); return !!v && /^[A-Za-z][A-Za-z .'-]*$/.test(v); }
-function checkNameEn(){ const v=(document.getElementById('name').value||'').trim(), w=document.getElementById('nameWarn'); if(w) w.style.display = (v && !nameIsEn()) ? 'block' : 'none'; }
+// ===== 👑 BOSS : saisie directe des massages du jour (sans cycle) =====
+let bossLoaded='', bossTouched=false;
+function isBossName(){ return (document.getElementById('name').value||'').trim().toLowerCase()==='boss'; }
+function bossTot(t){ const v=id=>Math.max(0,+document.getElementById(id).value||0);
+  document.getElementById('bossCa').textContent='Total : '+(v('bL1')*600+v('bL2')*800+v('bHH')*600).toLocaleString('en-US')+' ฿';
+  if(t){ bossTouched=true; const m=document.getElementById('bossMsg'); m.style.color='#d97706'; m.textContent='⚠️ pas encore enregistré'; } }
+function bossCardUpdate(){
+  const c=document.getElementById('bossCard'); if(!c) return; const on=isBossName(); c.style.display=on?'block':'none'; if(!on) return;
+  const d=isoD(workToday()); document.getElementById('bossDate').textContent='('+fmtDate(workToday()).slice(0,5)+')';
+  if(bossLoaded===d) return; bossLoaded=d;
+  fetch(SHEET_URL+'?boss=1&pin=x&d='+d+'&_='+Date.now()).then(r=>r.text()).then(t=>{ const j=JSON.parse(t);
+    if(j.moi && !bossTouched){ document.getElementById('bL1').value=j.moi.l1||0; document.getElementById('bL2').value=j.moi.l2||0; document.getElementById('bHH').value=j.moi.hh||0; bossTot(0); } }).catch(()=>{ bossLoaded=''; });
+}
+async function bossSend(){
+  const b=document.getElementById('bossOk'), m=document.getElementById('bossMsg'); b.disabled=true; b.textContent='⏳ …';
+  try{
+    const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'bossday',date:isoD(workToday()),
+      l1:+document.getElementById('bL1').value||0,l2:+document.getElementById('bL2').value||0,hh:+document.getElementById('bHH').value||0})});
+    const j=JSON.parse(await r.text()); if(!j.ok) throw 0;
+    bossTouched=false; m.style.color='var(--green)'; m.textContent='✅ Enregistré dans Google ('+j.ca.toLocaleString('en-US')+' ฿)';
+  }catch(e){ m.style.color='var(--red)'; m.textContent='❌ Pas envoyé — vérifiez internet et réessayez'; }
+  b.disabled=false; b.textContent='💾 Enregistrer mes massages';
+}
+window.addEventListener('load',()=>setTimeout(bossCardUpdate,800)); setInterval(bossCardUpdate,60000);
+function checkNameEn(){ try{ bossCardUpdate(); }catch(e){} const v=(document.getElementById('name').value||'').trim(), w=document.getElementById('nameWarn'); if(w) w.style.display = (v && !nameIsEn()) ? 'block' : 'none'; }
 function startWork(btn){
   if(!nameIsEn()){ checkNameEn(); alert('⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z) ก่อนเริ่มงาน'); document.getElementById('name').focus(); return; }
   // ouvre directement la caméra frontale ; l'heure est enregistrée au moment de la photo
@@ -1524,9 +1560,22 @@ function accessOK(){
   }catch(e){}
   return sessionStorage && (function(){ try{ return sessionStorage.getItem('pointage_access_ok')==='1'; }catch(e){ return false; } })();
 }
+// ===== 📷 SCANS : ouverture de l'app sans code / par QR → onglet « 📷 Scans » (langue, fuseau, modèle) =====
+function appScan(res){
+  try{
+    const l=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'']).join(',');
+    let tz=''; try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||''; }catch(e){}
+    const ua=navigator.userAgent, m=(ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build|\))/)||[])[1];
+    const model=/iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':m?('Android '+m):(/Android/.test(ua)?'Android':(/Windows|Macintosh/.test(ua)?'Ordinateur':'?'));
+    fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'app',src:new URLSearchParams(location.search).get('src')||'',lang:l,tz,model,thai:/(^|,)th/i.test(l),res})}).catch(()=>{});
+  }catch(e){}
+}
+let accessFails=0;
 function checkAccess(){
   const v=(document.getElementById('accessCode').value||'').trim();
+  try{ if(localStorage.getItem('pointage_access_stop')===new Date().toDateString()){ document.getElementById('accessMsg').textContent='⛔ ลองใหม่พรุ่งนี้'; document.getElementById('accessCode').value=''; return; } }catch(e){}
   if(v===todayCode()){
+    appScan('✅ bon code → accès à l\'app');
     try{ localStorage.setItem('pointage_access_ok','1'); }catch(e){}
     try{ sessionStorage.setItem('pointage_access_ok','1'); }catch(e){}
     document.getElementById('accessGate').style.display='none';
@@ -1534,10 +1583,13 @@ function checkAccess(){
   } else {
     document.getElementById('accessMsg').textContent='❌ รหัสไม่ถูกต้อง';
     document.getElementById('accessCode').value='';
+    accessFails++; appScan('❌ mauvais code ('+accessFails+')');
+    if(accessFails>=5){ try{ localStorage.setItem('pointage_access_stop', new Date().toDateString()); }catch(e){} document.getElementById('accessMsg').textContent='⛔ ผิด 5 ครั้ง — ลองใหม่พรุ่งนี้'; }
   }
 }
 (function(){
-  if(accessOK()) return;
+  if(accessOK()){ if(new URLSearchParams(location.search).get('src')==='qr') appScan('ouvert par QR (déjà autorisé)'); return; }
+  appScan('ouvert → demande le code');
   document.getElementById('accessGate').style.display='block';
   document.body.style.overflow='hidden';
   const inp=document.getElementById('accessCode');

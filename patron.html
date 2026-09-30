@@ -32,6 +32,12 @@
   #msg{margin-top:10px;font-weight:700;text-align:center;min-height:20px}
   a.sms{display:block;text-align:center;margin-top:10px;background:var(--green);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px}
   .small{font-size:.8rem;color:var(--muted);text-align:center}
+  .moi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .moi>div{border:2px solid #fde68a;background:#fefce8;border-radius:12px;padding:8px 2px;text-align:center;min-width:0}
+  .moi label{display:block;font-size:.8rem;font-weight:700;margin-bottom:4px}
+  .moi .st{display:flex;align-items:center;justify-content:center;gap:2px}
+  .moi .st button{flex:0 0 30px;width:30px;height:34px;padding:0;border-radius:10px;border:none;background:#e5e7eb;font-size:1.2rem;font-weight:800;color:var(--text)}
+  .moi input{width:36px;min-width:0;font-size:1.25rem;letter-spacing:0;padding:4px 0;border:none;background:transparent;font-weight:800}
 </style>
 </head>
 <body>
@@ -47,6 +53,17 @@
   </div>
 
   <div id="main" style="display:none">
+    <div class="card">
+      <h2>👑 Mes massages aujourd'hui <span id="moiDate" style="font-weight:normal;color:var(--muted);font-size:.8rem"></span></h2>
+      <div class="moi">
+        <div><label>1 lady<br>600 ฿</label><div class="st"><button onclick="pm('l1',-1)">−</button><input id="l1" type="number" min="0" inputmode="numeric" value="0" oninput="moiCa()"><button onclick="pm('l1',1)">+</button></div></div>
+        <div><label>2 lady<br>800 ฿</label><div class="st"><button onclick="pm('l2',-1)">−</button><input id="l2" type="number" min="0" inputmode="numeric" value="0" oninput="moiCa()"><button onclick="pm('l2',1)">+</button></div></div>
+        <div><label>Happy Hour<br>600 ฿</label><div class="st"><button onclick="pm('hh',-1)">−</button><input id="hh" type="number" min="0" step="0.5" inputmode="decimal" value="0" oninput="moiCa()"><button onclick="pm('hh',1)">+</button></div></div>
+      </div>
+      <div id="moiCa" style="text-align:center;font-weight:800;margin:10px 0 8px">Total : 0 ฿</div>
+      <button class="big green" id="moiOk" onclick="moiEnvoyer()">💾 Enregistrer mes massages</button>
+      <div id="moiMsg" class="small" style="margin-top:6px"></div>
+    </div>
     <div class="card">
       <h2>1️⃣ Employée <span style="font-weight:normal;color:var(--green);font-size:.8rem">● en service aujourd'hui</span></h2>
       <div id="liste">Chargement…</div>
@@ -82,14 +99,17 @@ function start(){ if(!getPin()){ $('pinBox').style.display='block'; $('main').st
 async function charger(){
   $('liste').textContent='Chargement…';
   try{
-    const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&_='+Date.now()); const j=JSON.parse(await readTxt(r));
+    const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); const j=JSON.parse(await readTxt(r));
     if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
     emps=j.emps||[]; sel=null; draw();
+    if(j.moi && !moiTouche){ ['l1','l2','hh'].forEach(k=>$(k).value=j.moi[k]||0); moiAff(); }
     const R=$('resa'); R.innerHTML='';
     if(!(j.resa||[]).length) R.textContent='Aucune réservation pour le moment.';
     (j.resa||[]).forEach(x=>{ const d=document.createElement('div'); d.style.cssText='border-top:1px solid var(--border);padding:8px 0;font-size:.95rem;color:var(--text)';
       d.innerHTML='<b></b> <span class="small"></span><br><span></span>'; d.querySelector('b').textContent='🆕 '+x.nom;
-      d.querySelector('.small').textContent=x.tel+' · reçu '+x.recu; d.querySelectorAll('span')[1].textContent='🕐 '+x.sh+' · 🗓️ '+x.deb+' → '+x.fin+' · '+x.contrat; R.appendChild(d); });
+      d.querySelector('.small').textContent=x.tel+' · reçu '+x.recu; d.querySelectorAll('span')[1].textContent='🕐 '+x.sh+' · 🗓️ '+x.deb+' → '+x.fin+' · '+x.contrat;
+      if(x.th){ const c=document.createElement('div'); c.className='small'; c.style.cssText='text-align:left;font-weight:700;color:'+(/⚠️/.test(x.th)?'var(--red)':'var(--green)'); c.textContent='🇹🇭 '+x.th; d.appendChild(c); }
+      R.appendChild(d); });
   }catch(e){ $('liste').textContent='⚠️ Pas de connexion — réessayez'; }
 }
 function draw(){
@@ -132,6 +152,21 @@ async function places(){
     P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
   }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
 }
+// ===== 👑 MES MASSAGES (Boss) : 1 ligne par jour dans « Massages », comptée dans les totaux =====
+let moiTouche=false;
+function pm(k,d){ const el=$(k); el.value=Math.max(0,(+el.value||0)+d); moiCa(); }
+function moiAff(){ const v=k=>Math.max(0,+$(k).value||0); $('moiCa').textContent='Total : '+(v('l1')*600+v('l2')*800+v('hh')*600).toLocaleString('en-US')+' ฿'; }
+function moiCa(){ moiTouche=true; moiAff(); $('moiMsg').textContent='⚠️ pas encore enregistré'; $('moiMsg').style.color='#d97706'; }
+async function moiEnvoyer(){
+  const b=$('moiOk'); b.disabled=true; b.textContent='⏳ …';
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify({type:'bossday',date:isoJ(0),l1:+$('l1').value||0,l2:+$('l2').value||0,hh:+$('hh').value||0})});
+    const j=JSON.parse(await readTxt(r)); if(!j.ok) throw 0;
+    moiTouche=false; $('moiMsg').style.color='var(--green)'; $('moiMsg').textContent='✅ Enregistré dans Google ('+j.ca.toLocaleString('en-US')+' ฿)';
+  }catch(e){ $('moiMsg').style.color='var(--red)'; $('moiMsg').textContent='❌ Pas envoyé — vérifiez internet et réessayez'; }
+  b.disabled=false; b.textContent='💾 Enregistrer mes massages';
+}
+(()=>{ const p=isoJ(0).split('-'); $('moiDate').textContent='('+p[2]+'/'+p[1]+')'; })();
 start(); places();
 </script>
 </body>

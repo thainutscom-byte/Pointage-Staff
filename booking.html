@@ -28,6 +28,9 @@
   .sum{background:#f3f4f6;border-radius:12px;padding:12px;text-align:left;line-height:1.7;margin:10px 0}
   a.btn{display:block;text-align:center;background:var(--blue);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px;margin-top:10px}
   .small{font-size:.8rem;color:var(--muted)}
+  .qw{font-size:2.6rem;font-weight:800;text-align:center;margin:10px 0 14px}
+  .qc{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .qc button{font-size:2.2rem;padding:14px 0;border-radius:14px;border:2px solid var(--border);background:#fff;color:var(--text)}
 </style>
 </head>
 <body>
@@ -35,7 +38,17 @@
   <h1>📝 จองวันเริ่มงาน</h1>
   <p class="sub">เลือกวันเริ่มงานและช่วงเวลาล่วงหน้า · หัวหน้าจะได้รับแจ้งทันที</p>
 
-  <div id="form">
+  <div id="gate" class="card" style="text-align:center">
+    <div style="font-size:2.4rem">🇹🇭</div>
+    <h2 style="margin:6px 0 2px;font-size:1.15rem">ยืนยันว่าคุณอ่านภาษาไทยได้</h2>
+    <div class="small" id="qn">คำถาม 1/2 — กดรูปที่ตรงกับคำนี้</div>
+    <div class="qw" id="qw"></div>
+    <div class="qc" id="qc"></div>
+    <div class="warn" id="qmsg" style="text-align:center;margin-top:10px"></div>
+  </div>
+  <div id="stop" class="card ok" style="display:none"><div class="ic">⛔</div><h2 style="margin:6px 0">ไม่สามารถจองได้</h2><div class="small">This page is for Thai staff only.</div></div>
+
+  <div id="form" style="display:none">
     <div class="card">
       <label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label>
       <input id="name" placeholder="เช่น Noi, Ploy, Mint" autocomplete="off" autocapitalize="words">
@@ -110,7 +123,7 @@ function draw(){
 async function reserver(){
   if($('go').disabled) return;
   const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
-  const p={type:'cycle', booking:true, name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), sh:choix,
+  const p={type:'cycle', booking:true, th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), sh:choix,
            cycleStart:$('start').value, cycleEnd:fin(), contract:$('contract').value==='30'?'Mensuel 30 j':'Freelance 10 j'};
   try{
     const r=await fetch(API,{method:'POST',body:JSON.stringify(p)}); const t=await readTxt(r);
@@ -123,11 +136,47 @@ async function reserver(){
       $('form').style.display='none'; $('done').style.display='block';
     } else {
       const q=t.split('|');
-      $('msg').textContent = q[1]==='plein'?'🔴 ช่วงเวลานี้เต็มแล้ว — เลือกช่วงเวลาอื่น':q[1]==='meme'?'⛔ มีคนเริ่มวันเดียวกันแล้ว — เลือกวันหรือช่วงเวลาอื่น':q[1]==='roulement'?'🔄 ต้องเปลี่ยนช่วงเวลา':'⚠️ จองไม่ได้ — ลองใหม่';
+      $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 ช่วงเวลานี้เต็มแล้ว — เลือกช่วงเวลาอื่น':q[1]==='meme'?'⛔ มีคนเริ่มวันเดียวกันแล้ว — เลือกวันหรือช่วงเวลาอื่น':q[1]==='roulement'?'🔄 ต้องเปลี่ยนช่วงเวลา':'⚠️ จองไม่ได้ — ลองใหม่';
       $('msg').style.display='block'; b.textContent='📝 จองเลย'; charger();
     }
   }catch(e){ $('msg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; $('msg').style.display='block'; b.textContent='📝 จองเลย'; b.disabled=false; }
 }
+// ===== 🇹🇭 CONTRÔLE : téléphone thaï + 2 questions en thaï (les touristes ne peuvent pas réserver) =====
+const Q=[['สาม',['1','3','5','8'],1],['เจ็ด',['2','4','7','9'],2],['ห้า',['5','6','0','2'],0],['สีแดง',['🟢','🔵','🔴','🟡'],2],['สีเขียว',['🟢','🔴','🟡','🔵'],0],
+         ['สีเหลือง',['🔵','🟡','🔴','🟢'],1],['แมว',['🐶','🐘','🐟','🐱'],3],['ช้าง',['🐘','🐱','🐶','🐟'],0],['ปลา',['🐱','🐟','🐘','🐶'],1],['สุนัข',['🐟','🐱','🐶','🐘'],2]];
+const SIG=(()=>{ const l=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'']).join(',');
+  let tz=''; try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||''; }catch(e){}
+  const ua=navigator.userAgent, m=(ua.match(/Android[^;)]*;\s*([^;)]+?)(?:\s+Build|\))/)||[])[1];
+  const model=/iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':m?('Android '+m):(/Android/.test(ua)?'Android':(/Windows|Macintosh/.test(ua)?'Ordinateur':'?'));
+  return {lang:l, tz, model, thai:/(^|,)th/i.test(l), bkk:/Asia\/(Bangkok|Vientiane|Phnom_Penh)/.test(tz)}; })();
+const SRC=new URLSearchParams(location.search).get('src')||'';
+function ctl(){ return (SIG.thai?'✅ ภาษาไทย':'⚠️ langue '+(SIG.lang||'?'))+' · '+(SIG.bkk?'heure BKK':'⚠️ '+(SIG.tz||'?'))+' · '+SIG.model+' · quiz ✅'; }
+function scan(res){ try{ fetch(API,{method:'POST',body:JSON.stringify({type:'scan',page:'booking',src:SRC,lang:SIG.lang,tz:SIG.tz,model:SIG.model,thai:SIG.thai,res})}).catch(()=>{}); }catch(e){} }
+const mel=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
+let qi=0, qs=[], rate=0;
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function jour(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function gateStart(){
+  if(lsGet('booking_stop')===jour()){ bloquer(); scan('⛔ déjà bloqué aujourd\'hui'); return; }
+  if(lsGet('booking_th')==='1'){ ouvrir(); scan('ouvert (déjà vérifié)'); return; }
+  scan('ouvert → questions en thaï');
+  qs=mel(Q).slice(0,2); qi=0; poser();
+}
+function poser(){
+  const q=qs[qi]; $('qn').textContent='คำถาม '+(qi+1)+'/2 — กดรูปที่ตรงกับคำนี้'; $('qw').textContent=q[0]; const C=$('qc'); C.innerHTML='';
+  q[1].forEach((t,i)=>{ const b=document.createElement('button'); b.textContent=t; b.onclick=()=>repondre(i); C.appendChild(b); });
+}
+function repondre(i){
+  if(i===qs[qi][2]){ qi++; if(qi<2) return poser(); lsSet('booking_th','1'); scan('✅ questions réussies'); ouvrir(); return; }
+  rate++;
+  if(rate>=2){ lsSet('booking_stop', jour()); scan('⛔ questions ratées → bloqué 24 h'); bloquer(); return; }
+  $('qmsg').textContent='❌ ไม่ถูกต้อง — ลองใหม่อีกครั้ง'; $('qmsg').style.display='block';
+  qs=mel(Q.filter(x=>qs.indexOf(x)<0)).slice(0,2); qi=0; poser();
+}
+function bloquer(){ $('gate').style.display='none'; $('form').style.display='none'; $('stop').style.display='block'; }
+function ouvrir(){ $('gate').style.display='none'; $('form').style.display='block'; }
+gateStart();
 // dates possibles : de demain à +60 jours
 (()=>{ const a=new Date(); a.setDate(a.getDate()+1); const z=new Date(); z.setDate(z.getDate()+60); $('start').min=iso(a); $('start').max=iso(z); })();
 ['name','phone'].forEach(id=>$(id).addEventListener('input',check));
