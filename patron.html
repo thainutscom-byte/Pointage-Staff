@@ -120,6 +120,13 @@
       <div id="horMsg" class="small" style="margin-top:6px"></div>
     </div>
     <div class="card" style="margin-top:14px">
+      <h2>🚪 Démission — bloquer une employée</h2>
+      <select id="demEmp" onchange="demDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
+      <div id="demInfo" class="small" style="text-align:left;margin:8px 0"></div>
+      <button class="big" id="demOk" disabled onclick="demValider()">🚫 Bloquer (démission)</button>
+      <div id="demMsg" class="small" style="margin-top:6px"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
       <h2>📝 Réservations reçues</h2>
       <div id="resa" class="small">Chargement…</div>
     </div>
@@ -145,7 +152,7 @@ async function charger(){
   try{
     const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); const j=JSON.parse(await readTxt(r));
     if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
-    emps=j.emps||[]; sel=null; draw();
+    emps=j.emps||[]; sel=null; draw(); demListe();
     HOR=j.hor||{}; horListe(); ARR=j.arr||{}; arrListe();
     JOURS[isoJ(0)]=j.jour||{}; corListe();
     const R=$('resa'); R.innerHTML='';
@@ -328,6 +335,32 @@ async function horValider(){
     HOR[k]={...HOR[k],sh:j.sh,impose:true}; horListe(); places();
   }catch(e){ $('horMsg').style.color='var(--red)'; $('horMsg').textContent=e==='contrat'?'❌ Pas de contrat en cours pour cette employée':e==='meme'?'⛔ Refusé : une autre employée commence le même jour sur cet horaire':'❌ Pas envoyé — réessayez'; }
   b.textContent='✔ Changer l\'horaire';
+}
+// ===== 🚪 DÉMISSION : bloquer l'employée (téléphone + réservations) ou la réintégrer =====
+function demListe(){
+  const S=$('demEmp'), v=S.value; S.innerHTML='<option value="">— choisir l\'employée —</option>';
+  emps.forEach(e=>{ const o=document.createElement('option'); o.value=e.label; o.textContent=e.nom+(e.demission?' · 🚪 démission':e.bloque?' · 🚫 bloquée':''); S.appendChild(o); });
+  S.value=emps.some(e=>e.label===v)?v:''; demDraw();
+}
+function demDraw(){
+  const k=$('demEmp').value, e=emps.find(x=>x.label===k), b=$('demOk'); $('demMsg').textContent='';
+  if(!e){ $('demInfo').textContent=''; b.className='big'; b.disabled=true; b.textContent='🚫 Bloquer (démission)'; return; }
+  if(e.demission){ $('demInfo').textContent='🚪 Démission enregistrée : son téléphone est bloqué, elle ne peut plus réserver, et le code du jour ne la débloque pas.'; b.className='big green'; b.textContent='↩️ Réintégrer : '+e.nom; b.disabled=false; return; }
+  $('demInfo').textContent = e.bloque ? '🚫 Déjà bloquée (blocage automatique ou manuel). En la passant en « démission », le code du jour ne pourra plus la débloquer.' : 'Son téléphone sera bloqué et sa place se libère dans le planning. Ses journées déjà saisies et sa paie restent inchangées.';
+  b.className='big'; b.textContent='🚫 Bloquer : '+e.nom+' (démission)'; b.disabled=false;
+}
+async function demValider(){
+  const k=$('demEmp').value, e=emps.find(x=>x.label===k); if(!e) return;
+  const re=!!e.demission;
+  if(!confirm(re ? '↩️ Réintégrer '+e.nom+' ?' : '🚫 Bloquer '+e.nom+' suite à sa démission ?')) return;
+  const b=$('demOk'); b.disabled=true; b.textContent='⏳ …';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'bossdemission',label:k,action:re?'reintegrer':'bloquer'})})));
+    if(!j.ok) throw j.err||'x';
+    e.demission=!re; e.bloque=!re;
+    $('demMsg').style.color='var(--green)'; $('demMsg').textContent=re?'✅ '+e.nom+' est réintégrée':'✅ '+e.nom+' est bloquée';
+    draw(); const S=$('demEmp'), keep=S.value; demListe(); S.value=keep; demDraw(); $('demMsg').style.color='var(--green)'; $('demMsg').textContent=re?'✅ '+e.nom+' est réintégrée':'✅ '+e.nom+' est bloquée'; places();
+  }catch(x){ $('demMsg').style.color='var(--red)'; $('demMsg').textContent=x==='test'?'❌ Compte de test : impossible':x==='inconnue'?'❌ Employée introuvable':'❌ Pas envoyé — réessayez'; b.disabled=false; demDraw(); }
 }
 start(); places();
 </script>

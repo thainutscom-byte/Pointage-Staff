@@ -199,7 +199,7 @@ async function reserverEssai(){
       const a=document.querySelector('#done a.btn'); if(a) a.style.display='none';
       $('form').style.display='none'; $('done').style.display='block';
     } else {
-      const q=t.split('|'); $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 วันนี้มีคนจองแล้ว — เลือกวันอื่น':q[1]==='age'?'⚠️ ขออภัย ขณะนี้ไม่สามารถรับสมัครได้':q[1]==='line'?'⚠️ LINE ID ไม่ถูกต้อง':'⚠️ จองไม่ได้ — ลองใหม่';
+      const q=t.split('|'); $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 วันนี้มีคนจองแล้ว — เลือกวันอื่น':q[1]==='age'?'⚠️ ขออภัย ขณะนี้ไม่สามารถรับสมัครได้':q[1]==='line'?'⚠️ LINE ID ไม่ถูกต้อง':q[1]==='bloque'?'⚠️ ขออภัย ขณะนี้ไม่สามารถจองได้':'⚠️ จองไม่ได้ — ลองใหม่';
       $('msg').style.display='block'; b.textContent='🧪 จองวันทดลองงาน'; chargerEssai();
     }
   }catch(e){ $('msg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; $('msg').style.display='block'; b.textContent='🧪 จองวันทดลองงาน'; b.disabled=false; }
@@ -259,7 +259,7 @@ async function reserver(){
       $('form').style.display='none'; $('done').style.display='block';
     } else {
       const q=t.split('|');
-      $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 ช่วงเวลานี้เต็มแล้ว — เลือกช่วงเวลาอื่น':q[1]==='meme'?'⛔ มีคนเริ่มวันเดียวกันแล้ว — เลือกวันหรือช่วงเวลาอื่น':q[1]==='roulement'?'🔄 ต้องเปลี่ยนช่วงเวลา':'⚠️ จองไม่ได้ — ลองใหม่';
+      $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 ช่วงเวลานี้เต็มแล้ว — เลือกช่วงเวลาอื่น':q[1]==='meme'?'⛔ มีคนเริ่มวันเดียวกันแล้ว — เลือกวันหรือช่วงเวลาอื่น':q[1]==='roulement'?'🔄 ต้องเปลี่ยนช่วงเวลา':q[1]==='bloque'?'⚠️ ขออภัย ขณะนี้ไม่สามารถจองได้':'⚠️ จองไม่ได้ — ลองใหม่';
       $('msg').style.display='block'; b.textContent='📝 จองเลย'; charger();
     }
   }catch(e){ $('msg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; $('msg').style.display='block'; b.textContent='📝 จองเลย'; b.disabled=false; }
