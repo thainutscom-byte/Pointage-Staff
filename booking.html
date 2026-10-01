@@ -135,8 +135,8 @@
     <div class="sum" id="sum"></div>
     <div id="photoBox" class="adr" style="display:none;border-color:#06c755;background:#f0fdf4">
       <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px">📷 ขั้นตอนสุดท้าย</div>
-      <div style="text-align:left;line-height:1.6;font-size:.95rem">กรุณาส่ง <b>รูปถ่ายเต็มตัว</b> (เห็นตั้งแต่หัวถึงเท้า) ให้หัวหน้าทาง LINE <b>ก่อนวันทดลองงาน</b><br>และนำ <b>บัตรประชาชน</b> มาด้วยในวันทดลองงาน</div>
-      <a id="lineBtn" class="adrBtn" style="background:#06c755;display:none" target="_blank" rel="noopener">💬 ส่งรูปทาง LINE</a>
+      <div style="text-align:left;line-height:1.6;font-size:.95rem">กรุณาส่ง <b>รูปถ่ายเต็มตัว</b> (เห็นตั้งแต่หัวถึงเท้า) ให้หัวหน้าทาง LINE <b>ก่อนวันมาทำงาน</b><br>และนำ <b>บัตรประชาชน</b> มาด้วยในวันแรกที่มาทำงาน</div>
+      <a id="lineBtn" class="adrBtn" style="background:#06c755;display:none" target="_blank" rel="noopener">💬 เข้ากลุ่ม LINE · ส่งรูป</a>
     </div>
     <div class="adr">
       <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px">📍 ที่อยู่ร้าน</div>
@@ -155,7 +155,7 @@ const SH={ '10':[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],[
            '30':[['09:00-17:00','09:00-17:00 น.'],['17:00-01:00','17:00-01:00 น.']] };
 // ⚙️ RÉGLAGES JOUR D'ESSAI (à modifier ici ET dans le script Google : AGE_MIN_ESSAI / AGE_MAX_ESSAI)
 const AGE_MIN=18, AGE_MAX=35;
-const LINE_OA='https://line.me/R/ti/g/xHDT335wSe';   // lien LINE où la personne envoie sa photo (vide = bouton masqué)
+const LINE_OA='https://line.me/R/ti/g/xHDT335wSe';   // 💬 groupe LINE après la réservation (contrat ET essai)   // lien LINE où la personne envoie sa photo (vide = bouton masqué)
 let choix='', res={};
 const $=id=>document.getElementById(id);
 // ⏳ gros rond de chargement au centre (Google met quelques secondes à répondre)
@@ -295,7 +295,7 @@ async function reserver(){
       $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>📄 <span id="s2"></span><br>🗓️ <span id="s3"></span><br>🕐 <span id="s4"></span>';
       $('sum').querySelector('b').textContent=p.name; $('s1').textContent=p.phone; $('s2').textContent=$('contract').value==='30'?'รายเดือน (30 วัน)':'ฟรีแลนซ์ (10 วัน)';
       $('s3').textContent=dm(p.cycleStart)+' → '+dm(p.cycleEnd); $('s4').textContent=lab;
-      $('form').style.display='none'; $('done').style.display='block';
+      $('form').style.display='none'; $('done').style.display='block'; $('photoBox').style.display='block'; if(LINE_OA){ const lb=$('lineBtn'); lb.href=LINE_OA; lb.style.display='block'; }
     } else {
       const q=t.split('|');
       $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 ช่วงเวลานี้เต็มแล้ว — เลือกช่วงเวลาอื่น':q[1]==='meme'?'⛔ มีคนเริ่มวันเดียวกันแล้ว — เลือกวันหรือช่วงเวลาอื่น':q[1]==='roulement'?'🔄 ต้องเปลี่ยนช่วงเวลา':q[1]==='bloque'?'⚠️ ขออภัย ขณะนี้ไม่สามารถจองได้':'⚠️ จองไม่ได้ — ลองใหม่';
