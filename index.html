@@ -314,6 +314,11 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     </div>
 
     <div class="field"><label>วันที่เริ่มรอบ</label><input id="startDate" type="date"></div>
+    <div id="startPickBox" style="display:none;background:#dbeafe;border:2px solid #2563eb;border-radius:12px;padding:12px;margin-bottom:12px;">
+      <div style="font-weight:800;margin-bottom:6px;">📅 เลือกวันทำงานวันแรก</div>
+      <select id="startPick" style="width:100%;font-size:1.05rem;padding:10px;border-radius:10px;"></select>
+      <button type="button" onclick="startPickOk()" style="width:100%;margin-top:8px;border:none;border-radius:10px;padding:13px;font-size:1.05rem;font-weight:800;background:#16a34a;color:#fff;">✅ ยืนยันวันเริ่มงาน</button>
+    </div>
     <div class="row2">
       <div class="field"><label>วันที่สิ้นสุดรอบ</label><input id="endDate" type="text" disabled></div>
       <div class="field"><label>วันที่จ่ายเงิน</label><input id="payDate" type="text" disabled></div>
@@ -1975,6 +1980,29 @@ function payeConfirmer(){
   calc(); saveState(); payeAff(); alert('✅ ชำระแล้ว — ขอบคุณ');
 }
 setInterval(payeAff, 5000); setTimeout(payeAff, 2500);
+
+// 📅 NOUVELLE EMPLOYÉE : 1er jour de travail choisi dans un menu (aujourd'hui proposé par défaut) puis validé
+function startPickMaj(){
+  try{
+    const sd=document.getElementById('startDate'), B=document.getElementById('startPickBox'), f=sd.closest('.field');
+    const montrer = !sd.value && !window.__BOSS && !window.__essai;
+    B.style.display = montrer ? 'block' : 'none'; f.style.display = montrer ? 'none' : '';
+    const S=document.getElementById('startPick');
+    if(montrer && !S.options.length){
+      const t=workToday();
+      for(let i=0;i<14;i++){ const d=addDays(t,i); const o=document.createElement('option'); o.value=isoD(d);
+        o.textContent=(i===0?'วันนี้ — ':i===1?'พรุ่งนี้ — ':'')+TH_DAYS[d.getDay()]+' '+fmtDate(d); S.appendChild(o); }
+      S.value=isoD(t);
+    }
+  }catch(e){}
+}
+function startPickOk(){
+  const v=document.getElementById('startPick').value; if(!v) return;
+  const sd=document.getElementById('startDate'); sd.value=v; sd.dispatchEvent(new Event('change'));
+  try{ updateDates(); calc(); saveState(); }catch(e){}
+  startPickMaj();
+}
+setInterval(startPickMaj, 1500); setTimeout(startPickMaj, 300);
 setInterval(plVerifier, 1000); setTimeout(plVerifier, 1200);
 
 // ===== 📋 RÈGLEMENT : lecture chapitre par chapitre, texte non sélectionnable / non copiable,
