@@ -45,6 +45,9 @@
   .paie td{border:1px solid #d1fae5;padding:6px 4px;text-align:center}
   .paie td.nom{text-align:left;font-weight:700}
   .paie tr.tot td{background:#fef3c7;font-weight:800}
+  .refus{display:block;width:100%;margin-top:10px;border:2px solid var(--red);background:#fff;color:var(--red);border-radius:12px;padding:11px;font-size:.95rem;font-weight:800;text-align:center;text-decoration:none}
+  .refus:disabled{opacity:.6}
+  .okrefus{margin-top:10px;font-weight:800;color:var(--green);text-align:left}
 </style>
 </head>
 <body>
@@ -77,6 +80,27 @@ function isoJ(o){ const d=new Date(Date.now()-6*3600e3); d.setDate(d.getDate()+(
 async function chargerBoss(){ const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); return JSON.parse(await readTxt(r)); }
 function fmtTel(t){ const d=String(t||'').replace(/\D/g,''); return d.length===10 ? d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6) : (t||''); }
 function ligne(txt,css){ const c=document.createElement('div'); c.style.cssText='margin-top:4px;text-align:left;'+(css||''); c.textContent=txt; return c; }
+// ❌ Profil non retenu : annule l'essai (la place du planning se libère) puis propose le SMS à envoyer (texte modifiable ici)
+const MSG_REFUS='ขอบคุณที่สนใจสมัครทดลองงานกับเรา ขออภัยด้วย ทางเราพิจารณาโปรไฟล์ของคุณแล้วพบว่ายังไม่ตรงกับที่เรากำลังมองหา จึงขอยกเลิกคำขอทดลองงานของคุณ ขอบคุณมาก';
+function smsRefus(num){ return 'sms:'+num+(/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?')+'body='+encodeURIComponent(MSG_REFUS); }
+function boutonRefus(x,num,d){
+  const zone=document.createElement('div'); const b=document.createElement('button'); b.className='refus'; b.textContent='❌ Profil non retenu · annuler l\'essai'; zone.appendChild(b);
+  b.onclick=async()=>{
+    if(!confirm('Annuler l\'essai de '+x.nom+' ('+x.deb+') et libérer la place ?')) return;
+    b.disabled=true; b.textContent='⏳ …';
+    try{
+      const j=JSON.parse(await readTxt(await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&annuleessai=1&cle='+encodeURIComponent(x.cle||'')+'&deb='+encodeURIComponent(x.deb)+'&_='+Date.now())));
+      if(j.err==='inconnue'){ zone.innerHTML=''; zone.appendChild(ligne('ℹ️ Déjà annulée ou introuvable — touchez « Actualiser ».','color:var(--muted);font-weight:700')); return; }
+      if(j.err==='pas_essai'){ zone.innerHTML=''; zone.appendChild(ligne('⛔ Ce n\'est pas un jour d\'essai : rien annulé.','color:var(--red);font-weight:700')); return; }
+      if(!j.ok) throw 0;
+      zone.innerHTML=''; d.style.opacity='.75';
+      const m=ligne('✅ Essai annulé · la place est libérée dans le planning','font-weight:800;color:var(--green)'); zone.appendChild(m);
+      if(num){ const a=document.createElement('a'); a.className='sms'; a.href=smsRefus(num); a.textContent='📱 Envoyer le SMS de refus à '+x.nom.split(' ')[0]; zone.appendChild(a); }
+      places();
+    }catch(e){ b.disabled=false; b.textContent='❌ Profil non retenu · annuler l\'essai'; zone.appendChild(ligne('❌ Pas envoyé — réessayez (script Google à jour ?)','color:var(--red);font-weight:700')); }
+  };
+  return zone;
+}
 async function charger(){
   const R=$('resa');
   try{
@@ -98,6 +122,7 @@ async function charger(){
       d.appendChild(ligne('🕐 '+x.sh+' · 🗓️ '+x.deb+' → '+x.fin+' · '+x.contrat));
       if(x.suite) d.appendChild(ligne('🧪 '+x.suite,'font-weight:800;color:'+(/📄/.test(x.suite)?'var(--green)':'var(--muted)')));
       if(x.th) d.appendChild(ligne('🇹🇭 '+x.th,'font-weight:700;color:'+(/⚠️/.test(x.th)?'var(--red)':'var(--green)')));
+      if(/^🧪/.test(x.contrat||'')) d.appendChild(boutonRefus(x,num,d));
       R.appendChild(d); });
   }catch(e){ R.textContent='⚠️ Pas de connexion — réessayez'; }
 }
