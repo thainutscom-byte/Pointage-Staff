@@ -1956,7 +1956,7 @@ function reglesDessiner(){
   [...document.getElementById('rgMenu').children].forEach(b=>{ const on=+b.dataset.k===rgI; b.style.background=on?'var(--blue)':'#fff'; b.style.color=on?'#fff':'var(--text)'; b.style.opacity=(rgOblig && +b.dataset.k>rgVu)?.35:1; });
 }
 function reglesAller(d){ if(rgI===REGLES.length-1 && d>0){ reglesFermer(); return; } rgI=Math.max(0,Math.min(REGLES.length-1,rgI+d)); reglesDessiner(); }
-// ✅ RÈGLEMENT OBLIGATOIRE : après avoir choisi son 1er jour de travail, elle doit lire tous les chapitres et accepter
+// ✅ RÈGLEMENT OBLIGATOIRE pour TOUTES les employées qui ne l'ont pas encore accepté (dès que nom + téléphone + date de début sont remplis)
 function rgCle(){ return 'pointage_regles_ok_'+(empKey()||''); }
 function reglesAcceptees(){ try{ return !!localStorage.getItem(rgCle()); }catch(e){ return true; } }
 function reglesAccepter(){
@@ -1973,7 +1973,7 @@ function reglesObligatoires(){
     if(!g || g.style.display==='block' || (w && w.style.display!=='none' && w.style.display!=='')) return;
     const n=(document.getElementById('name').value||'').trim(), sv=document.getElementById('startDate').value;
     if(!n || n.toLowerCase()==='boss' || !(document.getElementById('phone').value||'').trim() || !sv) return;
-    if(document.querySelector('.day[data-locked="1"]') || reglesAcceptees()) return;
+    if(reglesAcceptees()) return;          // toutes les employées qui ne l'ont pas encore accepté (anciennes comprises)
     reglesOuvrir(0, true);
   }catch(e){}
 }
