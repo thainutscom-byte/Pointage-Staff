@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#dc2626">
+<title>📝 Patron · Réservations reçues</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--redbg:#fee2e2;--green:#16a34a;--border:#e5e7eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:460px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 30px;}
+  h1{font-size:1.25rem;margin:4px 0 12px;text-align:center}
+  .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  h2{font-size:1rem;margin:0 0 8px}
+  .emp{display:block;width:100%;text-align:left;border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px;margin:0 0 8px;font-size:1.05rem;color:var(--text)}
+  .emp small{color:var(--muted);font-size:.8rem}
+  .emp.svc{border-left:7px solid var(--green)}
+  .emp.on{border-color:var(--red);background:var(--redbg)}
+  .emp.blk{opacity:.5}
+  .sep{font-size:.8rem;color:var(--muted);margin:8px 0 6px}
+  .pen{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pen button{border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px 8px;font-size:.95rem;text-align:left;color:var(--text)}
+  .pen button.on{border-color:var(--red);background:var(--redbg);font-weight:800}
+  .big{width:100%;border:none;border-radius:14px;padding:16px;font-size:1.15rem;font-weight:800;color:#fff;background:var(--red)}
+  .big:disabled{background:#9ca3af}
+  .big.green{background:var(--green)}
+  input{width:100%;font-size:1.6rem;text-align:center;letter-spacing:6px;padding:12px;border-radius:12px;border:2px solid var(--border)}
+  #msg{margin-top:10px;font-weight:700;text-align:center;min-height:20px}
+  a.sms{display:block;text-align:center;margin-top:10px;background:var(--green);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px}
+  .small{font-size:.8rem;color:var(--muted);text-align:center}
+  .cor{width:100%;border-collapse:collapse;margin-top:8px}
+  .cor th{background:#fef08a;font-size:.8rem;padding:6px 4px;border:1px solid #fde68a;text-align:center}
+  .cor td{border:1px solid #fde68a;padding:6px 4px;text-align:center;font-weight:700;background:#fefce8}
+  .cor td.nom{text-align:left;font-size:.9rem}
+  .cor .st{display:flex;align-items:center;justify-content:center;gap:2px}
+  .cor .st button{flex:0 0 30px;width:30px;height:34px;padding:0;border-radius:10px;border:none;background:#e5e7eb;font-size:1.2rem;font-weight:800;color:var(--text)}
+  .cor input{width:40px;min-width:0;font-size:1.25rem;letter-spacing:0;padding:4px 0;border:2px solid #fde68a;border-radius:8px;background:#fff;font-weight:800;text-align:center}
+  .cor tr.tot td{background:#fef08a;font-weight:800}
+  .paie{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+  .paie th{background:#dcfce7;font-size:.78rem;padding:6px 4px;border:1px solid #bbf7d0;text-align:center}
+  .paie td{border:1px solid #d1fae5;padding:6px 4px;text-align:center}
+  .paie td.nom{text-align:left;font-weight:700}
+  .paie tr.tot td{background:#fef3c7;font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📝 Réservations reçues</h1>
+  <div id="main">
+    <div class="card">
+      <h2>📝 Réservations reçues</h2>
+      <div id="resa" class="small">Chargement…</div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>🗓️ Places disponibles <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(5 max par horaire)</span></h2>
+      <div id="places">Chargement…</div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>📇 Contacts des employées</h2>
+      <button class="big green" id="vcfBtn" onclick="vcfTelecharger()">📥 Ajouter les employées à mon répertoire</button>
+      <div id="vcfMsg" class="small" style="margin-top:6px"></div>
+    </div>
+    <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
+    <div class="small" style="margin-top:14px"><a href="#" onclick="actualiser();return false">🔄 Actualiser</a></div>
+  </div>
+</div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const $=id=>document.getElementById(id);
+function getPin(){ return 'x'; }   // plus de code patron
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+function isoJ(o){ const d=new Date(Date.now()-6*3600e3); d.setDate(d.getDate()+(o||0)); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+async function chargerBoss(){ const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); return JSON.parse(await readTxt(r)); }
+function fmtTel(t){ const d=String(t||'').replace(/\D/g,''); return d.length===10 ? d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6) : (t||''); }
+function ligne(txt,css){ const c=document.createElement('div'); c.style.cssText='margin-top:4px;text-align:left;'+(css||''); c.textContent=txt; return c; }
+async function charger(){
+  const R=$('resa');
+  try{
+    const j=await chargerBoss(); $('err').textContent=''; R.innerHTML='';
+    const L=j.resa||[];
+    if(!L.length){ R.textContent='Aucune réservation pour le moment.'; return; }
+    R.style.color='var(--text)'; R.style.fontSize='.95rem'; R.style.textAlign='left';
+    L.forEach(x=>{
+      const d=document.createElement('div'); d.style.cssText='border-top:1px solid var(--border);padding:12px 0;color:var(--text);font-size:.95rem';
+      const t=document.createElement('div'); t.innerHTML='<b style="font-size:1.05rem"></b> <span class="small"></span>';
+      t.querySelector('b').textContent='🆕 '+x.nom; t.querySelector('.small').textContent='· reçu '+x.recu; d.appendChild(t);
+      // 📞 numéro de téléphone bien visible + appeler / SMS
+      const num=String(x.tel||'').replace(/\D/g,'');
+      const p=document.createElement('div'); p.style.cssText='display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap';
+      const n=document.createElement('span'); n.style.cssText='font-size:1.2rem;font-weight:800;letter-spacing:.5px'; n.textContent='📞 '+fmtTel(x.tel); p.appendChild(n);
+      if(num){ [['tel:','Appeler','#16a34a'],['sms:','SMS','#2563eb']].forEach(([s,l,c])=>{ const a=document.createElement('a'); a.href=s+num; a.textContent=l; a.style.cssText='background:'+c+';color:#fff;text-decoration:none;font-weight:800;padding:6px 12px;border-radius:10px;font-size:.9rem'; p.appendChild(a); }); }
+      d.appendChild(p);
+      if(x.age||x.line) d.appendChild(ligne((x.age?'🎂 '+x.age+' ans':'')+(x.age&&x.line?' · ':'')+(x.line?'💬 LINE : '+x.line:'')));
+      d.appendChild(ligne('🕐 '+x.sh+' · 🗓️ '+x.deb+' → '+x.fin+' · '+x.contrat));
+      if(x.suite) d.appendChild(ligne('🧪 '+x.suite,'font-weight:800;color:'+(/📄/.test(x.suite)?'var(--green)':'var(--muted)')));
+      if(x.th) d.appendChild(ligne('🇹🇭 '+x.th,'font-weight:700;color:'+(/⚠️/.test(x.th)?'var(--red)':'var(--green)')));
+      R.appendChild(d); });
+  }catch(e){ R.textContent='⚠️ Pas de connexion — réessayez'; }
+}
+// 🗓️ places libres par horaire : aujourd'hui et sur les 10 prochains jours (jour le plus chargé)
+const SH=[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],['16h-22h','16:00-22:00 น.'],['19h-01h','19:00-01:00 น.'],['21h-03h','21:00-03:00 น.'],['09:00-17:00','09:00-17:00 น. (mensuel)'],['17:00-01:00','17:00-01:00 น. (mensuel)']];
+async function places(){
+  const P=$('places'); P.textContent='Chargement…';
+  try{
+    const q=n=>fetch(API+'?plan=1&emp=__patron__&tel=0&s='+isoJ(0)+'&n='+n+'&sh='+encodeURIComponent(SH.map(x=>x[0]).join(','))+'&_='+Date.now()).then(readTxt).then(JSON.parse);
+    const [a,b]=await Promise.all([q(1),q(10)]);
+    const col=l=>l<=0?'var(--red)':l===1?'#ea580c':'var(--green)';
+    let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
+    SH.forEach(([k,l])=>{ const la=5-((a[k]||{}).max||0), lb=5-((b[k]||{}).max||0);
+      h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px 0">'+l+'</td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/5</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/5</td></tr>'; });
+    P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
+  }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
+}
+// ===== 📇 CONTACTS : fichier .vcf (noms + numéros) à ouvrir sur le téléphone → ajout au répertoire =====
+async function vcfTelecharger(){
+  const b=$('vcfBtn'), m=$('vcfMsg'); b.disabled=true; m.style.color=''; m.textContent='⏳ …';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&vcf=1&_='+Date.now())));
+    if(!j.n) { m.textContent='Aucune employée à ajouter.'; b.disabled=false; return; }
+    const url=URL.createObjectURL(new Blob([j.vcf],{type:'text/vcard'})), a=document.createElement('a');
+    a.href=url; a.download='employees.vcf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000);
+    m.style.color='var(--green)'; m.textContent='✅ '+j.n+' employée(s) : ouvrez le fichier téléchargé et choisissez « Ajouter les contacts ».';
+  }catch(e){ m.style.color='var(--red)'; m.textContent='❌ Pas envoyé — réessayez'; }
+  b.disabled=false;
+}
+function actualiser(){ charger(); places(); }
+actualiser();
+</script>
+</body>
+</html>

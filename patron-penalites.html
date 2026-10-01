@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#dc2626">
+<title>⚠️ Patron · Pénalités · SMS · Démission</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--redbg:#fee2e2;--green:#16a34a;--border:#e5e7eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:460px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 30px;}
+  h1{font-size:1.25rem;margin:4px 0 12px;text-align:center}
+  .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  h2{font-size:1rem;margin:0 0 8px}
+  .emp{display:block;width:100%;text-align:left;border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px;margin:0 0 8px;font-size:1.05rem;color:var(--text)}
+  .emp small{color:var(--muted);font-size:.8rem}
+  .emp.svc{border-left:7px solid var(--green)}
+  .emp.on{border-color:var(--red);background:var(--redbg)}
+  .emp.blk{opacity:.5}
+  .sep{font-size:.8rem;color:var(--muted);margin:8px 0 6px}
+  .pen{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pen button{border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px 8px;font-size:.95rem;text-align:left;color:var(--text)}
+  .pen button.on{border-color:var(--red);background:var(--redbg);font-weight:800}
+  .big{width:100%;border:none;border-radius:14px;padding:16px;font-size:1.15rem;font-weight:800;color:#fff;background:var(--red)}
+  .big:disabled{background:#9ca3af}
+  .big.green{background:var(--green)}
+  input{width:100%;font-size:1.6rem;text-align:center;letter-spacing:6px;padding:12px;border-radius:12px;border:2px solid var(--border)}
+  #msg{margin-top:10px;font-weight:700;text-align:center;min-height:20px}
+  a.sms{display:block;text-align:center;margin-top:10px;background:var(--green);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px}
+  .small{font-size:.8rem;color:var(--muted);text-align:center}
+  .cor{width:100%;border-collapse:collapse;margin-top:8px}
+  .cor th{background:#fef08a;font-size:.8rem;padding:6px 4px;border:1px solid #fde68a;text-align:center}
+  .cor td{border:1px solid #fde68a;padding:6px 4px;text-align:center;font-weight:700;background:#fefce8}
+  .cor td.nom{text-align:left;font-size:.9rem}
+  .cor .st{display:flex;align-items:center;justify-content:center;gap:2px}
+  .cor .st button{flex:0 0 30px;width:30px;height:34px;padding:0;border-radius:10px;border:none;background:#e5e7eb;font-size:1.2rem;font-weight:800;color:var(--text)}
+  .cor input{width:40px;min-width:0;font-size:1.25rem;letter-spacing:0;padding:4px 0;border:2px solid #fde68a;border-radius:8px;background:#fff;font-weight:800;text-align:center}
+  .cor tr.tot td{background:#fef08a;font-weight:800}
+  .paie{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+  .paie th{background:#dcfce7;font-size:.78rem;padding:6px 4px;border:1px solid #bbf7d0;text-align:center}
+  .paie td{border:1px solid #d1fae5;padding:6px 4px;text-align:center}
+  .paie td.nom{text-align:left;font-weight:700}
+  .paie tr.tot td{background:#fef3c7;font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚠️ Pénalités · SMS · Démission</h1>
+  <div id="main">
+<div class="card">
+      <h2>1️⃣ Employée <span style="font-weight:normal;color:var(--green);font-size:.8rem">● en service aujourd'hui</span></h2>
+      <div id="liste">Chargement…</div>
+    </div>
+    <div class="card">
+      <h2>2️⃣ Pénalité</h2>
+      <div class="pen" id="pen"></div>
+    </div>
+    <button class="big" id="ok" disabled onclick="valider()">✔ Valider</button>
+    <div id="msg"></div>
+    <div id="smsBox"></div>
+    <div class="card" style="margin-top:14px">
+      <h2>📱 SMS des infractions récentes</h2>
+      <div id="infListe" class="small" style="text-align:left">Chargement…</div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>🚪 Démission — bloquer une employée</h2>
+      <select id="demEmp" onchange="demDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
+      <div id="demInfo" class="small" style="text-align:left;margin:8px 0"></div>
+      <button class="big" id="demOk" disabled onclick="demValider()">🚫 Bloquer (démission)</button>
+      <div id="demMsg" class="small" style="margin-top:6px"></div>
+    </div>
+        <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
+    <div class="small" style="margin-top:14px"><a href="#" onclick="actualiser();return false">🔄 Actualiser</a></div>
+  </div>
+</div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const $=id=>document.getElementById(id);
+function getPin(){ return 'x'; }   // plus de code patron
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+function isoJ(o){ const d=new Date(Date.now()-6*3600e3); d.setDate(d.getDate()+(o||0)); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+async function chargerBoss(){ const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); return JSON.parse(await readTxt(r)); }
+const CH=[['1','Avertissement formel'],['2','-200 ฿'],['3','-500 ฿ + garantie annulée'],['4','-500 ฿ + guillotine']];
+let emps=[],sel=null,n=1;
+// 📱 infractions validées récentes : bouton SMS pour chacune (même après avoir quitté la page)
+function infListe(L){
+  const B=$('infListe'); B.innerHTML='';
+  if(!L.length){ B.textContent='Aucune infraction validée pour le moment.'; return; }
+  L.forEach(x=>{
+    const d=document.createElement('div'); d.style.cssText='border-top:1px solid var(--border);padding:8px 0;color:var(--text);font-size:.95rem';
+    const t=document.createElement('div'); t.innerHTML='<b></b> <span class="small"></span>'; t.querySelector('b').textContent=x.nom; t.querySelector('span').textContent='· infraction '+x.n+' · '+x.quand; d.appendChild(t);
+    if(x.sms){ const a=document.createElement('a'); a.className='sms'; a.style.cssText='padding:10px;margin-top:6px;font-size:.95rem'; a.href=x.sms; a.textContent='📱 Envoyer le SMS à '+x.nom.split(' ')[0]; d.appendChild(a); }
+    else { const c=document.createElement('div'); c.className='small'; c.textContent='⚠️ numéro de téléphone invalide'; d.appendChild(c); }
+    B.appendChild(d); });
+}
+function draw(){
+  const L=$('liste'); L.innerHTML=''; let sep=false;
+  emps.forEach((e,i)=>{
+    if(!e.service && !sep){ sep=true; const d=document.createElement('div'); d.className='sep'; d.textContent='Autres employées'; L.appendChild(d); }
+    const b=document.createElement('button'); b.className='emp'+(e.service?' svc':'')+(sel===i?' on':'')+(e.bloque?' blk':'');
+    b.innerHTML='<b></b> <small></small>'; b.querySelector('b').textContent=e.nom;
+    b.querySelector('small').textContent=e.tel+(e.depuis?' · ▶️ '+e.depuis:'')+(e.bloque?' · 🚫 bloquée':'');
+    b.onclick=()=>{ sel=i; n=e.prochain||1; draw(); }; L.appendChild(b);
+  });
+  if(!emps.length) L.innerHTML='<i>Aucune employée</i>';
+  const P=$('pen'); P.innerHTML='';
+  CH.forEach(c=>{ const b=document.createElement('button'); b.className=(+c[0]===n?'on':''); b.innerHTML='<b>'+c[0]+'</b> — '+c[1]; b.onclick=()=>{ n=+c[0]; draw(); }; P.appendChild(b); });
+  $('ok').disabled = sel===null;
+  $('ok').textContent = sel===null ? '✔ Valider' : '✔ Valider : '+emps[sel].nom+' — infraction '+n;
+}
+async function valider(){
+  if(sel===null) return; const e=emps[sel]; const b=$('ok'); b.disabled=true; b.textContent='⏳ …'; $('smsBox').innerHTML='';
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify({type:'infraction',pin:getPin(),label:e.label,n})}); const j=JSON.parse(await readTxt(r));
+    if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
+    $('msg').style.color='var(--green)'; $('msg').textContent='✅ '+j.msg;
+    if(j.sms){ const a=document.createElement('a'); a.className='sms'; a.href=j.sms; a.textContent='📱 Envoyer aussi le SMS à '+e.nom; $('smsBox').appendChild(a); }
+    charger();
+  }catch(err){ $('msg').style.color='var(--red)'; $('msg').textContent='❌ Pas envoyé — vérifiez internet et réessayez'; draw(); }
+}
+// ===== 🚪 DÉMISSION : bloquer l'employée (téléphone + réservations) ou la réintégrer =====
+function demListe(){
+  const S=$('demEmp'), v=S.value; S.innerHTML='<option value="">— choisir l\'employée —</option>';
+  emps.forEach(e=>{ const o=document.createElement('option'); o.value=e.label; o.textContent=e.nom+(e.demission?' · 🚪 démission':e.bloque?' · 🚫 bloquée':''); S.appendChild(o); });
+  S.value=emps.some(e=>e.label===v)?v:''; demDraw();
+}
+function demDraw(){
+  const k=$('demEmp').value, e=emps.find(x=>x.label===k), b=$('demOk'); $('demMsg').textContent='';
+  if(!e){ $('demInfo').textContent=''; b.className='big'; b.disabled=true; b.textContent='🚫 Bloquer (démission)'; return; }
+  if(e.demission){ $('demInfo').textContent='🚪 Démission enregistrée : son téléphone est bloqué, elle ne peut plus réserver, et le code du jour ne la débloque pas.'; b.className='big green'; b.textContent='↩️ Réintégrer : '+e.nom; b.disabled=false; return; }
+  $('demInfo').textContent = e.bloque ? '🚫 Déjà bloquée (blocage automatique ou manuel). En la passant en « démission », le code du jour ne pourra plus la débloquer.' : 'Son téléphone sera bloqué et sa place se libère dans le planning. Ses journées déjà saisies et sa paie restent inchangées.';
+  b.className='big'; b.textContent='🚫 Bloquer : '+e.nom+' (démission)'; b.disabled=false;
+}
+async function demValider(){
+  const k=$('demEmp').value, e=emps.find(x=>x.label===k); if(!e) return;
+  const re=!!e.demission;
+  if(!confirm(re ? '↩️ Réintégrer '+e.nom+' ?' : '🚫 Bloquer '+e.nom+' suite à sa démission ?')) return;
+  const b=$('demOk'); b.disabled=true; b.textContent='⏳ …';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'bossdemission',label:k,action:re?'reintegrer':'bloquer'})})));
+    if(!j.ok) throw j.err||'x';
+    e.demission=!re; e.bloque=!re;
+    $('demMsg').style.color='var(--green)'; $('demMsg').textContent=re?'✅ '+e.nom+' est réintégrée':'✅ '+e.nom+' est bloquée';
+    draw(); const S=$('demEmp'), keep=S.value; demListe(); S.value=keep; demDraw(); $('demMsg').style.color='var(--green)'; $('demMsg').textContent=re?'✅ '+e.nom+' est réintégrée':'✅ '+e.nom+' est bloquée';
+  }catch(x){ $('demMsg').style.color='var(--red)'; $('demMsg').textContent=x==='test'?'❌ Compte de test : impossible':x==='inconnue'?'❌ Employée introuvable':'❌ Pas envoyé — réessayez'; b.disabled=false; demDraw(); }
+}
+
+async function charger(){
+  try{
+    const j=await chargerBoss(); $('err').textContent='';
+    emps=j.emps||[]; sel=null; draw(); demListe(); infListe(j.inf||[]);
+  }catch(e){ $('liste').textContent='⚠️ Pas de connexion — réessayez'; $('err').textContent='⚠️ Pas de connexion — réessayez'; }
+}
+function actualiser(){ charger(); }
+actualiser();
+</script>
+</body>
+</html>
