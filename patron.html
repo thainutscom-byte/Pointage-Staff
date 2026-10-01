@@ -40,6 +40,11 @@
   .cor .st button{flex:0 0 30px;width:30px;height:34px;padding:0;border-radius:10px;border:none;background:#e5e7eb;font-size:1.2rem;font-weight:800;color:var(--text)}
   .cor input{width:40px;min-width:0;font-size:1.25rem;letter-spacing:0;padding:4px 0;border:2px solid #fde68a;border-radius:8px;background:#fff;font-weight:800;text-align:center}
   .cor tr.tot td{background:#fef08a;font-weight:800}
+  .paie{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+  .paie th{background:#dcfce7;font-size:.78rem;padding:6px 4px;border:1px solid #bbf7d0;text-align:center}
+  .paie td{border:1px solid #d1fae5;padding:6px 4px;text-align:center}
+  .paie td.nom{text-align:left;font-weight:700}
+  .paie tr.tot td{background:#fef3c7;font-weight:800}
 </style>
 </head>
 <body>
@@ -71,6 +76,14 @@
       <div style="height:10px"></div>
       <button class="big green" id="corOk" disabled onclick="corEnvoyer()">✔ Enregistrer la correction</button>
       <div id="corMsg" class="small" style="margin-top:6px"></div>
+    </div>
+    <div class="card">
+      <h2>💰 À payer aux employées</h2>
+      <input id="paieMois" type="month" onchange="paieCharger()" style="width:100%;box-sizing:border-box;font-size:1.05rem;letter-spacing:0;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)">
+      <div id="paieAuj" class="small" style="text-align:left;margin:8px 0;font-weight:700"></div>
+      <div id="paieRes" class="small" style="text-align:left">Chargement…</div>
+      <div style="overflow-x:auto"><table class="paie" id="paieTab" style="display:none"></table></div>
+      <div class="small" style="text-align:left;margin-top:6px">Brut − pénalités. Contrats en cours = provisoire. Logement, uniformes et autres retenues : onglet « 💰 Paie contrats » de Google Sheets.</div>
     </div>
     <div class="card">
       <h2>1️⃣ Employée <span style="font-weight:normal;color:var(--green);font-size:.8rem">● en service aujourd'hui</span></h2>
@@ -109,7 +122,7 @@
       <h2>🗓️ Places disponibles <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(5 max par horaire)</span></h2>
       <div id="places">Chargement…</div>
     </div>
-    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();places();return false">🔄 Actualiser</a></div>
+    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();places();paieCharger();return false">🔄 Actualiser</a></div>
   </div>
 </div>
 <script>
@@ -121,7 +134,7 @@ function getPin(){ return 'x'; }   // plus de code patron
 function savePin(){ const v=$('pin').value.trim(); if(!v) return; try{ localStorage.setItem('patron_pin',v); }catch(e){} start(); }
 function logout(){ try{ localStorage.removeItem('patron_pin'); }catch(e){} start(); }
 async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
-function start(){ if(!getPin()){ $('pinBox').style.display='block'; $('main').style.display='none'; return; } $('pinBox').style.display='none'; $('main').style.display='block'; charger(); }
+function start(){ if(!getPin()){ $('pinBox').style.display='block'; $('main').style.display='none'; return; } $('pinBox').style.display='none'; $('main').style.display='block'; charger(); paieCharger(); }
 async function charger(){
   $('liste').textContent='Chargement…';
   try{
@@ -180,6 +193,26 @@ async function places(){
     P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
   }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
 }
+// ===== 💰 À PAYER AUX EMPLOYÉES : par mois, par employée, + montant du jour =====
+const fb=n=>(Math.round(n)||0).toLocaleString('en-US')+' ฿';
+async function paieCharger(){
+  if(!$('paieMois').value) $('paieMois').value=isoJ(0).slice(0,7);
+  const km=$('paieMois').value, R=$('paieRes'), T=$('paieTab'); R.textContent='Chargement…'; T.style.display='none';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&paie='+km+'&_='+Date.now()))).paie;
+    if(!j||j.err) throw 0;
+    if($('paieMois').value!==km) return;
+    $('paieAuj').textContent=j.auj?('Aujourd\'hui : '+j.auj.tours+' tours → '+fb(j.auj.net)+' à payer'+(j.auj.pen?' (après '+fb(j.auj.pen)+' de pénalités)':'')):'Aujourd\'hui : rien d\'enregistré pour le moment';
+    if(!j.emps.length){ R.textContent='Aucune journée enregistrée ce mois-ci.'; return; }
+    R.textContent='Mois : CA '+fb(j.ca)+' · à payer (net) '+fb(j.net)+' · reste '+fb(j.ca-j.net);
+    T.innerHTML='<tr><th>Employée</th><th>Jours</th><th>Tours</th><th>Brut</th><th>Pénal.</th><th>Net</th></tr>';
+    j.emps.forEach(e=>{ const tr=document.createElement('tr'); tr.innerHTML='<td class="nom"></td><td></td><td></td><td></td><td></td><td><b></b></td>';
+      const c=tr.children; c[0].textContent=e.nom; c[1].textContent=e.jours; c[2].textContent=e.tours; c[3].textContent=fb(e.brut); c[4].textContent=e.pen?'-'+fb(e.pen):'—'; c[5].firstChild.textContent=fb(e.net); T.appendChild(tr); });
+    const tr=document.createElement('tr'); tr.className='tot'; tr.innerHTML='<td class="nom">TOTAL</td><td></td><td></td><td></td><td></td><td></td>';
+    tr.children[2].textContent=j.tours; tr.children[3].textContent=fb(j.brut); tr.children[4].textContent=j.pen?'-'+fb(j.pen):'—'; tr.children[5].textContent=fb(j.net); T.appendChild(tr);
+    T.style.display='';
+  }catch(e){ R.textContent='⚠️ Pas de connexion — réessayez'; }
+}
 // ===== ✏️ CORRIGER LES MASSAGES D'UNE EMPLOYÉE : employée + date → tableau à remplir → le téléphone se met à jour =====
 let JOURS={}, orig=null;   // JOURS[date] = { clé employée : {l1,l2,hh} }
 const PX={l1:600,l2:800,hh:600};
@@ -215,7 +248,7 @@ async function corEnvoyer(){
   try{
     const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'bosscorrige',label:k,date:d,l1:+$('l1').value||0,l2:+$('l2').value||0,hh:+$('hh').value||0})})));
     if(!j.ok) throw j.err||'x';
-    JOURS[d][cleE(k)]={l1:j.l1,l2:j.l2,hh:j.hh}; await corDraw();
+    JOURS[d][cleE(k)]={l1:j.l1,l2:j.l2,hh:j.hh}; await corDraw(); paieCharger();
     $('corMsg').style.color='var(--green)'; $('corMsg').textContent='✅ Corrigé ('+j.ca.toLocaleString('en-US')+' ฿) — le téléphone de '+k.split(' — ')[0]+' se met à jour à la prochaine ouverture';
   }catch(e){ $('corMsg').style.color='var(--red)'; $('corMsg').textContent=e==='ligne'?'❌ Aucune journée envoyée à cette date':e==='date'?'❌ Date non permise (pas dans le futur, 60 jours max)':'❌ Pas envoyé — réessayez'; $('corOk').disabled=false; }
   b.textContent='✔ Enregistrer la correction';
