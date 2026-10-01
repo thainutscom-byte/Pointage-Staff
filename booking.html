@@ -84,6 +84,7 @@
     <div class="small" style="margin-top:12px">รับสมัครเฉพาะผู้หญิงสัญชาติไทย อายุ 18 – 35 ปี<br>ต้องนำบัตรประชาชนมาแสดงในวันเริ่มงาน</div>
   </div>
   <div id="form" style="display:none">
+    <div id="parBand" class="card" style="display:none;text-align:center;border:2px solid #ec4899;background:#fdf2f8;font-weight:800">👭 เพื่อนของ <span id="parBandNom"></span> แนะนำมา · ยินดีต้อนรับ 💖</div>
     <div class="card">
       <label style="margin-top:0">เลือกแบบที่ต้องการ</label>
       <button class="opt on" id="optC" onclick="choisirMode('contrat')"><b>📄 สัญญาฟรีแลนซ์ 10 วัน</b><br>6 ชั่วโมง/วัน · 10,000 – 13,000 ฿<br><span class="small">เงินเดือนคงที่ + ค่าคอมมิชชั่น + ทิป (จ่ายทุกวัน)</span></button>
@@ -227,10 +228,10 @@ function dessinerJours(){
 }
 async function reserverEssai(){
   const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
-  const p={type:'essai', th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), date:$('start').value, age:ageVal(), naissance:dnIso(), line:$('lineid').value.trim().toLowerCase()};
+  const p={type:'essai', th:ctl()+parTh(), parrain:parValide(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), date:$('start').value, age:ageVal(), naissance:dnIso(), line:$('lineid').value.trim().toLowerCase()};
   try{
     const t=await readTxt(await fetch(API,{method:'POST',body:JSON.stringify(p)}));
-    if(t==='ok'){
+    if(t==='ok'){ parResa(p);
       $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>💬 LINE: <span id="s2"></span><br>🧪 ทดลองงาน 1 วัน<br>🗓️ <span id="s3"></span><br>⏰ 12:00 – 20:00 น. · รับประกัน 500 ฿ หากไม่มีลูกค้า';
       $('sum').querySelector('b').textContent=p.name; $('s1').textContent=p.phone; $('s2').textContent=p.line; $('s3').textContent=dm(p.date);
       $('photoBox').style.display='block'; if(LINE_OA){ const lb=$('lineBtn'); lb.href=LINE_OA; lb.style.display='block'; }
@@ -285,11 +286,11 @@ async function reserver(){
   if($('go').disabled) return;
   if(MODE==='essai') return reserverEssai();
   const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
-  const p={type:'cycle', booking:true, age:ageVal(), naissance:dnIso(), th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), sh:choix,
+  const p={type:'cycle', booking:true, age:ageVal(), naissance:dnIso(), th:ctl()+parTh(), parrain:parValide(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), sh:choix,
            cycleStart:$('start').value, cycleEnd:fin(), contract:$('contract').value==='30'?'Mensuel 30 j':'Freelance 10 j'};
   try{
     const r=await fetch(API,{method:'POST',body:JSON.stringify(p)}); const t=await readTxt(r);
-    if(t==='ok'){
+    if(t==='ok'){ parResa(p);
       try{ localStorage.setItem('pointage_booking', JSON.stringify({...p, contractN:$('contract').value})); }catch(e){}
       const lab=SH[$('contract').value].find(x=>x[0]===choix)[1];
       $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>📄 <span id="s2"></span><br>🗓️ <span id="s3"></span><br>🕐 <span id="s4"></span>';
@@ -312,6 +313,22 @@ const SIG=(()=>{ const l=(navigator.languages&&navigator.languages.length?naviga
   const model=/iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':m?('Android '+m):(/Android/.test(ua)?'Android':(/Windows|Macintosh/.test(ua)?'Ordinateur':'?'));
   return {lang:l, tz, model, thai:/^th(-|,|$)/i.test(l)||l==='fr-FR,th-TH,en-GB,en-US', bkk:/Asia\/(Bangkok|Vientiane|Phnom_Penh)/.test(tz)}; })();
 const SRC=new URLSearchParams(location.search).get('src')||'';
+
+// ===== 🤝 PARRAINAGE : ?ref=ivy5052 → la 1re marraine dont le lien est ouvert sur ce téléphone garde la filleule (30 jours) =====
+const PAR=(()=>{ try{
+  const q=(new URLSearchParams(location.search).get('ref')||'').toLowerCase();
+  let o=JSON.parse(localStorage.getItem('booking_ref')||'null');
+  if(o && Date.now()-o.at>30*86400000) o=null;
+  if(!o && /^[a-z]{1,12}\d{4}$/.test(q)){ o={ref:q, at:Date.now()}; localStorage.setItem('booking_ref', JSON.stringify(o)); }
+  let dev=localStorage.getItem('booking_dev'); if(!dev){ dev=Math.random().toString(36).slice(2,8); localStorage.setItem('booking_dev', dev); }
+  if(/^[a-z]{1,12}\d{4}$/.test(q) && !localStorage.getItem('booking_ref_vu_'+q)){ localStorage.setItem('booking_ref_vu_'+q,'1'); window.__parVu='👀 lien parrain ouvert — ref '+q+' — appareil '+dev+' — via '+((new URLSearchParams(location.search).get('v')||'?').replace(/[^a-z]/g,'').slice(0,12))+(o && o.ref!==q?' (déjà parrainée par '+o.ref+')':''); }
+  return o ? o.ref : '';
+}catch(e){ return ''; } })();
+function parNom(r){ const n=String(r||'').replace(/\d+$/,''); return n ? n[0].toUpperCase()+n.slice(1) : ''; }
+function parValide(){ const t=$('phone').value.replace(/\D/g,''), n=$('name').value.toLowerCase().replace(/[^a-z]/g,'');
+  return PAR && !(t.slice(-4)===PAR.slice(-4) && PAR.replace(/\d+$/,'')===n.slice(0,12)) ? PAR : ''; }   // pas de parrainage sur soi-même
+function parTh(){ const r=parValide(); return r ? ' · 🤝 ref '+r : ''; }
+function parResa(p){ const r=parValide(); if(r) scan('📝 réservation parrainée — ref '+r+' — '+p.name+' '+p.phone); }
 function ctl(){ return (SIG.thai?'✅ ภาษาไทย':'⚠️ langue '+(SIG.lang||'?'))+' · '+(SIG.bkk?'heure BKK':'⚠️ '+(SIG.tz||'?'))+' · '+SIG.model+' · quiz ✅'; }
 function scan(res){ try{ fetch(API,{method:'POST',body:JSON.stringify({type:'scan',page:'booking',src:SRC,lang:SIG.lang,tz:SIG.tz,model:SIG.model,thai:SIG.thai,res})}).catch(()=>{}); }catch(e){} }
 const mel=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
@@ -320,6 +337,7 @@ function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; 
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function jour(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function gateStart(){
+  if(window.__parVu){ scan(window.__parVu); window.__parVu=''; }
   { const o=ageBloque(); if(o){ ageStop(o.txt); scan('⛔ âge : déjà bloquée ('+o.n+' ans)'); return; } }
   if(lsGet('booking_stop')===jour()){ bloquer(); scan('⛔ déjà bloqué aujourd\'hui'); return; }
   if(lsGet('booking_th')==='1'){ ouvrir(); scan('ouvert (déjà vérifié)'); return; }
@@ -339,7 +357,7 @@ function repondre(i){
   qs=mel(Q.filter(x=>qs.indexOf(x)<0)).slice(0,2); qi=0; poser();
 }
 function bloquer(){ $('gate').style.display='none'; $('form').style.display='none'; $('stop').style.display='block'; }
-function ouvrir(){ $('gate').style.display='none'; $('form').style.display='block'; preRemplir(); }
+function ouvrir(){ $('gate').style.display='none'; $('form').style.display='block'; if(PAR){ $('parBand').style.display='block'; $('parBandNom').textContent=parNom(PAR); } preRemplir(); }
 // 🧪 → 📄 venue de la fin du jour d'essai : nom + téléphone déjà remplis, option contrat choisie
 function preRemplir(){ try{ const q=new URLSearchParams(location.search);
   if(q.get('n') && !$('name').value) $('name').value=q.get('n'); if(q.get('t') && !$('phone').value) $('phone').value=q.get('t');

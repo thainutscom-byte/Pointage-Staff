@@ -233,6 +233,16 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div style="text-align:center;margin-top:20px;"><a href="#" onclick="bossMode();return false;" style="color:#9ca3af;font-size:.85rem;text-decoration:none;">👑 หัวหน้า</a></div>
   </div>
 </div>
+<div id="parGate" style="display:none;position:fixed;inset:0;z-index:99980;background:rgba(17,24,39,.75);align-items:center;justify-content:center;padding:18px;">
+  <div style="background:#fff;border-radius:18px;max-width:380px;width:100%;padding:18px;text-align:center;">
+    <div style="font-size:2.6rem;">🤝💸</div>
+    <div style="font-weight:900;font-size:1.2rem;margin:4px 0;">ชวนเพื่อน 1 คน = 2,000 ฿</div>
+    <div id="parGateTxt" style="line-height:1.6;margin:8px 0 14px;"></div>
+    <button type="button" onclick="parFermer();parPartager('line')" style="width:100%;border:none;border-radius:12px;padding:14px;font-size:1.05rem;font-weight:800;background:#06c755;color:#fff;">💬 ส่งให้เพื่อนตอนนี้เลย</button>
+    <button type="button" onclick="parFermer();document.getElementById('parCard').scrollIntoView({behavior:'smooth',block:'center'})" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:11px;font-weight:800;background:#fdf2f8;color:#db2777;">📲 Messenger · Instagram · TikTok · SMS</button>
+    <button type="button" onclick="parFermer()" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:11px;font-weight:700;background:#e5e7eb;">ภายหลัง</button>
+  </div>
+</div>
 <div id="plageGate" style="display:none;position:fixed;inset:0;z-index:99990;background:#111827;color:#fff;overflow:auto;">
   <div style="max-width:380px;margin:0 auto;padding:calc(70px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
     <div style="font-size:3.4rem;">🔒</div>
@@ -398,6 +408,21 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
 
     <button type="button" onclick="reglesOuvrir(0)" style="width:100%;margin-top:8px;background:#fff;color:var(--text);border:2px solid var(--border);padding:12px;border-radius:12px;font-size:1rem;font-weight:800;">📋 อ่านกฎระเบียบ (แตะเพื่ออ่านทีละหมวด)</button>
     <a href="https://line.me/R/ti/g/vJMkG2gVhz" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;width:100%;margin-top:8px;background:#06c755;color:#fff;padding:13px;border-radius:12px;font-size:1rem;font-weight:800;box-sizing:border-box;">💬 เข้ากลุ่ม LINE พนักงาน</a>
+    <div id="parCard" style="margin-top:10px;border:3px solid #ec4899;background:#fdf2f8;border-radius:14px;padding:12px;">
+      <div style="font-weight:900;font-size:1.1rem;">🤝 ชวนเพื่อนมาทำงาน รับ <span style="color:#db2777;">2,000 ฿</span></div>
+      <div class="small" style="margin:4px 0 8px;line-height:1.5;">เพื่อนต้องจองผ่าน <b>ลิงก์ของคุณ</b> และทำงานครบ <b>2 เดือน</b> → คุณได้ค่าแนะนำ <b>2,000 ฿ / คน</b> · ชวนได้ไม่จำกัด!</div>
+      <div id="parStats" class="small" style="font-weight:700;margin-bottom:8px;"></div>
+      <button type="button" onclick="parPartager('line')" style="width:100%;border:none;border-radius:12px;padding:13px;font-size:1.02rem;font-weight:800;background:#06c755;color:#fff;">💬 ส่งข้อความชวนเพื่อนทาง LINE</button>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;">
+        <button type="button" onclick="parPartager('messenger')" style="border:none;border-radius:10px;padding:10px 4px;font-weight:800;font-size:.85rem;background:#0084ff;color:#fff;">💬 Messenger</button>
+        <button type="button" onclick="parPartager('instagram')" style="border:none;border-radius:10px;padding:10px 4px;font-weight:800;font-size:.85rem;background:linear-gradient(45deg,#f58529,#dd2a7b,#8134af);color:#fff;">📸 Instagram</button>
+        <button type="button" onclick="parPartager('tiktok')" style="border:none;border-radius:10px;padding:10px 4px;font-weight:800;font-size:.85rem;background:#111827;color:#fff;">🎵 TikTok</button>
+        <button type="button" onclick="parPartager('sms')" style="border:none;border-radius:10px;padding:10px 4px;font-weight:800;font-size:.85rem;background:#2563eb;color:#fff;">✉️ SMS</button>
+        <button type="button" onclick="parPartager('autre')" style="border:none;border-radius:10px;padding:10px 4px;font-weight:800;font-size:.85rem;background:#6b7280;color:#fff;">📤 อื่นๆ</button>
+        <button type="button" onclick="parCopier()" style="border:2px solid #db2777;border-radius:10px;padding:8px 4px;font-weight:800;font-size:.85rem;background:#fff;color:#db2777;">📋 คัดลอก</button>
+      </div>
+      <div id="parAide" class="small" style="display:none;margin-top:8px;font-weight:700;color:#16a34a;text-align:center;"></div>
+    </div>
     <input type="hidden" id="rate" value="135"><input type="hidden" id="rateUrg" value="100">
     <input type="hidden" id="penRate1" value="20"><input type="hidden" id="penRate2" value="30">
     <input type="hidden" id="penRate60a" value="500"><input type="hidden" id="penRate60b" value="2000">
@@ -1976,7 +2001,7 @@ function payeConfirmer(){
   const D=payeDu(), P=payeGet(); if(D.dep) P.dep=Date.now(); P.uni=Date.now();
   try{ localStorage.setItem(payeCle(), JSON.stringify(P)); }catch(e){}
   const n=(document.getElementById('name').value||'').trim(), t=(document.getElementById('phone').value||'').replace(/\D/g,'');
-  try{ fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'paiement',src:'app',res:'💰 Payé PromptPay : '+(D.dep?'dépôt chambre '+D.dep+' ฿ ':'')+(D.uni?'uniformes '+D.uni+' ฿ ':'')+'— '+n+' '+t})}).catch(()=>{}); }catch(e){}
+  try{ fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'app',thai:true,src:'app',res:'💰 Payé PromptPay : '+(D.dep?'dépôt chambre '+D.dep+' ฿ ':'')+(D.uni?'uniformes '+D.uni+' ฿ ':'')+'— '+n+' '+t})}).catch(()=>{}); }catch(e){}
   calc(); saveState(); payeAff(); alert('✅ ชำระแล้ว — ขอบคุณ');
 }
 setInterval(payeAff, 5000); setTimeout(payeAff, 2500);
@@ -2003,6 +2028,85 @@ function startPickOk(){
   startPickMaj();
 }
 setInterval(startPickMaj, 1500); setTimeout(startPickMaj, 300);
+
+// ===== 🤝 PARRAINAGE : lien personnel par employée → suivi des partages, ouvertures, réservations (2 000 ฿ si l'amie travaille 2 mois) =====
+const PAR_BOOK='https://thainutscom-byte.github.io/Pointage-Staff/booking.html', PAR_COMM=2000, PAR_RAPPEL_J=3;
+function parCode(){ const n=(document.getElementById('name').value||'').toLowerCase().replace(/[^a-z]/g,'').slice(0,12), t=(document.getElementById('phone').value||'').replace(/\D/g,'');
+  return (n && t.length>=9) ? n+t.slice(-4) : ''; }
+function parLien(){ return PAR_BOOK+'?mode=essai&ref='+parCode()+'&openExternalBrowser=1'; }
+function parMsg(){ return 'แกรรร เจอกันหน่อยไหม 💆‍♀️ นึกถึงแกคนแรกเลยเนี่ย! สนใจมาทำงานด้วยกันสักวันไหม? พอดีที่ร้านกำลังหาคนมานวดน้ำมันแนว Feeling Massage อยู่พอดี บอกเลยว่าถ้าได้ทำงานกับเพื่อนจะแฮปปี้มาก แถมรายได้ดีและน่าสนใจสุดๆ 💸 ✨\n'
+  +'🧪 ทดลองงาน 1 วัน\n⏰ 12:00 – 20:00 น.\n💰 ถ้าวันไหนไม่มีลูกค้า การันตีให้เลย 500 บาท\n'
+  +'🎓 ถ้าไม่เคยทำมาก่อนก็ไม่ต้องห่วงเลย เดี๋ยวฉันช่วยสอน ช่วยดูและเทคแคร์แกเองนะ! 🫶\n'
+  +'👉 เลือกวันที่สะดวกแล้วจองได้เลยที่นี่นะ (จองผ่านลิงก์นี้นะ จะได้รู้ว่ามากับฉัน):\n'+parLien()+'\n\nอยากทำงานด้วยกันนะ รอเธออยู่น้า 🥰'; }
+function parGet(){ try{ return JSON.parse(localStorage.getItem('pointage_parrain_'+parCode())||'{}'); }catch(e){ return {}; } }
+function parSet(o){ try{ localStorage.setItem('pointage_parrain_'+parCode(), JSON.stringify(o)); }catch(e){} }
+function parLog(txt){ try{ fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'app',thai:true,src:'app',res:txt})}).catch(()=>{}); }catch(e){} }
+function parNote(quoi){ const o=parGet(); o.n=(o.n||0)+1; o.last=Date.now(); parSet(o);
+  parLog('📤 parrainage '+quoi+' — ref '+parCode()+' — '+(document.getElementById('name').value||'').trim()+' '+(document.getElementById('phone').value||'').replace(/\D/g,'')+' (n°'+o.n+')'); parAff(); }
+const PAR_CANAUX={line:'LINE', messenger:'Messenger', instagram:'Instagram', tiktok:'TikTok', sms:'SMS', autre:'autre', copie:'copie'};
+function parLienC(c){ return parLien().replace('&openExternalBrowser=1','&v='+c+'&openExternalBrowser=1'); }
+function parMsgC(c){ return parMsg().replace(parLien(), parLienC(c)); }
+async function parCopierTxt(t){ try{ await navigator.clipboard.writeText(t); return true; }catch(e){ try{ const a=document.createElement('textarea'); a.value=t; document.body.appendChild(a); a.select(); const ok=document.execCommand('copy'); a.remove(); return ok; }catch(x){ return false; } } }
+function parAide(t){ const a=document.getElementById('parAide'); if(a){ a.textContent=t; a.style.display='block'; } }
+function parOuvrir(u){ try{ location.href=u; }catch(e){} }
+async function parPartager(c){
+  c=c||'line';
+  if(!parCode()){ alert('⚠️ กรุณาใส่ชื่อเล่น (ภาษาอังกฤษ) และเบอร์โทรก่อน'); return; }
+  const msg=parMsgC(c), enc=encodeURIComponent(msg), ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+  parNote(PAR_CANAUX[c]||c);
+  if(c==='line'){ const u='https://line.me/R/share?text='+enc; try{ const w=window.open(u,'_blank'); if(!w) location.href=u; }catch(e){ location.href=u; } return; }
+  if(c==='sms'){ parOuvrir('sms:'+(ios?'&':'?')+'body='+enc); return; }
+  if(c==='autre'){
+    if(navigator.share){ try{ await navigator.share({text:msg}); return; }catch(e){ if(e && e.name==='AbortError') return; } }
+    const ok=await parCopierTxt(msg); parAide(ok?'✅ คัดลอกข้อความแล้ว — เปิดแอปแชทแล้ววางได้เลย':'⚠️ คัดลอกไม่ได้'); return; }
+  // Messenger / Instagram / TikTok : le texte ne peut pas être pré-rempli → copié, puis l'app s'ouvre : coller dans la discussion
+  const ok=await parCopierTxt(msg);
+  parAide(ok ? '✅ คัดลอกข้อความแล้ว → เลือกเพื่อน → กดค้างในช่องแชท → วาง (Paste) → ส่ง' : '⚠️ คัดลอกไม่ได้ — กด 📋 คัดลอก');
+  const u = c==='messenger' ? 'fb-messenger://share/?link='+encodeURIComponent(parLienC(c))
+          : c==='instagram' ? 'instagram://direct-inbox'
+          : 'https://www.tiktok.com/messages';
+  const web = c==='messenger' ? 'https://www.messenger.com/' : c==='instagram' ? 'https://www.instagram.com/direct/inbox/' : 'https://www.tiktok.com/messages';
+  setTimeout(()=>{ const t0=Date.now(); parOuvrir(u); setTimeout(()=>{ if(web!==u && !document.hidden && Date.now()-t0<2500) parOuvrir(web); }, 1800); }, 700);
+}
+async function parCopier(){
+  if(!parCode()){ alert('⚠️ กรุณาใส่ชื่อเล่น (ภาษาอังกฤษ) และเบอร์โทรก่อน'); return; }
+  const ok=await parCopierTxt(parMsgC('copie')); parAide(ok?'✅ คัดลอกข้อความ + ลิงก์ของคุณแล้ว — วางในแชทของเพื่อนได้เลย':'⚠️ คัดลอกไม่ได้');
+  if(!ok) prompt('คัดลอกข้อความนี้', parMsgC('copie'));
+  parNote('copie');
+}
+let parServeur=null, parServeurT=0;
+async function parAff(){
+  const S=document.getElementById('parStats'), C=document.getElementById('parCard'); if(!S||!C) return;
+  const nom=(document.getElementById('name').value||'').trim().toLowerCase();
+  C.style.display = (!parCode() || nom==='boss' || window.__essai) ? 'none' : 'block';
+  if(C.style.display==='none') return;
+  const o=parGet();
+  if(Date.now()-parServeurT>10*60000){ parServeurT=Date.now();
+    try{ const t=await readTxt(await fetch(SHEET_URL+'?parrain='+encodeURIComponent(parCode())+'&_='+Date.now())); if(t[0]==='{'){ const j=JSON.parse(t); if(j && j.ok) parServeur=j; } }catch(e){} }
+  const P=parServeur;
+  S.innerHTML='📤 ส่งแล้ว <b>'+Math.max(o.n||0, P?P.partages||0:0)+'</b> ครั้ง'
+    +(P ? ' · 👀 เปิดลิงก์ <b>'+(P.ouvertures||0)+'</b> คน · 📝 จอง <b>'+(P.resas||0)+'</b> คน · ✅ ครบ 2 เดือน <b>'+(P.deux||0)+'</b> คน'+((P.aPayer||0)?' · 💰 รอรับ <b>'+P.aPayer.toLocaleString('en-US')+' ฿</b>':'') : '');
+}
+// 🔔 incitation : tous les 3 jours (pas les 2 premiers jours du contrat), quand l'app est ouverte et libre
+function parFermer(){ const g=document.getElementById('parGate'); if(g) g.style.display='none'; const o=parGet(); o.vu=Date.now(); parSet(o); }
+function parRappel(){
+  try{
+    if(!parCode() || window.__BOSS || window.__essai) return;
+    if((document.getElementById('name').value||'').trim().toLowerCase()==='boss') return;
+    const sv=document.getElementById('startDate').value; if(!sv) return;
+    if(workToday() < addDays(new Date(sv+'T00:00:00'),2)) return;          // à partir du 3e jour
+    const libre=['reglesGate','plageGate','welcomeGate','renouvGate','parGate'].every(id=>{ const g=document.getElementById(id); return !g || g.style.display!=='block' && g.style.display!=='flex'; });
+    if(!libre || document.hidden) return;
+    const o=parGet(), dernier=Math.max(o.last||0, o.vu||0);
+    if(Date.now()-dernier < PAR_RAPPEL_J*86400000) return;
+    const P=parServeur;
+    document.getElementById('parGateTxt').innerHTML='ส่งข้อความชวนเพื่อนทาง LINE แค่ 1 นาที 📲<br>เพื่อนทำงานครบ <b>2 เดือน</b> → คุณรับ <b>2,000 ฿</b><br>'
+      +(P && P.resas ? '🔥 เพื่อนจองแล้ว <b>'+P.resas+'</b> คน — ชวนเพิ่มอีก!' : 'ยิ่งชวนมาก ยิ่งได้มาก · ไม่จำกัดจำนวน');
+    document.getElementById('parGate').style.display='flex';
+  }catch(e){}
+}
+setInterval(parAff, 20000); setTimeout(parAff, 2000);
+setInterval(parRappel, 60000); setTimeout(parRappel, 45000);
 setInterval(plVerifier, 1000); setTimeout(plVerifier, 1200);
 
 // ===== 📋 RÈGLEMENT : lecture chapitre par chapitre, texte non sélectionnable / non copiable,
@@ -2046,7 +2150,7 @@ function reglesAccepter(){
   if(!document.getElementById('rgAccord').checked) return;
   const n=(document.getElementById('name').value||'').trim(), t=(document.getElementById('phone').value||'').replace(/\D/g,'');
   try{ localStorage.setItem(rgCle(), String(Date.now())); }catch(e){}
-  try{ fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'règlement',src:'app',res:'✅ Règlement lu et accepté — '+n+' '+t})}).catch(()=>{}); }catch(e){}
+  try{ fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'app',thai:true,src:'app',res:'✅ Règlement lu et accepté — '+n+' '+t})}).catch(()=>{}); }catch(e){}
   rgOblig=false; reglesFermer(); alert('✅ ขอบคุณ — ยอมรับกฎระเบียบเรียบร้อยแล้ว');
 }
 function reglesObligatoires(){
