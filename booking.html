@@ -94,6 +94,13 @@
     <div class="card" id="essaiCard" style="display:none">
       <label style="margin-top:0">🧪 วันทดลองงาน</label>
       <div style="font-size:1.1rem;font-weight:800">⏰ 12:00 – 20:00 น. · 💰 รับประกัน 500 ฿ หากไม่มีลูกค้า</div>
+      <label>อายุ (ปี)</label>
+      <input id="age" type="tel" inputmode="numeric" maxlength="2" placeholder="เช่น 25" autocomplete="off">
+      <div id="ageWarn" class="warn"></div>
+      <label>LINE ID</label>
+      <input id="lineid" placeholder="เช่น noi.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <div id="lineWarn" class="warn">⚠️ LINE ID ไม่ถูกต้อง (4–20 ตัว: a-z 0-9 . - _)</div>
+      <div class="small" style="margin-top:8px">📷 หลังจองแล้ว กรุณาส่งรูปเต็มตัวให้หัวหน้าทาง LINE</div>
       <div class="small" style="margin:8px 0 6px;font-weight:700;color:var(--text)">📅 เลือกวันทดลองงาน · 10 วันข้างหน้า (1 คน ต่อวัน)</div>
       <div id="essaiJours" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">⏳ …</div>
       <div id="essaiDispo" class="small" style="margin-top:8px"></div>
@@ -110,6 +117,11 @@
     <div class="ic">✅</div>
     <h2 style="margin:6px 0">จองเรียบร้อยแล้ว</h2>
     <div class="sum" id="sum"></div>
+    <div id="photoBox" class="adr" style="display:none;border-color:#06c755;background:#f0fdf4">
+      <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px">📷 ขั้นตอนสุดท้าย</div>
+      <div style="text-align:left;line-height:1.6;font-size:.95rem">กรุณาส่ง <b>รูปถ่ายเต็มตัว</b> (เห็นตั้งแต่หัวถึงเท้า) ให้หัวหน้าทาง LINE <b>ก่อนวันทดลองงาน</b><br>และนำ <b>บัตรประชาชน</b> มาด้วยในวันทดลองงาน</div>
+      <a id="lineBtn" class="adrBtn" style="background:#06c755;display:none" target="_blank" rel="noopener">💬 ส่งรูปทาง LINE</a>
+    </div>
     <div class="adr">
       <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px">📍 ที่อยู่ร้าน</div>
       <div style="font-size:1.15rem;font-weight:800;margin-bottom:8px">129b Soi Buakhao</div>
@@ -125,6 +137,9 @@
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const SH={ '10':[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],['16h-22h','16:00-22:00 น.'],['19h-01h','19:00-01:00 น.'],['21h-03h','21:00-03:00 น.']],
            '30':[['09:00-17:00','09:00-17:00 น.'],['17:00-01:00','17:00-01:00 น.']] };
+// ⚙️ RÉGLAGES JOUR D'ESSAI (à modifier ici ET dans le script Google : AGE_MIN_ESSAI / AGE_MAX_ESSAI)
+const AGE_MIN=18, AGE_MAX=35;
+const LINE_OA='';   // lien de votre LINE pour recevoir les photos, ex. 'https://line.me/ti/p/~votre_id' (vide = bouton masqué)
 let choix='', res={};
 const $=id=>document.getElementById(id);
 // ⏳ gros rond de chargement au centre (Google met quelques secondes à répondre)
@@ -133,6 +148,9 @@ const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+Stri
 const dm=s=>s.split('-').reverse().join('/');
 async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
 function nomOk(){ return /^[A-Za-z][A-Za-z .'-]*$/.test($('name').value.trim()); }
+function ageVal(){ const v=$('age').value.trim(); return /^\d{1,2}$/.test(v) ? +v : -1; }
+function ageOk(){ const a=ageVal(); return a>=AGE_MIN && a<=AGE_MAX; }
+function lineOk(){ return /^[a-z0-9._-]{4,20}$/.test($('lineid').value.trim().toLowerCase()); }
 function telOk(){ return /^0\d{9}$/.test($('phone').value.replace(/\D/g,'')); }
 function fin(){ const s=$('start').value; if(!s) return ''; const d=new Date(s+'T00:00:00'); d.setDate(d.getDate()+(+$('contract').value)-1); return iso(d); }
 // ===== 2 OPTIONS : contrat 10 jours  /  🧪 jour d'essai (12:00-20:00, garantie 500 ฿) =====
@@ -170,17 +188,18 @@ function dessinerJours(){
 }
 async function reserverEssai(){
   const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
-  const p={type:'essai', th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), date:$('start').value};
+  const p={type:'essai', th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), date:$('start').value, age:ageVal(), line:$('lineid').value.trim().toLowerCase()};
   try{
     const t=await readTxt(await fetch(API,{method:'POST',body:JSON.stringify(p)}));
     if(t==='ok'){
-      $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>🧪 ทดลองงาน 1 วัน<br>🗓️ <span id="s3"></span><br>⏰ 12:00 – 20:00 น. · รับประกัน 500 ฿ หากไม่มีลูกค้า';
-      $('sum').querySelector('b').textContent=p.name; $('s1').textContent=p.phone; $('s3').textContent=dm(p.date);
+      $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>💬 LINE: <span id="s2"></span><br>🧪 ทดลองงาน 1 วัน<br>🗓️ <span id="s3"></span><br>⏰ 12:00 – 20:00 น. · รับประกัน 500 ฿ หากไม่มีลูกค้า';
+      $('sum').querySelector('b').textContent=p.name; $('s1').textContent=p.phone; $('s2').textContent=p.line; $('s3').textContent=dm(p.date);
+      $('photoBox').style.display='block'; if(LINE_OA){ const lb=$('lineBtn'); lb.href=LINE_OA; lb.style.display='block'; }
       $('doneNote').textContent='กรุณามาถึงร้านก่อน 12:00 น. ในวันที่จอง — หัวหน้าจะติดต่อกลับทาง LINE / โทรศัพท์';
       const a=document.querySelector('#done a.btn'); if(a) a.style.display='none';
       $('form').style.display='none'; $('done').style.display='block';
     } else {
-      const q=t.split('|'); $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 วันนี้มีคนจองแล้ว — เลือกวันอื่น':'⚠️ จองไม่ได้ — ลองใหม่';
+      const q=t.split('|'); $('msg').textContent = q[1]==='tel'?'⚠️ ต้องใช้เบอร์โทรศัพท์ไทย (06/08/09)':q[1]==='plein'?'🔴 วันนี้มีคนจองแล้ว — เลือกวันอื่น':q[1]==='age'?'⚠️ ขออภัย ขณะนี้ไม่สามารถรับสมัครได้':q[1]==='line'?'⚠️ LINE ID ไม่ถูกต้อง':'⚠️ จองไม่ได้ — ลองใหม่';
       $('msg').style.display='block'; b.textContent='🧪 จองวันทดลองงาน'; chargerEssai();
     }
   }catch(e){ $('msg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; $('msg').style.display='block'; b.textContent='🧪 จองวันทดลองงาน'; b.disabled=false; }
@@ -188,7 +207,11 @@ async function reserverEssai(){
 function check(){
   if(MODE==='essai'){ $('nameWarn').style.display = $('name').value.trim() && !nomOk() ? 'block' : 'none';
     $('telWarn').style.display = $('phone').value.trim() && !telOk() ? 'block' : 'none'; $('endTxt').textContent='';
-    $('go').disabled = !(nomOk() && telOk() && $('start').value && essaiOk); return; }
+    const av=$('age').value.trim(), aw=$('ageWarn');
+    if(!av) aw.style.display='none'; else if(ageVal()<0){ aw.textContent='⚠️ กรุณาใส่อายุเป็นตัวเลข'; aw.style.display='block'; }
+    else if(!ageOk()){ aw.textContent='⚠️ ขออภัย ขณะนี้ไม่สามารถรับสมัครได้'; aw.style.display='block'; } else aw.style.display='none';
+    $('lineWarn').style.display = $('lineid').value.trim() && !lineOk() ? 'block' : 'none';
+    $('go').disabled = !(nomOk() && telOk() && ageOk() && lineOk() && $('start').value && essaiOk); return; }
   $('nameWarn').style.display = $('name').value.trim() && !nomOk() ? 'block' : 'none';
   $('telWarn').style.display = $('phone').value.trim() && !telOk() ? 'block' : 'none';
   $('endTxt').textContent = $('start').value ? 'ถึงวันที่ '+dm(fin())+' ('+$('contract').value+' วัน)' : '';
@@ -284,7 +307,7 @@ function preRemplir(){ try{ const q=new URLSearchParams(location.search);
 gateStart();
 // dates possibles : de demain à +60 jours
 (()=>{ const a=new Date(); a.setDate(a.getDate()+1); const z=new Date(); z.setDate(z.getDate()+60); $('start').min=iso(a); $('start').max=iso(z); })();
-['name','phone'].forEach(id=>$(id).addEventListener('input',check));
+['name','phone','age','lineid'].forEach(id=>$(id).addEventListener('input',check));
 $('start').addEventListener('change',charger); $('contract').addEventListener('change',charger);
 </script>
 </body>
