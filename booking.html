@@ -111,7 +111,7 @@
       <div id="essaiDispo" class="small" style="margin-top:8px"></div>
     </div>
     <div class="card modeC">
-      <label style="margin-top:0">ช่วงเวลาทำงาน <span class="small">(สูงสุด 5 คน ต่อช่วงเวลา)</span></label>
+      <label style="margin-top:0">ช่วงเวลาทำงาน <span class="small">(สูงสุด 4 คน ต่อช่วงเวลา)</span></label>
       <div id="shifts" class="small">เลือกวันที่เริ่มงานก่อน</div>
     </div>
     <button class="big" id="go" disabled onclick="reserver()">📝 จองเลย</button>
@@ -238,9 +238,9 @@ async function charger(){
 function draw(){
   const S=$('shifts'), n=$('contract').value; S.innerHTML='';
   SH[n].forEach(([k,l])=>{
-    const x=res[k]||{v:'',max:0}, libre=Math.max(0,5-(+x.max||0));
+    const x=res[k]||{v:'',max:0}, libre=Math.max(0,4-(+x.max||0));
     const b=document.createElement('button'); b.className='sh'+(choix===k?' on':'');
-    let etat = x.v ? (x.v.startsWith('plein')?'🔴 เต็ม':x.v.startsWith('meme')?'⛔ มีคนเริ่มวันนี้แล้ว':'🔄 ต้องเปลี่ยน') : '✅ ว่าง '+libre+'/5';
+    let etat = x.v ? (x.v.startsWith('plein')?'🔴 เต็ม':x.v.startsWith('meme')?'⛔ มีคนเริ่มวันนี้แล้ว':'🔄 ต้องเปลี่ยน') : '✅ ว่าง '+libre+'/4';
     b.innerHTML='<span></span><small></small>'; b.querySelector('span').textContent=l; b.querySelector('small').textContent=etat;
     b.querySelector('small').style.color = x.v ? 'var(--red)' : 'var(--green)';
     b.disabled=!!x.v; b.onclick=()=>{ choix=k; draw(); check(); };
