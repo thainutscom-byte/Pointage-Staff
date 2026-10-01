@@ -54,15 +54,17 @@
 
   <div id="main" style="display:none">
     <div class="card">
-      <h2>👑 Mes massages aujourd'hui <span id="moiDate" style="font-weight:normal;color:var(--muted);font-size:.8rem"></span></h2>
-      <div class="moi">
-        <div><label>1 lady<br>600 ฿</label><div class="st"><button onclick="pm('l1',-1)">−</button><input id="l1" type="number" min="0" inputmode="numeric" value="0" oninput="moiCa()"><button onclick="pm('l1',1)">+</button></div></div>
-        <div><label>2 lady<br>800 ฿</label><div class="st"><button onclick="pm('l2',-1)">−</button><input id="l2" type="number" min="0" inputmode="numeric" value="0" oninput="moiCa()"><button onclick="pm('l2',1)">+</button></div></div>
-        <div><label>Happy Hour<br>600 ฿</label><div class="st"><button onclick="pm('hh',-1)">−</button><input id="hh" type="number" min="0" step="0.5" inputmode="decimal" value="0" oninput="moiCa()"><button onclick="pm('hh',1)">+</button></div></div>
+      <h2>✏️ Corriger les massages d'une employée <span id="corDate" style="font-weight:normal;color:var(--muted);font-size:.8rem"></span></h2>
+      <select id="corEmp" onchange="corDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
+      <div id="corInfo" class="small" style="text-align:left;margin:8px 0"></div>
+      <div class="moi" id="corBox" style="display:none">
+        <div><label>1 lady<br>600 ฿</label><div class="st"><button onclick="pm('l1',-1)">−</button><input id="l1" type="number" min="0" inputmode="numeric" value="0" oninput="corCa()"><button onclick="pm('l1',1)">+</button></div></div>
+        <div><label>2 lady<br>800 ฿</label><div class="st"><button onclick="pm('l2',-1)">−</button><input id="l2" type="number" min="0" inputmode="numeric" value="0" oninput="corCa()"><button onclick="pm('l2',1)">+</button></div></div>
+        <div><label>Happy Hour<br>600 ฿</label><div class="st"><button onclick="pm('hh',-1)">−</button><input id="hh" type="number" min="0" step="0.5" inputmode="decimal" value="0" oninput="corCa()"><button onclick="pm('hh',1)">+</button></div></div>
       </div>
-      <div id="moiCa" style="text-align:center;font-weight:800;margin:10px 0 8px">Total : 0 ฿</div>
-      <button class="big green" id="moiOk" onclick="moiEnvoyer()">💾 Enregistrer mes massages</button>
-      <div id="moiMsg" class="small" style="margin-top:6px"></div>
+      <div id="corTot" style="text-align:center;font-weight:800;margin:10px 0 8px"></div>
+      <button class="big green" id="corOk" disabled onclick="corEnvoyer()">✔ Corriger les massages</button>
+      <div id="corMsg" class="small" style="margin-top:6px"></div>
     </div>
     <div class="card">
       <h2>1️⃣ Employée <span style="font-weight:normal;color:var(--green);font-size:.8rem">● en service aujourd'hui</span></h2>
@@ -121,7 +123,7 @@ async function charger(){
     if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
     emps=j.emps||[]; sel=null; draw();
     HOR=j.hor||{}; horListe(); ARR=j.arr||{}; arrListe();
-    if(j.moi && !moiTouche){ ['l1','l2','hh'].forEach(k=>$(k).value=j.moi[k]||0); moiAff(); }
+    JOUR=j.jour||{}; corListe();
     const R=$('resa'); R.innerHTML='';
     if(!(j.resa||[]).length) R.textContent='Aucune réservation pour le moment.';
     (j.resa||[]).forEach(x=>{ const d=document.createElement('div'); d.style.cssText='border-top:1px solid var(--border);padding:8px 0;font-size:.95rem;color:var(--text)';
@@ -172,21 +174,37 @@ async function places(){
     P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
   }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
 }
-// ===== 👑 MES MASSAGES (Boss) : 1 ligne par jour dans « Massages », comptée dans les totaux =====
-let moiTouche=false;
-function pm(k,d){ const el=$(k); el.value=Math.max(0,(+el.value||0)+d); moiCa(); }
-function moiAff(){ const v=k=>Math.max(0,+$(k).value||0); $('moiCa').textContent='Total : '+(v('l1')*600+v('l2')*800+v('hh')*600).toLocaleString('en-US')+' ฿'; }
-function moiCa(){ moiTouche=true; moiAff(); $('moiMsg').textContent='⚠️ pas encore enregistré'; $('moiMsg').style.color='#d97706'; }
-async function moiEnvoyer(){
-  const b=$('moiOk'); b.disabled=true; b.textContent='⏳ …';
-  try{
-    const r=await fetch(API,{method:'POST',body:JSON.stringify({type:'bossday',date:isoJ(0),l1:+$('l1').value||0,l2:+$('l2').value||0,hh:+$('hh').value||0})});
-    const j=JSON.parse(await readTxt(r)); if(!j.ok) throw 0;
-    moiTouche=false; $('moiMsg').style.color='var(--green)'; $('moiMsg').textContent='✅ Enregistré dans Google ('+j.ca.toLocaleString('en-US')+' ฿)';
-  }catch(e){ $('moiMsg').style.color='var(--red)'; $('moiMsg').textContent='❌ Pas envoyé — vérifiez internet et réessayez'; }
-  b.disabled=false; b.textContent='💾 Enregistrer mes massages';
+// ===== ✏️ CORRIGER LES MASSAGES D'UNE EMPLOYÉE (aujourd'hui) : l'employée s'est trompée → le téléphone se met à jour =====
+let JOUR={}, corTouche=false;
+function pm(k,d){ const el=$(k); el.value=Math.max(0,(+el.value||0)+d); corCa(); }
+function corAff(){ const v=k=>Math.max(0,+$(k).value||0); $('corTot').textContent='Total : '+(v('l1')*600+v('l2')*800+v('hh')*600).toLocaleString('en-US')+' ฿'; }
+function corCa(){ corTouche=true; corAff(); $('corOk').disabled=!$('corEmp').value; $('corMsg').textContent='⚠️ pas encore enregistré'; $('corMsg').style.color='#d97706'; }
+function corListe(){
+  const S=$('corEmp'), v=S.value; S.innerHTML='<option value="">— choisir l\'employée —</option>';
+  emps.forEach(e=>{ const o=document.createElement('option'); o.value=e.label; const m=JOUR[cleE(e.label)];
+    o.textContent=(e.service?'● ':'')+e.nom+(m?' · '+m.l1+' / '+m.l2+' / '+m.hh:' · pas encore de journée'); S.appendChild(o); });
+  S.value=emps.some(e=>e.label===v)?v:''; if(!corTouche) corDraw();
 }
-(()=>{ const p=isoJ(0).split('-'); $('moiDate').textContent='('+p[2]+'/'+p[1]+')'; })();
+function corDraw(){
+  const k=$('corEmp').value, m=k?JOUR[cleE(k)]:null; corTouche=false;
+  $('corBox').style.display=m?'':'none'; $('corOk').disabled=true; $('corMsg').textContent='';
+  if(!k){ $('corInfo').textContent=''; $('corTot').textContent=''; return; }
+  if(!m){ $('corInfo').textContent='Cette employée n\'a pas encore envoyé sa journée d\'aujourd\'hui — rien à corriger.'; $('corTot').textContent=''; return; }
+  $('corInfo').textContent='Chiffres envoyés par l\'employée : 1 lady '+m.l1+' · 2 lady '+m.l2+' · Happy Hour '+m.hh;
+  ['l1','l2','hh'].forEach(x=>$(x).value=m[x]||0); corAff();
+}
+async function corEnvoyer(){
+  const k=$('corEmp').value; if(!k) return; const b=$('corOk'); b.disabled=true; b.textContent='⏳ …';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'bosscorrige',label:k,date:isoJ(0),l1:+$('l1').value||0,l2:+$('l2').value||0,hh:+$('hh').value||0})})));
+    if(!j.ok) throw j.err||'x';
+    JOUR[cleE(k)]={l1:j.l1,l2:j.l2,hh:j.hh}; corTouche=false; corListe(); corDraw();
+    $('corMsg').style.color='var(--green)'; $('corMsg').textContent='✅ Corrigé ('+j.ca.toLocaleString('en-US')+' ฿) — le téléphone de '+k.split(' — ')[0]+' se met à jour à la prochaine ouverture';
+    $('corOk').disabled=true;
+  }catch(e){ $('corMsg').style.color='var(--red)'; $('corMsg').textContent=e==='ligne'?'❌ Cette employée n\'a pas encore envoyé sa journée':'❌ Pas envoyé — réessayez'; $('corOk').disabled=false; }
+  b.textContent='✔ Corriger les massages';
+}
+(()=>{ const p=isoJ(0).split('-'); $('corDate').textContent='('+p[2]+'/'+p[1]+')'; })();
 // ===== ⏰ HEURE D'ARRIVÉE : le patron valide l'heure réelle → le téléphone recalcule le retard =====
 let ARR={};
 const cleE=l=>{ const p=l.split(' — '); return p.slice(0,-1).join(' — ').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(p[p.length-1]).replace(/\D/g,''); };
@@ -243,7 +261,7 @@ async function horValider(){
     if(!j.ok) throw j.err||'x';
     $('horMsg').style.color='var(--green)'; $('horMsg').textContent='✅ Horaire changé — le téléphone de '+k.split(' — ')[0]+' se met à jour à la prochaine ouverture'+(j.alerte?' · ⚠️ '+j.alerte:'');
     HOR[k]={...HOR[k],sh:j.sh,impose:true}; horListe(); places();
-  }catch(e){ $('horMsg').style.color='var(--red)'; $('horMsg').textContent=e==='contrat'?'❌ Pas de contrat en cours pour cette employée':'❌ Pas envoyé — réessayez'; }
+  }catch(e){ $('horMsg').style.color='var(--red)'; $('horMsg').textContent=e==='contrat'?'❌ Pas de contrat en cours pour cette employée':e==='meme'?'⛔ Refusé : une autre employée commence le même jour sur cet horaire':'❌ Pas envoyé — réessayez'; }
   b.textContent='✔ Changer l\'horaire';
 }
 start(); places();
