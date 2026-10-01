@@ -936,6 +936,7 @@ async function syncSheet(){
   if(sheetBusy || !SHEET_URL) return; sheetBusy=true;
   const sent=sheetSent(); let pending=0, okN=0; const rsTok=resyncMode;
   for(const day of document.querySelectorAll('.day[data-locked="1"]')){
+    { const dd0=dayDate(+day.dataset.d); if(dd0 && dd0>workToday()) continue; }   // jamais de journée dans le futur
     const p=dayPayload(day); if(!p) continue;
     if(rsTok && sent[p.id]){   // 🔁 récupération : renvoi des journées déjà envoyées
       try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({...p, resync:true})}); const t=await readTxt(r); if(!(r.ok && (t==='ok'||t==='blocked'))) pending++; }
@@ -954,7 +955,7 @@ async function syncSheet(){
   const ss0=(()=>{ try{ return JSON.parse(localStorage.getItem('sheet_start_v1')||'{}'); }catch(e){ return {}; } })();
   for(const day of document.querySelectorAll('.day')){
     const arr=day.querySelector('.arrival').value, dd=dayDate(+day.dataset.d), k=empKey();
-    if(!arr || !dd || !k) continue;
+    if(!arr || !dd || !k || dd>workToday()) continue;
     const st={type:'start', id:k+'|'+isoD(dd), date:isoD(dd), arrival:arr, name:document.getElementById('name').value.trim(),
               phone:document.getElementById('phone').value.trim(), contract:N===10?'Freelance 10 j':'Mensuel 30 j', ...cycleInfo()};
     if(ss0[st.id]) continue;
@@ -1380,6 +1381,7 @@ setInterval(syncSheet, 5*60*1000);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncSheet(); });
 setTimeout(syncSheet, 2500);
 function lockDay(btn){
+  { const dd0=dayDate(+btn.closest('.day').dataset.d); if(dd0 && dd0>workToday() && !window.__BOSS){ alert('⚠️ ยังไม่ถึงวันนี้ — ยืนยันได้เฉพาะวันที่ทำงานแล้ว'); return; } }
   { const dd=btn.closest('.day'); if(dd.querySelector('.c-just').checked && !dd.dataset.cert){ alert('⚠️ กรุณาแนบใบรับรองแพทย์ก่อน'); return; } }
   if(!confirm('ล็อกวันนี้ถาวร? หลังจากนี้จะแก้ไขไม่ได้')) return;
   const day = btn.closest('.day');
@@ -1807,7 +1809,7 @@ function plPre(on, e){
   const note=document.getElementById('plPreNote');
   if(on){
     if(!plPreCaches){
-      const keepIds=['contract','startDate','freelanceNote','monthlyCard'];
+      const keepIds=['contract','startDate','freelanceNote','monthlyCard','pkg','uniShort','uniTee'];
       const keep=new Set(keepIds.map(id=>{ const el=document.getElementById(id); return el && (el.closest('.field')&&id!=='freelanceNote'&&id!=='monthlyCard' ? el.closest('.field') : el); }).filter(Boolean));
       const card=document.getElementById('contract').closest('.card');
       let n=document.getElementById('plPreNote'); if(!n){ n=document.createElement('div'); n.id='plPreNote'; n.style.cssText='background:#dbeafe;border:2px solid #2563eb;border-radius:12px;padding:10px;margin-bottom:12px;font-weight:700;text-align:center;line-height:1.6;color:#111827;'; card.prepend(n); }
@@ -1819,7 +1821,7 @@ function plPre(on, e){
       [...document.body.children].forEach(c=>{ if(chemin.has(c) || c.tagName==='SCRIPT' || c.tagName==='STYLE' || /Gate$|Bar$|Banner$/.test(c.id||'')) return; plPreCaches.push([c, c.style.display]); c.style.display='none'; });
     }
     const o=new Date(e.prochain);
-    document.getElementById('plPreNote').innerHTML='⏳ สัญญาเริ่มวันที่ '+fmtDate(new Date(e.dd))+(curShift() ? '<br>แอปจะเปิดใช้งานเต็มรูปแบบ '+TH_DAYS[o.getDay()]+' '+fmtDate(o).slice(0,5)+' เวลา '+fmtHM(o)+' น.' : '<br><span style="color:#dc2626;">⚠️ กรุณาเลือกช่วงเวลาทำงาน</span>')+'<br><span style="font-weight:400;font-size:.85rem;">ตอนนี้เลือกได้เฉพาะ ประเภทสัญญา · วันที่เริ่มรอบ · ช่วงเวลาทำงาน</span>';
+    document.getElementById('plPreNote').innerHTML='⏳ สัญญาเริ่มวันที่ '+fmtDate(new Date(e.dd))+(curShift() ? '<br>แอปจะเปิดใช้งานเต็มรูปแบบ '+TH_DAYS[o.getDay()]+' '+fmtDate(o).slice(0,5)+' เวลา '+fmtHM(o)+' น.' : '<br><span style="color:#dc2626;">⚠️ กรุณาเลือกช่วงเวลาทำงาน</span>')+'<br><span style="font-weight:400;font-size:.85rem;">ตอนนี้เลือกได้เฉพาะ ประเภทสัญญา · วันที่เริ่มรอบ · ช่วงเวลาทำงาน · ที่พัก · ยูนิฟอร์ม</span>';
   } else if(plPreCaches){
     plPreCaches.forEach(([c,d])=>c.style.display=d); plPreCaches=null; if(note) note.remove();
   }
