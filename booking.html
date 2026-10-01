@@ -64,7 +64,7 @@
 
   <div class="card" style="background:#fef3c7;border:2px solid #f59e0b;text-align:center;line-height:1.6">
     <div style="font-weight:800;font-size:1.05rem">🇹🇭 รับสมัครเฉพาะผู้ที่มีสัญชาติไทยเท่านั้น</div>
-    <div class="small" style="color:#92400e;font-weight:700">👩 เฉพาะผู้หญิง (Lady) อายุ 18 ปีขึ้นไปเท่านั้น</div>
+    <div class="small" style="color:#92400e;font-weight:700">👩 เฉพาะผู้หญิง (Lady) อายุ 18 – 35 ปี เท่านั้น</div>
   </div>
 
   <div id="gate" class="card" style="text-align:center">
@@ -77,6 +77,12 @@
   </div>
   <div id="stop" class="card ok" style="display:none"><div class="ic">⛔</div><h2 style="margin:6px 0">ไม่สามารถจองได้</h2><div class="small">This page is for Thai staff only.</div></div>
 
+  <div id="ageStop" class="card ok" style="display:none;border:3px solid var(--red)">
+    <div class="ic">⛔</div>
+    <h2 style="margin:6px 0">ขออภัย ไม่สามารถจองได้</h2>
+    <div id="ageStopTxt" style="line-height:1.7;font-size:1.02rem"></div>
+    <div class="small" style="margin-top:12px">รับสมัครเฉพาะผู้หญิงสัญชาติไทย อายุ 18 – 35 ปี<br>ต้องนำบัตรประชาชนมาแสดงในวันเริ่มงาน</div>
+  </div>
   <div id="form" style="display:none">
     <div class="card">
       <label style="margin-top:0">เลือกแบบที่ต้องการ</label>
@@ -90,6 +96,14 @@
       <label>เบอร์โทรศัพท์</label>
       <input id="phone" type="tel" inputmode="numeric" placeholder="08X XXX XXXX">
       <div id="telWarn" class="warn">⚠️ เบอร์โทรไม่ถูกต้อง (10 หลัก)</div>
+      <label>🎂 วันเกิด</label>
+      <div style="display:grid;grid-template-columns:1fr 1.6fr 1.6fr;gap:6px">
+        <select id="dnJ"><option value="">วัน</option></select>
+        <select id="dnM"><option value="">เดือน</option></select>
+        <select id="dnA"><option value="">ปี (พ.ศ.)</option></select>
+      </div>
+      <div id="ageWarn" class="warn"></div>
+      <div class="small" style="margin-top:4px">รับสมัครเฉพาะผู้ที่มีอายุ 18 – 35 ปี</div>
       <label class="modeC">ประเภทสัญญา</label>
       <select id="contract" class="modeC"><option value="10">ฟรีแลนซ์ (10 วัน)</option><option value="30">รายเดือน (30 วัน)</option></select>
       <label id="startLbl" class="modeC">วันที่เริ่มงาน</label>
@@ -99,9 +113,6 @@
     <div class="card" id="essaiCard" style="display:none">
       <label style="margin-top:0">🧪 วันทดลองงาน</label>
       <div style="font-size:1.1rem;font-weight:800">⏰ 12:00 – 20:00 น. · 💰 รับประกัน 500 ฿ หากไม่มีลูกค้า</div>
-      <label>อายุ (ปี)</label>
-      <input id="age" type="tel" inputmode="numeric" maxlength="2" placeholder="เช่น 25" autocomplete="off">
-      <div id="ageWarn" class="warn"></div>
       <label>LINE ID</label>
       <input id="lineid" placeholder="เช่น noi.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
       <div id="lineWarn" class="warn">⚠️ LINE ID ไม่ถูกต้อง (4–20 ตัว: a-z 0-9 . - _)</div>
@@ -153,7 +164,30 @@ const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+Stri
 const dm=s=>s.split('-').reverse().join('/');
 async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
 function nomOk(){ return /^[A-Za-z][A-Za-z .'-]*$/.test($('name').value.trim()); }
-function ageVal(){ const v=$('age').value.trim(); return /^\d{1,2}$/.test(v) ? +v : -1; }
+// 🎂 DATE DE NAISSANCE : âge calculé → hors 18-35 ans = page de refus, bloqué (moins de 18 ans : jusqu'à ses 18 ans)
+const MOIS_TH=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+(()=>{ const J=$('dnJ'), M=$('dnM'), A=$('dnA'), y=new Date().getFullYear();
+  for(let i=1;i<=31;i++) J.add(new Option(i, i));
+  MOIS_TH.forEach((m,i)=>M.add(new Option(m, i+1)));
+  for(let a=y-12;a>=y-70;a--) A.add(new Option((a+543)+' ('+a+')', a)); })();
+function naissance(){ const j=+$('dnJ').value, m=+$('dnM').value, a=+$('dnA').value; if(!j||!m||!a) return null;
+  const d=new Date(a, m-1, j); return (d.getMonth()===m-1) ? d : 'x'; }
+function ageVal(){ const d=naissance(); if(!d || d==='x') return -1; const t=new Date();
+  let n=t.getFullYear()-d.getFullYear(); if(t.getMonth()<d.getMonth() || (t.getMonth()===d.getMonth() && t.getDate()<d.getDate())) n--; return n; }
+function dnIso(){ const d=naissance(); return d && d!=='x' ? iso(d) : ''; }
+function ageRefus(){
+  const n=ageVal(), d=naissance(); if(n<0) return;
+  let jusqua='toujours', txt;
+  if(n<AGE_MIN){ const b=new Date(d); b.setFullYear(d.getFullYear()+AGE_MIN); jusqua=iso(b);
+    txt='ต้องมีอายุ <b>18 ปีขึ้นไป</b> เท่านั้น<br>ตอนนี้คุณอายุ <b>'+n+' ปี</b><br><br>📅 จองได้ตั้งแต่วันที่<br><b style="font-size:1.3rem">'+dm(jusqua)+'</b><br>(วันเกิดอายุครบ 18 ปี)'; }
+  else txt='รับสมัครเฉพาะผู้ที่มีอายุ <b>18 – 35 ปี</b><br>ขอบคุณที่สนใจร่วมงานกับเรา 🙏';
+  lsSet('booking_age_stop', JSON.stringify({jusqua, txt, n}));
+  scan('⛔ âge refusé : '+n+' ans (née le '+dm(dnIso())+')'+(jusqua!=='toujours'?' → bloquée jusqu\'au '+dm(jusqua):''));
+  ageStop(txt);
+}
+function ageStop(txt){ $('gate').style.display='none'; $('form').style.display='none'; $('ageStop').style.display='block'; $('ageStopTxt').innerHTML=txt; window.scrollTo(0,0); }
+function ageBloque(){ try{ const o=JSON.parse(lsGet('booking_age_stop')||'null'); if(!o) return null;
+  if(o.jusqua!=='toujours' && iso(new Date())>=o.jusqua){ localStorage.removeItem('booking_age_stop'); return null; } return o; }catch(e){ return null; } }
 function ageOk(){ const a=ageVal(); return a>=AGE_MIN && a<=AGE_MAX; }
 function lineOk(){ return /^[a-z0-9._-]{4,20}$/.test($('lineid').value.trim().toLowerCase()); }
 function telOk(){ return /^0\d{9}$/.test($('phone').value.replace(/\D/g,'')); }
@@ -193,7 +227,7 @@ function dessinerJours(){
 }
 async function reserverEssai(){
   const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
-  const p={type:'essai', th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), date:$('start').value, age:ageVal(), line:$('lineid').value.trim().toLowerCase()};
+  const p={type:'essai', th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), date:$('start').value, age:ageVal(), naissance:dnIso(), line:$('lineid').value.trim().toLowerCase()};
   try{
     const t=await readTxt(await fetch(API,{method:'POST',body:JSON.stringify(p)}));
     if(t==='ok'){
@@ -210,17 +244,17 @@ async function reserverEssai(){
   }catch(e){ $('msg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; $('msg').style.display='block'; b.textContent='🧪 จองวันทดลองงาน'; b.disabled=false; }
 }
 function check(){
+  { const aw=$('ageWarn'), d=naissance();
+    if(d==='x'){ aw.textContent='⚠️ วันเกิดไม่ถูกต้อง'; aw.style.display='block'; }
+    else { aw.style.display='none'; if(d && !ageOk()){ ageRefus(); return; } } }
   if(MODE==='essai'){ $('nameWarn').style.display = $('name').value.trim() && !nomOk() ? 'block' : 'none';
     $('telWarn').style.display = $('phone').value.trim() && !telOk() ? 'block' : 'none'; $('endTxt').textContent='';
-    const av=$('age').value.trim(), aw=$('ageWarn');
-    if(!av) aw.style.display='none'; else if(ageVal()<0){ aw.textContent='⚠️ กรุณาใส่อายุเป็นตัวเลข'; aw.style.display='block'; }
-    else if(!ageOk()){ aw.textContent='⚠️ ขออภัย ขณะนี้ไม่สามารถรับสมัครได้'; aw.style.display='block'; } else aw.style.display='none';
     $('lineWarn').style.display = $('lineid').value.trim() && !lineOk() ? 'block' : 'none';
     $('go').disabled = !(nomOk() && telOk() && ageOk() && lineOk() && $('start').value && essaiOk); return; }
   $('nameWarn').style.display = $('name').value.trim() && !nomOk() ? 'block' : 'none';
   $('telWarn').style.display = $('phone').value.trim() && !telOk() ? 'block' : 'none';
   $('endTxt').textContent = $('start').value ? 'ถึงวันที่ '+dm(fin())+' ('+$('contract').value+' วัน)' : '';
-  $('go').disabled = !(nomOk() && telOk() && $('start').value && choix);
+  $('go').disabled = !(nomOk() && telOk() && ageOk() && $('start').value && choix);
 }
 async function charger(){
   if(MODE==='essai') return chargerEssai();
@@ -251,7 +285,7 @@ async function reserver(){
   if($('go').disabled) return;
   if(MODE==='essai') return reserverEssai();
   const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
-  const p={type:'cycle', booking:true, th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), sh:choix,
+  const p={type:'cycle', booking:true, age:ageVal(), naissance:dnIso(), th:ctl(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), sh:choix,
            cycleStart:$('start').value, cycleEnd:fin(), contract:$('contract').value==='30'?'Mensuel 30 j':'Freelance 10 j'};
   try{
     const r=await fetch(API,{method:'POST',body:JSON.stringify(p)}); const t=await readTxt(r);
@@ -286,6 +320,7 @@ function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; 
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function jour(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function gateStart(){
+  { const o=ageBloque(); if(o){ ageStop(o.txt); scan('⛔ âge : déjà bloquée ('+o.n+' ans)'); return; } }
   if(lsGet('booking_stop')===jour()){ bloquer(); scan('⛔ déjà bloqué aujourd\'hui'); return; }
   if(lsGet('booking_th')==='1'){ ouvrir(); scan('ouvert (déjà vérifié)'); return; }
   if(new URLSearchParams(location.search).get('mode')==='contrat' && /^0\d{9}$/.test(new URLSearchParams(location.search).get('t')||'')){ lsSet('booking_th','1'); ouvrir(); scan('🧪 après essai → contrat'); return; }
@@ -312,7 +347,8 @@ function preRemplir(){ try{ const q=new URLSearchParams(location.search);
 gateStart();
 // dates possibles : de demain à +60 jours
 (()=>{ const a=new Date(); a.setDate(a.getDate()+1); const z=new Date(); z.setDate(z.getDate()+60); $('start').min=iso(a); $('start').max=iso(z); })();
-['name','phone','age','lineid'].forEach(id=>$(id).addEventListener('input',check));
+['name','phone','lineid'].forEach(id=>$(id).addEventListener('input',check));
+['dnJ','dnM','dnA'].forEach(id=>$(id).addEventListener('change',check));
 $('start').addEventListener('change',charger); $('contract').addEventListener('change',charger);
 </script>
 </body>
