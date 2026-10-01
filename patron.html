@@ -78,6 +78,11 @@
       <div id="corMsg" class="small" style="margin-top:6px"></div>
     </div>
     <div class="card">
+      <h2>📇 Contacts des employées</h2>
+      <button class="big green" id="vcfBtn" onclick="vcfTelecharger()">📥 Ajouter les employées à mon répertoire</button>
+      <div id="vcfMsg" class="small" style="margin-top:6px"></div>
+    </div>
+    <div class="card">
       <h2>💰 À payer aux employées</h2>
       <input id="paieMois" type="month" onchange="paieCharger()" style="width:100%;box-sizing:border-box;font-size:1.05rem;letter-spacing:0;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)">
       <div id="paieAuj" class="small" style="text-align:left;margin:8px 0;font-weight:700"></div>
@@ -192,6 +197,18 @@ async function places(){
       h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px 0">'+l+'</td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/5</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/5</td></tr>'; });
     P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
   }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
+}
+// ===== 📇 CONTACTS : fichier .vcf (noms + numéros) à ouvrir sur le téléphone → ajout au répertoire =====
+async function vcfTelecharger(){
+  const b=$('vcfBtn'), m=$('vcfMsg'); b.disabled=true; m.style.color=''; m.textContent='⏳ …';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&vcf=1&_='+Date.now())));
+    if(!j.n) { m.textContent='Aucune employée à ajouter.'; b.disabled=false; return; }
+    const url=URL.createObjectURL(new Blob([j.vcf],{type:'text/vcard'})), a=document.createElement('a');
+    a.href=url; a.download='employees.vcf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000);
+    m.style.color='var(--green)'; m.textContent='✅ '+j.n+' employée(s) : ouvrez le fichier téléchargé et choisissez « Ajouter les contacts ».';
+  }catch(e){ m.style.color='var(--red)'; m.textContent='❌ Pas envoyé — réessayez'; }
+  b.disabled=false;
 }
 // ===== 💰 À PAYER AUX EMPLOYÉES : par mois, par employée, + montant du jour =====
 const fb=n=>(Math.round(n)||0).toLocaleString('en-US')+' ฿';
