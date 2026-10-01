@@ -102,6 +102,10 @@
     <div id="msg"></div>
     <div id="smsBox"></div>
     <div class="card" style="margin-top:14px">
+      <h2>📱 SMS des infractions récentes</h2>
+      <div id="infListe" class="small" style="text-align:left">Chargement…</div>
+    </div>
+    <div class="card" style="margin-top:14px">
       <h2>⏰ Valider l'heure d'arrivée <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(aujourd'hui)</span></h2>
       <select id="arrEmp" onchange="arrDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
       <div id="arrInfo" class="small" style="text-align:left;margin:8px 0"></div>
@@ -152,7 +156,7 @@ async function charger(){
   try{
     const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); const j=JSON.parse(await readTxt(r));
     if(j.err==='pin'){ alert('❌ Code patron incorrect'); logout(); return; }
-    emps=j.emps||[]; sel=null; draw(); demListe();
+    emps=j.emps||[]; sel=null; draw(); demListe(); infListe(j.inf||[]);
     HOR=j.hor||{}; horListe(); ARR=j.arr||{}; arrListe();
     JOURS[isoJ(0)]=j.jour||{}; corListe();
     const R=$('resa'); R.innerHTML='';
@@ -164,6 +168,17 @@ async function charger(){
       if(x.th){ const c=document.createElement('div'); c.className='small'; c.style.cssText='text-align:left;font-weight:700;color:'+(/⚠️/.test(x.th)?'var(--red)':'var(--green)'); c.textContent='🇹🇭 '+x.th; d.appendChild(c); }
       R.appendChild(d); });
   }catch(e){ $('liste').textContent='⚠️ Pas de connexion — réessayez'; }
+}
+// 📱 infractions validées récentes : bouton SMS pour chacune (même après avoir quitté la page)
+function infListe(L){
+  const B=$('infListe'); B.innerHTML='';
+  if(!L.length){ B.textContent='Aucune infraction validée pour le moment.'; return; }
+  L.forEach(x=>{
+    const d=document.createElement('div'); d.style.cssText='border-top:1px solid var(--border);padding:8px 0;color:var(--text);font-size:.95rem';
+    const t=document.createElement('div'); t.innerHTML='<b></b> <span class="small"></span>'; t.querySelector('b').textContent=x.nom; t.querySelector('span').textContent='· infraction '+x.n+' · '+x.quand; d.appendChild(t);
+    if(x.sms){ const a=document.createElement('a'); a.className='sms'; a.style.cssText='padding:10px;margin-top:6px;font-size:.95rem'; a.href=x.sms; a.textContent='📱 Envoyer le SMS à '+x.nom.split(' ')[0]; d.appendChild(a); }
+    else { const c=document.createElement('div'); c.className='small'; c.textContent='⚠️ numéro de téléphone invalide'; d.appendChild(c); }
+    B.appendChild(d); });
 }
 function draw(){
   const L=$('liste'); L.innerHTML=''; let sep=false;
