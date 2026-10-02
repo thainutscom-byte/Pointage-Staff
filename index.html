@@ -244,7 +244,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div style="font-size:2.6rem;">🤝💸</div>
     <div style="font-weight:900;font-size:1.2rem;margin:4px 0;">ชวนเพื่อน 1 คน = 2,000 ฿</div>
     <div id="parGateTxt" style="line-height:1.6;margin:8px 0 14px;"></div>
-    <button type="button" onclick="parFermer();parPartager('line')" style="width:100%;border:none;border-radius:12px;padding:14px;font-size:1.05rem;font-weight:800;background:#06c755;color:#fff;">💬 ส่งให้เพื่อนตอนนี้เลย</button>
+    <button type="button" onclick="parFermer();parTypeSet('ami');parPartager('line')" style="width:100%;border:none;border-radius:12px;padding:14px;font-size:1.05rem;font-weight:800;background:#06c755;color:#fff;">💬 ส่งให้เพื่อนตอนนี้เลย</button>
     <button type="button" onclick="parFermer();document.getElementById('parCard').scrollIntoView({behavior:'smooth',block:'center'})" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:11px;font-weight:800;background:#fdf2f8;color:#db2777;">📲 Messenger · Instagram · TikTok · SMS</button>
     <button type="button" onclick="parFermer()" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:11px;font-weight:700;background:#e5e7eb;">ภายหลัง</button>
   </div>
@@ -441,6 +441,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       <div style="font-weight:900;font-size:1.1rem;">🤝 ชวนเพื่อนมาทำงาน รับ <span style="color:#db2777;">2,000 ฿</span></div>
       <div class="small" style="margin:4px 0 8px;line-height:1.5;">เพื่อนต้องจองผ่าน <b>ลิงก์ของคุณ</b> และทำงานครบ <b>2 เดือน</b> → คุณได้ค่าแนะนำ <b>2,000 ฿ / คน</b> · ชวนได้ไม่จำกัด!</div>
       <div id="parStats" class="small" style="font-weight:700;margin-bottom:8px;"></div>
+      <div id="parObj" style="display:none;border:2px solid #db2777;border-radius:12px;padding:10px;margin-bottom:10px;"></div>
       <div style="font-weight:800;margin-bottom:6px;">1️⃣ เลือกข้อความ</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
         <button type="button" id="parT_ami" onclick="parTypeSet('ami')" style="border:2px solid #db2777;border-radius:12px;padding:11px 4px;font-weight:800;font-size:.92rem;background:#db2777;color:#fff;line-height:1.3;">👭 ชวนเพื่อน<br><span style="font-size:.75rem;font-weight:600;">ส่งหาเพื่อนสนิท</span></button>
@@ -716,6 +717,7 @@ function buildDays(){
         <div class="small" style="margin-top:4px;">📍 กด “เริ่มงาน” ที่ร้าน (GPS)</div>
         <img class="selfieImg" style="display:none;width:90px;margin-top:6px;border-radius:8px;border:1px solid var(--border);">
         <div class="small workTimes"></div>
+        <div class="startConf" style="display:none;margin-top:8px;"></div>
         <input type="hidden" class="arrival"><input type="hidden" class="finish">
         <div class="dayFlags small" style="margin-top:8px;font-weight:700;"></div>
         <div class="justBox" style="margin-top:8px;padding:8px;border-radius:9px;border:1px dashed var(--border);">
@@ -784,9 +786,48 @@ async function startWork(btn){
     if(!(await gpsAuSalon())){ btn.textContent=t0; return; }
     day.querySelector('.arrival').value=hm;
     btn.disabled=true; btn.textContent='✅ เริ่มงาน '+hm;
-    calc(); saveState(); setTimeout(syncSheet, 300);
+    calc(); saveState(); startConfAff(day);
+    setTimeout(()=>startValider(day, true), 300);            // envoi automatique ; la touche ✅ reste si ça n'a pas marché
   } finally { delete btn.dataset.busy; }
 }
+// ===== ✅ VALIDER L'HEURE D'ARRIVÉE : envoi immédiat à Google + message « horaire confirmé et validé » =====
+function startLus(){ try{ return JSON.parse(localStorage.getItem('sheet_start_v1')||'{}'); }catch(e){ return {}; } }
+function startPayload(day){
+  const arr=day.querySelector('.arrival').value, dd=dayDate(+day.dataset.d), k=empKey();
+  if(!arr || !dd || !k || dd>workToday()) return null;
+  return {type:'start', id:k+'|'+isoD(dd), date:isoD(dd), arrival:arr, name:document.getElementById('name').value.trim(),
+          phone:document.getElementById('phone').value.trim(), contract:N===10?'Freelance 10 j':'Mensuel 30 j', ...cycleInfo()};
+}
+function startConfAff(day){
+  const B=day.querySelector('.startConf'); if(!B) return;
+  const st=startPayload(day), dd=dayDate(+day.dataset.d);
+  if(!st || !dd || isoD(dd)!==isoD(workToday()) || window.__BOSS){ B.style.display='none'; return; }
+  B.style.display='block';
+  if(startLus()[st.id]){
+    B.innerHTML='<div style="background:#dcfce7;border:2px solid #16a34a;border-radius:12px;padding:10px;text-align:center;font-weight:800;color:#166534;line-height:1.5;">✅ เวลาเริ่มงาน <span style="font-size:1.3rem;">'+st.arrival+'</span> น.<br>ยืนยันและบันทึกแล้ว · หัวหน้าเห็นแล้ว 👍</div>';
+  } else if(!B.querySelector('button') || B.dataset.err){
+    B.innerHTML='<div style="background:#fff7ed;border:2px solid #f59e0b;border-radius:12px;padding:10px;text-align:center;">'
+      +'<div style="font-weight:800;color:#9a3412;margin-bottom:8px;">'+(B.dataset.err?'❌ ส่งไม่ได้ — ตรวจอินเทอร์เน็ตแล้วกดอีกครั้ง':'⚠️ เวลาเริ่มงาน '+st.arrival+' น. ยังไม่ได้ยืนยัน')+'</div>'
+      +'<button type="button" class="startOk" style="width:100%;border:none;border-radius:12px;padding:14px;font-size:1.1rem;font-weight:900;background:#16a34a;color:#fff;">✅ ยืนยันเวลาเริ่มงาน '+st.arrival+'</button></div>';
+    B.querySelector('.startOk').onclick=()=>startValider(day, false);
+  }
+}
+async function startValider(day, auto){
+  const st=startPayload(day), B=day.querySelector('.startConf'); if(!st || !B) return false;
+  const b=B.querySelector('.startOk'); if(b){ if(b.disabled) return false; b.disabled=true; b.textContent='⏳ กำลังส่ง…'; }
+  let ok=!!startLus()[st.id];
+  if(!ok){
+    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(st)}); const t=await readTxt(r);
+         if(r.ok && (t==='ok'||t==='blocked')){ const s0=startLus(); s0[st.id]=1; try{ localStorage.setItem('sheet_start_v1', JSON.stringify(s0)); }catch(e){} ok=true; }
+         if(t==='blocked') setBlocked(true); }catch(e){}
+  }
+  if(ok){ delete B.dataset.err; } else if(!auto){ B.dataset.err='1'; } 
+  B.innerHTML=''; startConfAff(day);
+  if(ok && !auto){ try{ if(navigator.vibrate) navigator.vibrate(120); }catch(e){} }
+  setTimeout(syncSheet, 200);
+  return ok;
+}
+setTimeout(()=>document.querySelectorAll('.day').forEach(startConfAff), 1500);
 function showSelfie(day){
   const img=day.querySelector('.selfieImg');
   if(day.dataset.selfie){ img.src=day.dataset.selfie; img.style.display='block'; } else { img.removeAttribute('src'); img.style.display='none'; }
@@ -885,7 +926,7 @@ function applyFreeze(){
   let note=document.getElementById('freezeNote');
   if(!note){ note=document.createElement('div'); note.id='freezeNote'; note.className='small'; note.style.cssText='color:var(--red);font-weight:700;margin:6px 0;';
     document.getElementById('startDate').closest('.field').after(note); }
-  note.textContent = anyLocked ? '🔒 มีวันที่ยืนยันแล้ว — เปลี่ยนวันที่เริ่ม/แพ็กเกจไม่ได้ (กด 🗑️ รอบใหม่ ก่อน)' : '';
+  note.textContent = anyLocked ? '🔒 มีวันที่ยืนยันแล้ว — เปลี่ยนวันที่เริ่ม / ที่พักเองไม่ได้ · ต้องให้หัวหน้าเปิด (👑 หัวหน้า ด้านล่าง)' : '';
 }
 function bossLock(){ bossUnlocked=false; clearTimeout(bossTimer); applyFreeze(); }
 async function bossUnlock(){
@@ -1028,13 +1069,10 @@ async function syncSheet(){
   // ▶️ เริ่มงาน : l'employé apparaît tout de suite dans l'onglet « Employés » de Google
   const ss0=(()=>{ try{ return JSON.parse(localStorage.getItem('sheet_start_v1')||'{}'); }catch(e){ return {}; } })();
   for(const day of document.querySelectorAll('.day')){
-    const arr=day.querySelector('.arrival').value, dd=dayDate(+day.dataset.d), k=empKey();
-    if(!arr || !dd || !k || dd>workToday()) continue;
-    const st={type:'start', id:k+'|'+isoD(dd), date:isoD(dd), arrival:arr, name:document.getElementById('name').value.trim(),
-              phone:document.getElementById('phone').value.trim(), contract:N===10?'Freelance 10 j':'Mensuel 30 j', ...cycleInfo()};
-    if(ss0[st.id]) continue;
+    const st=startPayload(day); if(!st) continue;
+    if(ss0[st.id] || startLus()[st.id]) continue;
     try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(st)}); const t=await readTxt(r);
-         if(r.ok && (t==='ok'||t==='blocked')){ ss0[st.id]=1; try{ localStorage.setItem('sheet_start_v1', JSON.stringify(ss0)); }catch(e){} }
+         if(r.ok && (t==='ok'||t==='blocked')){ ss0[st.id]=1; const m0=startLus(); m0[st.id]=1; try{ localStorage.setItem('sheet_start_v1', JSON.stringify(m0)); }catch(e){} }
          if(t==='blocked') setBlocked(true); }catch(e){}
   }
   const as=absSent();
@@ -1044,6 +1082,7 @@ async function syncSheet(){
          if(r.ok && (t==='ok'||t==='blocked')){ as[a.id]=1; try{ localStorage.setItem('sheet_abs_v1', JSON.stringify(as)); }catch(e){} } }catch(e){}
   }
   sheetBusy=false;
+  try{ document.querySelectorAll('.day').forEach(startConfAff); }catch(e){}
   if(rsTok){ if(!pending){ try{ localStorage.setItem('pointage_rs', rsTok); }catch(e){} } resyncMode=false; }
   checkBlocked(false);
   const el=document.getElementById('sheetInfo');
@@ -2093,7 +2132,7 @@ function parMsg(){ if(parType==='rec') return parMsgRec(); return 'แกสน�
 function parGet(){ try{ return JSON.parse(localStorage.getItem('pointage_parrain_'+parCode())||'{}'); }catch(e){ return {}; } }
 function parSet(o){ try{ localStorage.setItem('pointage_parrain_'+parCode(), JSON.stringify(o)); }catch(e){} }
 function parLog(txt){ try{ fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'app',thai:true,src:'app',res:txt})}).catch(()=>{}); }catch(e){} }
-function parNote(quoi){ const o=parGet(); o.n=(o.n||0)+1; o.last=Date.now(); parSet(o);
+function parNote(quoi){ const o=parGet(); o.n=(o.n||0)+1; o.last=Date.now(); if(parType==='ami'){ o.ami=(o.ami||[]).concat(Date.now()).slice(-200); } parSet(o);
   parLog('📤 parrainage '+quoi+' — ref '+parCode()+' — '+(document.getElementById('name').value||'').trim()+' '+(document.getElementById('phone').value||'').replace(/\D/g,'')+' (n°'+o.n+')'); parAff(); }
 const PAR_CANAUX={line:'LINE', messenger:'Messenger', instagram:'Instagram', tiktok:'TikTok', sms:'SMS', autre:'autre', copie:'copie'};
 function parLienC(c){ return parLien().replace('&openExternalBrowser=1','&v='+c+'&openExternalBrowser=1'); }
@@ -2126,6 +2165,25 @@ async function parCopier(){
   if(!ok) prompt('คัดลอกข้อความนี้', parMsgC('copie'));
   parNote('copie'+(parType==='rec'?' · annonce recrutement':' · message amie'));
 }
+// 🎯 OBJECTIF : 5 messages « 👭 ชวนเพื่อน » par contrat de 10 jours (mensuel : par tranche de 10 jours)
+const PAR_OBJ=5;
+function parObj(){
+  const sv=document.getElementById('startDate').value; if(!sv || !parCode()) return null;
+  const sd=new Date(sv+'T00:00:00'), fin=cycleEndDate(), t=workToday(); if(!fin || t<sd || t>fin) return null;
+  const k=Math.floor(Math.round((t-sd)/86400000)/10), d0=addDays(sd,k*10); let d1=addDays(d0,9); if(d1>fin) d1=new Date(fin);
+  const a=d0.getTime(), b=addDays(d1,1).getTime();
+  const n=(parGet().ami||[]).filter(ts=>{ const j=ts-DAY_SWITCH_H*3600000; return j>=a && j<b; }).length;
+  return {n, but:PAR_OBJ, jour:Math.round((t-d0)/86400000)+1, duree:Math.round((d1-d0)/86400000)+1, fin:d1};
+}
+function parObjAff(){
+  const el=document.getElementById('parObj'); if(!el) return; const O=parObj();
+  if(!O){ el.style.display='none'; return; } el.style.display='block';
+  const ok=O.n>=O.but, pc=Math.min(100,Math.round(O.n/O.but*100));
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;"><b style="font-size:1.15rem;">🎯 '+Math.min(O.n,99)+'/'+O.but+' ส่งแล้ว รอบนี้</b><span class="small">วันที่ '+O.jour+'/'+O.duree+'</span></div>'
+    +'<div style="height:12px;background:#fbcfe8;border-radius:999px;overflow:hidden;margin:6px 0;"><div style="height:100%;width:'+pc+'%;background:'+(ok?'#16a34a':'#db2777')+';"></div></div>'
+    +'<div class="small" style="font-weight:700;color:'+(ok?'#16a34a':'#9d174d')+';">'+(ok?'✅ ครบแล้ว ขอบคุณมาก! 🥰':'หัวหน้าขอให้ส่ง 👭 ชวนเพื่อน '+O.but+' คน ต่อรอบ · เหลืออีก '+(O.but-O.n)+' คน ภายในวันที่ '+fmtDate(O.fin))+'</div>';
+  el.style.borderColor=ok?'#16a34a':'#db2777'; el.style.background=ok?'#f0fdf4':'#fff';
+}
 let parServeur=null, parServeurT=0;
 async function parAff(){
   const S=document.getElementById('parStats'), C=document.getElementById('parCard'); if(!S||!C) return;
@@ -2133,6 +2191,7 @@ async function parAff(){
   C.style.display = (!parCode() || window.__essai) ? 'none' : 'block';
   if(C.style.display==='none') return;
   { const v=document.getElementById('parApercu'); if(v && v.textContent!==parMsg()) v.textContent=parMsg(); }
+  parObjAff();
   const o=parGet();
   if(Date.now()-parServeurT>10*60000){ parServeurT=Date.now();
     try{ const t=await readTxt(await fetch(SHEET_URL+'?parrain='+encodeURIComponent(parCode())+'&_='+Date.now())); if(t[0]==='{'){ const j=JSON.parse(t); if(j && j.ok) parServeur=j; } }catch(e){} }
@@ -2148,9 +2207,20 @@ function parRappel(){
     if((document.getElementById('name').value||'').trim().toLowerCase()==='boss') return;
     const sv=document.getElementById('startDate').value; if(!sv) return;
     if(workToday() < addDays(new Date(sv+'T00:00:00'),2)) return;          // à partir du 3e jour
-    const libre=['reglesGate','plageGate','welcomeGate','renouvGate','parGate'].every(id=>{ const g=document.getElementById(id); return !g || g.style.display!=='block' && g.style.display!=='flex'; });
+    const libre=['reglesGate','plageGate','welcomeGate','renouvGate','parGate','gpsGate','msgGate','autGate','blockGate'].every(id=>{ const g=document.getElementById(id); return !g || g.style.display!=='block' && g.style.display!=='flex'; });
     if(!libre || document.hidden) return;
-    const o=parGet(), dernier=Math.max(o.last||0, o.vu||0);
+    const o=parGet(), O=parObj();
+    if(O && O.n<O.but){                                                      // 🎯 objectif pas atteint → rappel 1 fois par jour (à partir du 3e jour de la tranche)
+      if(O.jour<3) return;
+      const jj=isoD(workToday()); if(o.rappelObj===jj) return;
+      o.rappelObj=jj; parSet(o);
+      document.getElementById('parGateTxt').innerHTML='<div style="font-size:1.6rem;font-weight:900;color:#db2777;">🎯 '+O.n+'/'+O.but+' ส่งแล้ว รอบนี้</div>'
+        +'หัวหน้าขอให้ทุกคนส่งข้อความ <b>👭 ชวนเพื่อน</b><br><b>'+O.but+' คน ต่อรอบ 10 วัน</b><br>เหลืออีก <b style="color:#dc2626;">'+(O.but-O.n)+' คน</b> ภายในวันที่ <b>'+fmtDate(O.fin)+'</b>'
+        +(O.jour>=8?'<br><span style="color:#dc2626;font-weight:800;">⚠️ ใกล้หมดรอบแล้ว!</span>':'');
+      parTypeSet('ami'); document.getElementById('parGate').style.display='flex'; return;
+    }
+    if(O && O.n>=O.but) return;                                              // objectif atteint : plus de rappel
+    const dernier=Math.max(o.last||0, o.vu||0);
     if(Date.now()-dernier < PAR_RAPPEL_J*86400000) return;
     const P=parServeur;
     document.getElementById('parGateTxt').innerHTML='ส่งข้อความชวนเพื่อนทาง LINE แค่ 1 นาที 📲<br>เพื่อนทำงานครบ <b>2 เดือน</b> → คุณรับ <b>2,000 ฿</b><br>'
