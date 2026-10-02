@@ -2283,6 +2283,30 @@ async function lineIdSave(force){
     if(r.indexOf('"ok":1')>=0){ try{ localStorage.setItem(lineIdCle(), JSON.stringify({v, ok:1})); }catch(e){} msg.style.color='var(--green)'; msg.textContent='✅ บันทึก LINE ID แล้ว'; } }catch(e){}
 }
 setTimeout(()=>{ try{ const o=JSON.parse(localStorage.getItem(lineIdCle())||'null'); const el=document.getElementById('lineId'); if(o && el && !el.value){ el.value=o.v; if(!o.ok) lineIdSave(true); } }catch(e){} }, 1500);
+
+// ===== 🤒 / ❌ LIEN DU GROUPE LINE (retard) : ?absence=malade → certificat médical · ?absence=absent → absence du jour =====
+setTimeout(()=>{ try{
+  const a=new URLSearchParams(location.search).get('absence'); if(!/^(malade|absent)$/.test(a||'')) return;
+  const clean=()=>{ try{ const u=new URL(location.href); u.searchParams.delete('absence'); history.replaceState(null,'',u.toString()); }catch(e){} };
+  if(!document.getElementById('startDate').value){ clean(); return; }
+  const iso=isoD(workToday()), day=[...document.querySelectorAll('.day')].find(d=>{ const dd=dayDate(+d.dataset.d); return dd && isoD(dd)===iso; });
+  if(!day){ alert('⚠️ วันนี้ไม่มีวันทำงานในสัญญา'); clean(); return; }
+  const q=s=>day.querySelector(s);
+  day.classList.remove('pastDay'); day.style.display=''; q('.dayBody').style.display='block'; q('.daySummary').style.display='none';
+  if(day.dataset.locked==='1' || q('.arrival').value){ alert('ℹ️ วันนี้เริ่มงานหรือยืนยันไปแล้ว'); clean(); return; }
+  if(a==='malade'){
+    const cb=q('.c-just'); if(!cb.checked){ cb.checked=true; toggleJust(cb); }
+    appScan('🤒 malade (lien groupe LINE) — '+(document.getElementById('name').value||'').trim());
+    setTimeout(()=>{ day.scrollIntoView({behavior:'smooth',block:'center'}); alert('🤒 ขอให้หายป่วยเร็วๆ นะ\n\n1) กด 📷 ถ่ายรูปใบรับรองแพทย์\n2) กด ✔️ ยืนยันวันนี้\n\nไม่มีใบรับรองแพทย์ = นับเป็นขาดงาน'); }, 400);
+  } else {
+    if(confirm('❌ ยืนยันว่าวันนี้ ('+fmtDate(workToday())+') คุณจะไม่มาทำงาน?\n\n⚠️ ขาดงานโดยไม่มีใบรับรองแพทย์ = กฎกิโยติน\nถ้าป่วย ให้ใช้ลิงก์ 🤒 ป่วย แทน')){
+      q('.c-abs').checked=true; calc(); saveState();
+      appScan('❌ absente aujourd\'hui (lien groupe LINE) — '+(document.getElementById('name').value||'').trim());
+      setTimeout(()=>{ day.scrollIntoView({behavior:'smooth',block:'center'}); alert('✅ แจ้งขาดงานแล้ว — กด ✔️ ยืนยันวันนี้ เพื่อส่งให้หัวหน้า'); }, 300);
+    }
+  }
+  clean();
+}catch(e){} }, 3500);
 setInterval(plVerifier, 1000); setTimeout(plVerifier, 1200);
 
 // ===== 📋 RÈGLEMENT : lecture chapitre par chapitre, texte non sélectionnable / non copiable,

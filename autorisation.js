@@ -90,11 +90,18 @@
     LINES_P=(async()=>{ try{ const j=JSON.parse(await txt(await fetch(API+'?lineids=1&_='+Date.now()))); if(j && j.line) LINES=j.line; }catch(e){} return LINES; })(); return LINES_P; }
   const cleE=(nom,tel)=>String(nom||'').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(tel||'').replace(/\D/g,'');
   function msgRetard(o){ const n=new Date(); return 'สวัสดี '+o.nom+' 🙏 ตอนนี้ '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+' น. แล้ว คุณยังไม่ได้กดเริ่มงาน (ช่วงเวลา '+o.sh+') กรุณามาที่ร้านด่วน หรือแจ้งหัวหน้าทันที'; }
+  const APP_URL='https://thainutscom-byte.github.io/Pointage-Staff/?openExternalBrowser=1&absence=';
+  function msgGroupe(o){ const n=new Date(), h=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+    return '📢 @'+o.nom+' ⏰ ตอนนี้ '+h+' น. ยังไม่ได้กดเริ่มงาน (ช่วงเวลา '+o.sh+')\n'
+      +'🏃 กำลังมา → ถึงร้านแล้วกด ▶️ เริ่มงาน ในแอป\n'
+      +'🤒 ป่วย → แจ้งและส่งใบรับรองแพทย์ที่นี่:\n'+APP_URL+'malade\n'
+      +'❌ ไม่มาทำงานวันนี้ → แจ้งขาดงานที่นี่:\n'+APP_URL+'absent'; }
   function contactBoutons(R, o, vu){
     const ios=/iPhone|iPad|iPod/.test(navigator.userAgent), m=msgRetard(o), line=LINES[cleE(o.nom,o.tel)];
     const btn=(t,bg,fg,f)=>{ const b=document.createElement('a'); b.textContent=t; b.style.cssText='background:'+bg+';color:'+fg; if(typeof f==='string') b.href=f; else { b.href='#'; b.onclick=e=>{ e.preventDefault(); f(); }; } R.appendChild(b); return b; };
     btn('📞 Appeler','#16a34a','#fff','tel:'+o.tel);
-    btn('✉️ SMS','#2563eb','#fff','sms:'+o.tel+(ios?'&':'?')+'body='+encodeURIComponent(m));
+    btn('✉️ SMS','#2563eb','#fff','sms:'+o.tel+(ios?'&':'?')+'body='+encodeURIComponent(m)).dataset.grp='1';
+    btn('📢 Groupe LINE','#06c755','#fff', ()=>window.autGroupe(msgGroupe(o)));
     if(line) btn('💬 LINE','#06c755','#fff', async()=>{ try{ await navigator.clipboard.writeText(m); }catch(e){}
       alert('📋 Message copié.\nLINE va s\'ouvrir sur le profil de '+o.nom+' : touchez « Chat » puis collez, ou « Appel » pour l\'appeler sur LINE.'); location.href='https://line.me/R/ti/p/~'+encodeURIComponent(line); });
     else btn('💬 LINE ?','#e5e7eb','#6b7280', ()=>alert(o.nom+' n\'a pas encore donné son LINE ID.\nElle peut l\'ajouter dans son app (case « 💬 LINE ID »), ou vous pouvez l\'écrire dans l\'onglet « 💬 LINE ID » de Google Sheets.'));
