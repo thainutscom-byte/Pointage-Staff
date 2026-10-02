@@ -101,6 +101,29 @@
     if(vu){ const b=document.createElement('button'); b.textContent='👌 Vu'; b.style.cssText='background:#e5e7eb;color:#111827'; b.onclick=vu; R.appendChild(b); }
   }
   window.autContact=contactBoutons; window.autLineIds=lineIds;
+  // 📢 GROUPE LINE DES EMPLOYÉES : chaque message du patron (SMS d'infraction, retard…) peut aussi partir dans le groupe
+  const GROUPE_LINE='https://line.me/R/ti/g/vJMkG2gVhz';
+  window.autGroupe=async function(txt){
+    let ok=false; try{ await navigator.clipboard.writeText(txt); ok=true; }catch(e){}
+    if(!ok){ try{ const a=document.createElement('textarea'); a.value=txt; document.body.appendChild(a); a.select(); ok=document.execCommand('copy'); a.remove(); }catch(e){} }
+    alert((ok?'📋 Message copié.':'⚠️ Copiez ce message :\n\n'+txt+'\n')+'\nLe groupe LINE des employées va s\'ouvrir : appuyez longtemps dans la zone de texte → Coller → Envoyer.');
+    location.href=GROUPE_LINE;
+  };
+  // ajoute « 📢 Groupe LINE » à côté de chaque lien SMS des pages patron (texte du SMS repris)
+  function texteSms(href){ try{ const u=String(href||''); if(/^sms:/i.test(u)){ const m=u.match(/[?&]body=([^&]*)/); return m?decodeURIComponent(m[1]):''; }
+    if(/sms\.html/i.test(u)){ return new URL(u, location.href).searchParams.get('b')||''; } }catch(e){} return ''; }
+  function boutonsGroupe(){
+    if(/reservations/i.test(location.pathname)) return;     // messages aux candidates : jamais dans le groupe des employées
+    document.querySelectorAll('a[href^="sms:"], a[href*="sms.html"]').forEach(a=>{
+      if(a.dataset.grp) return; const t=texteSms(a.getAttribute('href')); if(!t) return; a.dataset.grp='1';
+      const b=document.createElement('a'); b.href='#'; b.textContent='📢 Groupe LINE'; b.className=a.className; b.dataset.grp='1';
+      b.style.cssText=(a.style.cssText||'')+';background:#06c755;color:#fff;';
+      b.onclick=e=>{ e.preventDefault(); window.autGroupe(t); };
+      a.after(b);
+    });
+  }
+  try{ new MutationObserver(boutonsGroupe).observe(document.body,{childList:true,subtree:true}); }catch(e){}
+  boutonsGroupe();
   // ⏰ ALERTE : employée pas encore arrivée 15 min après le début de son horaire
   const AZ=document.createElement('div'); AZ.id='autAlertes'; Z.appendChild(AZ);
   const cacheVu=()=>{ try{ return JSON.parse(localStorage.getItem('patron_retard_vu')||'{}'); }catch(e){ return {}; } };
