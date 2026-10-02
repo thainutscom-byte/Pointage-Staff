@@ -95,6 +95,7 @@ function autPost_(d) {
       const id = String(d.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 24); if (id.length < 12 || !AUT_ACTIONS[d.act]) return autJson_({ err: 'x' });
       const o = { act: d.act, nom: String(d.nom || '?').slice(0, 40), tel: String(d.tel || '').replace(/\D/g, '').slice(0, 10), at: Date.now(), st: 'att' };
       P.setProperty('AUT_' + id, JSON.stringify(o)); autLog_(id, o); try { autNettoyer_(); } catch (x) {}
+      try { autMail_(o); } catch (x) {}
       return autJson_({ ok: 1 });
     }
     if (d.type === 'autrep') {
@@ -144,6 +145,7 @@ function autPost_(d) {
         var d = null; try { d = JSON.parse(e.postData.contents); } catch (x) {}
         if (d && /^aut(dem|rep|link|gps)$/.test(String(d.type || ''))) { var r = autPost_(d); if (r) return r; return autJson_({ err: 'x' }); }
         if (d && AUT_POST_PATRON.indexOf(String(d.type || '')) >= 0 && autStrict_() && !autTokOk_(d.tok)) return autJson_({ err: 'tok' });
+        if (d && d.type === 'cycle') { try { var pl = autPlaces_(d); if (pl) return ContentService.createTextOutput(pl); } catch (x) {} }
         return p0(e);
       };
       p1.__autor = true; doPost = p1;
@@ -176,4 +178,37 @@ function majPaiesSignees() {
     nouv.push([x[0], nt.join(' '), "'" + tel, q[2] || '', +String(q[3] || '').replace(/[^\d-]/g, '') || 0, q.slice(4).join(' — '), cle]);
   });
   if (nouv.length) { T.getRange(T.getLastRow() + 1, 1, nouv.length, 7).setValues(nouv); T.getRange(2, 1, T.getLastRow() - 1, 1).setNumberFormat('dd/mm/yyyy hh:mm'); }
+}
+
+// 📧 message au patron pour chaque demande (en plus de l'affichage sur les pages patron)
+const AUT_PAGE_PATRON = 'https://thainutscom-byte.github.io/Pointage-Staff/patron.html';
+function autMail_(o) {
+  const moi = Session.getEffectiveUser().getEmail(); if (!moi) return;
+  MailApp.sendEmail(moi, '👑 Demande : ' + o.nom + ' — ' + (AUT_ACTIONS[o.act] || o.act),
+    (o.act === 'nouvelle' ? '🆕 Une nouvelle personne veut accéder à l\'app (QR code).\n\n' : '') +
+    'Employée : ' + o.nom + (o.tel ? ' — ' + o.tel : '') + '\nDemande : ' + (AUT_ACTIONS[o.act] || o.act) + '\n\n' +
+    '✅ Autoriser / ❌ Refuser (valable 10 minutes) :\n' + AUT_PAGE_PATRON);
+}
+
+// ===== 👥 PLACES PAR HORAIRE SELON LA SAISON : 4 (avril → octobre) · 5 (1er novembre → 30 mars) =====
+//   Vérifié ici AVANT le script principal (réservations + choix d'horaire dans l'app).
+//   ⚠️ Dans Code.gs, MAX_PAR_HORAIRE doit être à 5 (le maximum de l'année).
+function autCapJour_(iso) { const m = +String(iso).slice(5, 7), d = +String(iso).slice(8, 10); return (m >= 11 || m <= 2 || (m === 3 && d <= 30)) ? 5 : 4; }
+function autPlaces_(d) {
+  const sh = String(d.sh || ''), deb = String(d.cycleStart || ''), fin = String(d.cycleEnd || deb);
+  if (!sh || !/^\d{4}-\d{2}-\d{2}$/.test(deb) || !/^\d{4}-\d{2}-\d{2}$/.test(fin)) return '';
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), tz = ss.getSpreadsheetTimeZone(), C = ss.getSheetByName('_Cycles'); if (!C || C.getLastRow() < 2) return '';
+  const cle = String(d.name || '').trim().toLowerCase().replace(/\s+/g, ' ') + '|' + String(d.phone || '').replace(/\D/g, '');
+  const bloq = {}, E = ss.getSheetByName('Employés');
+  if (E && E.getLastRow() > 1) E.getRange(2, 3, E.getLastRow() - 1, 4).getValues().forEach(function (x) { if (String(x[0]) === 'Bloqué') bloq[String(x[3])] = 1; });
+  const iso = function (v) { return v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : String(v || '').replace(/^'/, ''); };
+  const autres = C.getRange(2, 1, C.getLastRow() - 1, 7).getValues().filter(function (x) {
+    const k = String(x[0]); return k && k !== cle && !bloq[k] && String(x[4]) === sh && !/^boss$/i.test(String(x[1]).trim()); })
+    .map(function (x) { return { deb: iso(x[5]), fin: iso(x[6]) }; });
+  for (let t = new Date(deb + 'T12:00:00'), f = new Date(fin + 'T12:00:00'); t <= f; t.setDate(t.getDate() + 1)) {
+    const j = Utilities.formatDate(t, tz, 'yyyy-MM-dd');
+    const n = autres.filter(function (c) { return c.deb <= j && c.fin >= j; }).length;
+    if (n >= autCapJour_(j)) return 'refus|plein|' + j;
+  }
+  return '';
 }
