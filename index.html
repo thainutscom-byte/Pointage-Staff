@@ -243,6 +243,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <button type="button" onclick="parFermer()" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:11px;font-weight:700;background:#e5e7eb;">ภายหลัง</button>
   </div>
 </div>
+<button type="button" id="btnRefresh" onclick="actualiser()" aria-label="รีเฟรช" style="position:fixed;top:calc(6px + env(safe-area-inset-top,0px));right:6px;z-index:99999;border:none;border-radius:50%;width:42px;height:42px;padding:0;font-size:1.3rem;line-height:42px;background:rgba(37,99,235,.92);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25);">🔄</button>
 <div id="plageGate" style="display:none;position:fixed;inset:0;z-index:99990;background:#111827;color:#fff;overflow:auto;">
   <div style="max-width:380px;margin:0 auto;padding:calc(70px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
     <div style="font-size:3.4rem;">🔒</div>
@@ -2107,6 +2108,17 @@ function parRappel(){
 }
 setInterval(parAff, 20000); setTimeout(parAff, 2000);
 setInterval(parRappel, 60000); setTimeout(parRappel, 45000);
+
+// 🔄 ACTUALISER : enregistre, envoie ce qui reste à Google, puis recharge la dernière version de l'app (sans perdre la fiche)
+async function actualiser(){
+  const b=document.getElementById('btnRefresh'); if(b){ b.disabled=true; b.textContent='⏳'; }
+  try{ saveState(); }catch(e){}
+  try{ await Promise.race([ (async()=>{ try{ await syncSheet(); }catch(e){} })(), new Promise(r=>setTimeout(r,6000)) ]); }catch(e){}
+  try{ saveState(); }catch(e){}
+  const u=new URL(location.href); u.searchParams.set('r', Date.now().toString(36));
+  location.replace(u.toString());
+}
+setInterval(()=>{ const b=document.getElementById('btnRefresh'); if(b) b.style.display = window.__BOSS ? 'none' : ''; }, 1000);
 setInterval(plVerifier, 1000); setTimeout(plVerifier, 1200);
 
 // ===== 📋 RÈGLEMENT : lecture chapitre par chapitre, texte non sélectionnable / non copiable,
