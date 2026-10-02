@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#db2777">
+<title>🤝 Parrainage</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--rose:#db2777;--border:#e5e7eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:520px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px));}
+  h1{font-size:1.25rem;margin:4px 0 2px;text-align:center}
+  .sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:12px}
+  .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .k{background:var(--card);border-radius:14px;padding:10px;box-shadow:0 2px 10px rgba(0,0,0,.06);text-align:center}
+  .k .v{font-size:1.4rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .k .l{font-size:.75rem;color:var(--muted);font-weight:700}
+  .emp{background:var(--card);border-radius:14px;margin-bottom:8px;box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden}
+  .emp summary{list-style:none;cursor:pointer;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+  .emp summary::-webkit-details-marker{display:none}
+  .emp .nom{font-weight:800;font-size:1.05rem}
+  .emp .chips{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:.8rem;font-weight:700;border-radius:999px;padding:3px 9px;background:#f3f4f6;font-variant-numeric:tabular-nums}
+  .chip.r{background:#fce7f3;color:#9d174d}.chip.g{background:#dcfce7;color:#166534}.chip.y{background:#fef3c7;color:#92400e}
+  .pay{font-weight:800;color:var(--rose);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .det{padding:0 14px 12px;border-top:1px solid var(--border);font-size:.9rem}
+  .det .ln{padding:8px 0;border-bottom:1px solid #f3f4f6}
+  .det .ln:last-child{border-bottom:none}
+  .muted{color:var(--muted)}
+  .btn{display:block;width:100%;border:none;border-radius:12px;padding:12px;font-weight:800;font-size:.95rem;background:#fff;color:var(--rose);border:2px solid var(--rose);margin-bottom:12px}
+  a.back{display:block;text-align:center;margin-top:10px;color:var(--rose);font-weight:700;text-decoration:none}
+  .filtre{display:flex;gap:6px;margin-bottom:10px}
+  .filtre button{flex:1;border:2px solid var(--border);background:#fff;border-radius:10px;padding:8px 4px;font-weight:700;font-size:.85rem}
+  .filtre button.on{border-color:var(--rose);color:var(--rose)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🤝 Parrainage des employées</h1>
+  <div class="sub" id="sub">Chargement…</div>
+  <div class="kpis">
+    <div class="k"><div class="l">📤 Envois</div><div class="v" id="kEnv">–</div></div>
+    <div class="k"><div class="l">📝 Réservations</div><div class="v" id="kRes">–</div></div>
+    <div class="k"><div class="l">💰 À payer</div><div class="v" id="kPay">–</div></div>
+  </div>
+  <button class="btn" id="maj" onclick="recalculer()">🔄 Recalculer maintenant</button>
+  <div class="filtre"><button id="fT" class="on" onclick="filtre('tous')">Toutes</button><button id="fA" onclick="filtre('actives')">Ont partagé</button><button id="fZ" onclick="filtre('zero')">Jamais partagé</button></div>
+  <div id="liste"></div>
+  <div class="sub" style="margin-top:8px">Mise à jour automatique toutes les heures · « Envois » = appuis sur un bouton de partage (LINE ne dit pas à combien d'amies)</div>
+  <a class="back" href="patron.html">← Espace patron</a>
+</div>
+<script src="autorisation.js?v=3"></script>
+<script>
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const $=id=>document.getElementById(id);
+let DATA=null, FILTRE='tous';
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+const fmt=n=>(+n||0).toLocaleString('en-US');
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function filtre(f){ FILTRE=f; ['fT','fA','fZ'].forEach(id=>$(id).classList.remove('on')); $({tous:'fT',actives:'fA',zero:'fZ'}[f]).classList.add('on'); dessiner(); }
+function dessiner(){
+  if(!DATA) return;
+  const L=$('liste'); L.innerHTML='';
+  let M=DATA.marraines||[];
+  if(FILTRE==='actives') M=M.filter(m=>m.partages||m.resas);
+  if(FILTRE==='zero') M=M.filter(m=>!m.partages && !m.resas && !m.bloque);
+  M.forEach(m=>{
+    const F=(DATA.filleules||[]).filter(f=>f.ref===m.ref);
+    const d=document.createElement('details'); d.className='emp';
+    d.innerHTML='<summary><span class="nom">'+esc(m.nom)+(m.bloque?' 🚫':'')+'</span><span class="pay">'+(m.aPayer?'💰 '+fmt(m.aPayer)+' ฿':'')+'</span>'
+      +'<span class="chips"><span class="chip">📤 '+fmt(m.partages)+' envois</span><span class="chip">👀 '+fmt(m.ouvertures)+' ouverts</span>'
+      +'<span class="chip r">📝 '+fmt(m.resas)+' résa</span><span class="chip g">✅ '+fmt(m.deux)+' à 2 mois</span>'+(m.paye?'<span class="chip y">payé '+fmt(m.paye)+' ฿</span>':'')+'</span></summary>';
+    const det=document.createElement('div'); det.className='det';
+    let h='<div class="ln"><span class="muted">Applis utilisées :</span> '+(m.canaux?esc(m.canaux):'—')+'</div>';
+    h+='<div class="ln"><span class="muted">Lien perso :</span> <b>ref '+esc(m.ref)+'</b>'+(m.tel?' · <a href="tel:'+esc(m.tel)+'">📞 '+esc(m.tel)+'</a>':'')+'</div>';
+    if(!F.length) h+='<div class="ln muted">Aucune amie parrainée pour le moment.</div>';
+    F.forEach(f=>{ h+='<div class="ln"><b>👭 '+esc(f.amie)+'</b> <span class="muted">'+esc(f.tel?('0'+f.tel).slice(-10):'')+'</span><br>'
+      +'<span class="muted">réservée le '+esc(f.resa)+(f.premier?' · 1er jour '+esc(f.premier):'')+' · '+f.jours+' jours travaillés</span><br>'
+      +esc(f.etat)+(f.com?' · <b>'+fmt(f.com)+' ฿</b>':'')+(f.paye?' · ✅ payée':'')+'</div>'; });
+    det.innerHTML=h; d.appendChild(det); L.appendChild(d);
+  });
+  if(!M.length) L.innerHTML='<div class="emp" style="padding:14px">Aucune employée dans cette liste.</div>';
+}
+function afficher(j){
+  if(!j || j.err){ $('sub').textContent = j && j.err==='tok' ? '🔐 Activez ce téléphone patron' : '⚠️ Pas de données — réessayez'; return; }
+  DATA=j; const M=j.marraines||[];
+  $('kEnv').textContent=fmt(M.reduce((a,m)=>a+(m.partages||0),0));
+  $('kRes').textContent=fmt(M.reduce((a,m)=>a+(m.resas||0),0));
+  $('kPay').textContent=fmt(M.reduce((a,m)=>a+(m.aPayer||0),0))+' ฿';
+  $('sub').textContent=M.length+' employées · '+M.filter(m=>m.partages).length+' ont partagé · données du '+(j.lu||'');
+  dessiner();
+}
+async function charger(){ try{ afficher(JSON.parse(await readTxt(await fetch(API+'?parrainliste=1&_='+Date.now())))); }catch(e){ $('sub').textContent='⚠️ Pas de connexion — réessayez'; } }
+async function recalculer(){
+  const b=$('maj'); b.disabled=true; b.textContent='⏳ Calcul en cours… (jusqu\'à 1 minute)';
+  try{ afficher(JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'parrainmaj'})})))); }catch(e){ alert('⚠️ Pas de connexion — réessayez'); }
+  b.disabled=false; b.textContent='🔄 Recalculer maintenant';
+}
+charger();
+</script>
+</body>
+</html>

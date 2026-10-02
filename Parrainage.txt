@@ -1,0 +1,185 @@
+// ============================================================
+//  🤝 PARRAINAGE — fichier À AJOUTER dans Apps Script (ne remplace rien)
+//  Apps Script → bouton « + » à côté de « Fichiers » → Script → nom : Parrainage → coller ce code → 💾
+//  Puis : choisir la fonction « installerParrainage » en haut → ▶️ Exécuter (une seule fois, accepter les autorisations)
+//
+//  Ce que ça fait (toutes les heures, automatiquement) :
+//   • lit « 📷 Scans » (partages LINE, liens ouverts, réservations parrainées) et « 📝 Réservations » (🤝 ref …)
+//   • garde tout dans un journal caché « _ParrainLog » (les Scans sont effacés après 1 000 lignes)
+//   • onglet « 🤝 Parrainages » : 1 ligne par amie parrainée → jours travaillés, 2 mois atteints, 2 000 ฿ à payer, case ✅ Payée
+//   • onglet « 🤝 Marraines » : par employée → partages, liens ouverts, réservations, 2 mois atteints, à payer, payé
+//  Règles (modifiables ci-dessous) :
+//   • l'amie doit avoir réservé avec le lien de la marraine (la 1re marraine dont le lien est ouvert sur son téléphone)
+//   • commission due quand l'amie a 2 mois depuis son 1er jour ET au moins 45 jours travaillés (absences non comptées)
+//   • pas de commission sur soi-même, ni sur une personne déjà employée avant la réservation
+//
+//  Compteur dans l'app des employées : branché AUTOMATIQUEMENT (rien à modifier dans Code.gs).
+//  ⚠️ Après avoir collé ce fichier : Déployer → Gérer les déploiements → ✏️ → Nouvelle version → Déployer.
+//  🔔 Messages automatiques à la marraine (onglet « 💬 Messages ») : amie qui réserve, 2 mois atteints, commission payée.
+// ============================================================
+const PAR_COMMISSION = 2000;     // ฿ par amie
+const PAR_MOIS = 2;              // mois depuis son 1er jour de travail
+const PAR_JOURS_MIN = 45;        // jours travaillés minimum (sans les absences)
+const PAR_ONGLET = '🤝 Parrainages', PAR_ONGLET_M = '🤝 Marraines', PAR_LOG = '_ParrainLog';
+
+function installerParrainage() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'majParrainages') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('majParrainages').timeBased().everyHours(1).create();
+  majParrainages();
+  SpreadsheetApp.getActiveSpreadsheet().toast('🤝 Parrainage installé : mise à jour toutes les heures', 'OK', 8);
+}
+
+function parDigits_(v) { return String(v || '').replace(/\D/g, ''); }
+function parCle_(nom, tel) { return String(nom || '').toLowerCase().replace(/[^a-z]/g, '').slice(0, 12) + parDigits_(tel).slice(-4); }
+function parIso_(d, tz) { return Utilities.formatDate(d, tz, 'yyyy-MM-dd'); }
+
+function majParrainages() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), tz = ss.getSpreadsheetTimeZone();
+  // ---------- 1) journal (ne perd rien quand les Scans sont effacés) ----------
+  let J = ss.getSheetByName(PAR_LOG);
+  if (!J) { J = ss.insertSheet(PAR_LOG); J.appendRow(['Quand', 'Type', 'Ref', 'Nom', 'Téléphone', 'Détail', 'Clé']); J.hideSheet(); }
+  const deja = {};
+  if (J.getLastRow() > 1) J.getRange(2, 7, J.getLastRow() - 1, 1).getValues().forEach(function (x) { deja[String(x[0])] = 1; });
+  const nouv = [];
+  const ajouter = function (quand, type, ref, nom, tel, det) {
+    const cle = type + '|' + ref + '|' + (quand instanceof Date ? quand.getTime() : quand) + '|' + parDigits_(tel) + '|' + det;
+    if (deja[cle]) return; deja[cle] = 1; nouv.push([quand, type, ref, nom, "'" + parDigits_(tel), det, cle]);
+  };
+  const S = ss.getSheetByName('📷 Scans');
+  if (S && S.getLastRow() > 1) S.getRange(2, 1, S.getLastRow() - 1, 8).getValues().forEach(function (x) {
+    const r = String(x[7] || ''), m = r.match(/ref ([a-z]{1,12}\d{4})/); if (!m || !(x[0] instanceof Date)) return;
+    if (/^📤/.test(r)) ajouter(x[0], 'partage', m[1], '', '', r.slice(0, 120));
+    else if (/^👀/.test(r)) { const a = (r.match(/appareil (\w+)/) || [])[1] || ''; ajouter(x[0], 'ouverture', m[1], '', '', a); }
+    else if (/^📝/.test(r)) { const q = r.split(' — '); const nt = (q[2] || '').trim().split(' '); const tel = nt.pop(); ajouter(x[0], 'resa', m[1], nt.join(' '), tel, ''); }
+  });
+  const R = ss.getSheetByName('📝 Réservations');
+  if (R && R.getLastRow() > 1) R.getRange(2, 1, R.getLastRow() - 1, 9).getValues().forEach(function (x) {
+    const m = String(x[8] || '').match(/🤝 ref ([a-z]{1,12}\d{4})/); if (!m) return;
+    ajouter(x[0] instanceof Date ? x[0] : new Date(), 'resa', m[1], String(x[1]), String(x[2]), String(x[3]));
+  });
+  if (nouv.length) J.getRange(J.getLastRow() + 1, 1, nouv.length, 7).setValues(nouv);
+  const LOG = J.getLastRow() > 1 ? J.getRange(2, 1, J.getLastRow() - 1, 6).getValues() : [];
+
+  // ---------- 2) employées : ref → nom, statut, 1re journée ----------
+  const E = ss.getSheetByName('Employés'), emp = {}, premTel = {};
+  if (E && E.getLastRow() > 1) E.getRange(2, 1, E.getLastRow() - 1, 4).getValues().forEach(function (x) {
+    if (!x[0]) return; const ref = parCle_(x[0], x[1]);
+    emp[ref] = { nom: String(x[0]), statut: String(x[2] || 'Actif') };
+    const t = parDigits_(x[1]).slice(-9); if (t && x[3] instanceof Date && (!premTel[t] || x[3] < premTel[t])) premTel[t] = x[3];
+  });
+  // ---------- 3) jours travaillés par téléphone (onglet Massages) ----------
+  const M = ss.getSheetByName('Massages'), jours = {}, premier = {};
+  if (M && M.getLastRow() > 1) M.getRange(2, 1, M.getLastRow() - 1, 11).getValues().forEach(function (x) {
+    if (!(x[0] instanceof Date)) return; const t = parDigits_(x[2]).slice(-9); if (!t) return;
+    if (!/Absent/.test(String(x[10] || ''))) { jours[t] = jours[t] || {}; jours[t][parIso_(x[0], tz)] = 1; }
+    if (!premier[t] || x[0] < premier[t]) premier[t] = x[0];
+  });
+
+  // ---------- 4) filleules : 1 par téléphone, la 1re réservation parrainée gagne ----------
+  const fil = {};
+  LOG.filter(function (x) { return x[1] === 'resa'; }).sort(function (a, b) { return new Date(a[0]) - new Date(b[0]); }).forEach(function (x) {
+    const t = parDigits_(x[4]).slice(-9); if (!t || fil[t]) return;
+    fil[t] = { ref: String(x[2]), nom: String(x[3]), tel: '0' + t, quand: new Date(x[0]) };
+  });
+  // cases « Payée » déjà cochées
+  let P = ss.getSheetByName(PAR_ONGLET); const paye = {};
+  if (P && P.getLastRow() > 1) P.getRange(2, 1, P.getLastRow() - 1, 10).getValues().forEach(function (x) { if (x[9] === true) paye[parDigits_(x[3]).slice(-9)] = true; });
+  const now = new Date(), lignes = [], parM = {};
+  Object.keys(fil).forEach(function (t) {
+    const f = fil[t], mar = emp[f.ref] || { nom: '(' + f.ref + ')', statut: '?' };
+    const p1 = premier[t] || null, nj = jours[t] ? Object.keys(jours[t]).length : 0;
+    let etat, com = 0;
+    if (t.slice(-4) === f.ref.slice(-4) && emp[f.ref] && parCle_(f.nom, f.tel) === f.ref) etat = '❌ elle-même';
+    else if (premTel[t] && premTel[t] < new Date(f.quand.getTime() - 86400000)) etat = '❌ déjà employée avant';
+    else if (!p1) etat = '⏳ pas encore commencé';
+    else {
+      const fin = new Date(p1); fin.setMonth(fin.getMonth() + PAR_MOIS);
+      if (now >= fin && nj >= PAR_JOURS_MIN) { com = PAR_COMMISSION; etat = paye[t] ? '✅ commission payée' : '💰 2 mois atteints → ' + PAR_COMMISSION + ' ฿ à payer'; }
+      else etat = '⏳ ' + nj + '/' + PAR_JOURS_MIN + ' jours · 2 mois le ' + Utilities.formatDate(fin, tz, 'dd/MM/yyyy');
+    }
+    lignes.push([mar.nom + (mar.statut === 'Bloqué' ? ' 🚫' : ''), f.ref, f.nom, "'" + f.tel, f.quand, p1 || '', nj, etat, com, !!paye[t]]);
+    const m = parM[f.ref] = parM[f.ref] || { partages: 0, ouvertures: 0, resas: 0, ok: 0, aPayer: 0, paye: 0 };
+    m.resas++; if (com) { m.ok++; if (paye[t]) m.paye += com; else m.aPayer += com; }
+  });
+  const vus = {};
+  LOG.forEach(function (x) {
+    const ref = String(x[2]); const m = parM[ref] = parM[ref] || { partages: 0, ouvertures: 0, resas: 0, ok: 0, aPayer: 0, paye: 0 };
+    if (x[1] === 'partage') { m.partages++; const c = (String(x[5]).match(/parrainage (\S+)/) || [])[1] || '?'; m.canaux = m.canaux || {}; m.canaux[c] = (m.canaux[c] || 0) + 1; }
+    if (x[1] === 'ouverture') { const k = ref + '|' + x[5]; if (!vus[k]) { vus[k] = 1; m.ouvertures++; } }
+  });
+
+  // ---------- 5) onglets ----------
+  if (!P) P = ss.insertSheet(PAR_ONGLET);
+  P.clear();
+  P.getRange(1, 1, 1, 10).setValues([['Marraine', 'Ref', 'Amie parrainée', 'Téléphone', 'Réservée le', '1er jour', 'Jours travaillés', 'État', 'Commission (฿)', '✅ Payée']])
+    .setFontWeight('bold').setBackground('#fbcfe8');
+  P.setFrozenRows(1);
+  if (lignes.length) {
+    lignes.sort(function (a, b) { return String(a[0]).localeCompare(String(b[0])); });
+    P.getRange(2, 1, lignes.length, 10).setValues(lignes);
+    P.getRange(2, 5, lignes.length, 2).setNumberFormat('dd/mm/yyyy');
+    P.getRange(2, 10, lignes.length, 1).insertCheckboxes();
+    lignes.forEach(function (l, i) { if (/^💰/.test(l[7])) P.getRange(i + 2, 1, 1, 10).setBackground('#fef08a').setFontWeight('bold');
+                                     else if (/^✅/.test(l[7])) P.getRange(i + 2, 1, 1, 10).setBackground('#dcfce7'); });
+  }
+  P.autoResizeColumns(1, 9);
+  let Q = ss.getSheetByName(PAR_ONGLET_M); if (!Q) Q = ss.insertSheet(PAR_ONGLET_M);
+  Q.clear();
+  Q.getRange(1, 1, 1, 8).setValues([['Marraine', 'Ref', '📤 Partages', '👀 Liens ouverts', '📝 Réservations', '✅ 2 mois atteints', '💰 À payer (฿) / payé', '📲 Partages par appli']]).setFontWeight('bold').setBackground('#fbcfe8');
+  Q.setFrozenRows(1);
+  const lm = Object.keys(parM).map(function (r) { const m = parM[r], e = emp[r];
+    return [e ? e.nom : '(' + r + ')', r, m.partages, m.ouvertures, m.resas, m.ok, m.aPayer + ' / ' + m.paye, Object.keys(m.canaux || {}).map(function (c) { return c + ' ' + m.canaux[c]; }).join(' · ')]; })
+    .sort(function (a, b) { return b[4] - a[4] || b[2] - a[2]; });
+  if (lm.length) Q.getRange(2, 1, lm.length, 8).setValues(lm);
+  Q.autoResizeColumns(1, 8);
+  // ---------- 6) 🔔 messages automatiques à la marraine (affichés dans son app) ----------
+  try { parMessages_(ss, fil, emp, lignes); } catch (x) {}
+  // ---------- 7) chiffres pour l'app des employées ----------
+  const out = {}; Object.keys(parM).forEach(function (r) { const m = parM[r]; out[r] = { partages: m.partages, ouvertures: m.ouvertures, resas: m.resas, ok: m.ok, aPayer: m.aPayer, paye: m.paye }; });
+  PropertiesService.getScriptProperties().setProperty('PARRAIN_STATS', JSON.stringify(out));
+}
+
+// appelé par doGet : ?parrain=ivy5052 → chiffres de la marraine
+function parrainGet_(e) {
+  let o = {}; try { o = JSON.parse(PropertiesService.getScriptProperties().getProperty('PARRAIN_STATS') || '{}'); } catch (x) {}
+  const m = o[String(e.parameter.parrain || '').toLowerCase()] || { partages: 0, ouvertures: 0, resas: 0, ok: 0, aPayer: 0, paye: 0 };
+  const r = { ok: 1, partages: m.partages || 0, ouvertures: m.ouvertures || 0, resas: m.resas || 0, deux: m.ok || 0, aPayer: m.aPayer || 0, paye: m.paye || 0 };
+  return ContentService.createTextOutput(JSON.stringify(r));
+}
+
+// 🔔 écrit dans « 💬 Messages » (1 seule fois par évènement) : amie qui réserve / 2 mois atteints / commission payée
+function parMessages_(ss, fil, emp, lignes) {
+  const T = ss.getSheetByName('💬 Messages'); if (!T) return;
+  const h = T.getRange(1, 1, 1, 6).getValues()[0];
+  if (String(h[1]) !== 'Employé' || String(h[5]) !== 'ID') return;            // onglet différent : on ne touche à rien
+  const ids = {}; if (T.getLastRow() > 1) T.getRange(2, 6, T.getLastRow() - 1, 1).getValues().forEach(function (x) { ids[String(x[0])] = 1; });
+  const tels = {};                                                             // ref → « Nom — téléphone »
+  const E = ss.getSheetByName('Employés');
+  if (E && E.getLastRow() > 1) E.getRange(2, 1, E.getLastRow() - 1, 2).getValues().forEach(function (x) {
+    if (x[0]) tels[parCle_(x[0], x[1])] = String(x[0]) + ' — ' + ('0' + parDigits_(x[1]).slice(-9)); });
+  const nouv = [], now = new Date();
+  lignes.forEach(function (l) {
+    const ref = l[1], amie = l[2], tel = parDigits_(l[3]).slice(-9), etat = String(l[7]), pour = tels[ref];
+    if (!pour || /^❌/.test(etat)) return;
+    const msg = function (k, txt) { const id = 'par|' + k + '|' + tel; if (!ids[id]) { ids[id] = 1; nouv.push([now, pour, txt, true, '', id]); } };
+    msg('resa', '🎉 ข่าวดี! เพื่อนของคุณ ' + amie + ' จองผ่านลิงก์ของคุณแล้ว 🤝\nถ้าเพื่อนทำงานครบ 2 เดือน คุณจะได้รับ ' + PAR_COMMISSION.toLocaleString('en-US') + ' ฿ 💰\nชวนเพื่อนเพิ่มได้อีกไม่จำกัด!');
+    if (/^💰|^✅/.test(etat)) msg('ok', '💰 ยินดีด้วย! ' + amie + ' ทำงานครบ 2 เดือนแล้ว\nคุณได้รับค่าแนะนำ ' + PAR_COMMISSION.toLocaleString('en-US') + ' ฿ — หัวหน้าจะจ่ายให้เร็วๆ นี้ 🙏');
+    if (/^✅/.test(etat)) msg('paye', '✅ จ่ายค่าแนะนำ ' + PAR_COMMISSION.toLocaleString('en-US') + ' ฿ (เพื่อน ' + amie + ') แล้ว ขอบคุณที่ชวนเพื่อนมาทำงาน 🥰');
+  });
+  if (nouv.length) { T.getRange(T.getLastRow() + 1, 1, nouv.length, 6).setValues(nouv); T.getRange(T.getLastRow() - nouv.length + 1, 1, nouv.length, 1).setNumberFormat('dd/mm/yyyy hh:mm'); }
+}
+
+// 🔌 BRANCHEMENT AUTOMATIQUE : ?parrain=… est traité ici, tout le reste continue vers le doGet de Code.gs.
+//    (si Code.gs contient déjà la ligne « parrainGet_ », aucun problème : même réponse)
+(function () {
+  try {
+    if (typeof doGet !== 'function' || doGet.__parrain) return;           // Code.gs pas encore chargé → on ne touche à rien
+    var principal = doGet;
+    var avecParrain = function (e) {
+      if (e && e.parameter && e.parameter.parrain) return parrainGet_(e);
+      return principal(e);
+    };
+    avecParrain.__parrain = true;
+    doGet = avecParrain;
+  } catch (x) {}
+})();
