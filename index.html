@@ -2078,7 +2078,7 @@ let parServeur=null, parServeurT=0;
 async function parAff(){
   const S=document.getElementById('parStats'), C=document.getElementById('parCard'); if(!S||!C) return;
   const nom=(document.getElementById('name').value||'').trim().toLowerCase();
-  C.style.display = (!parCode() || nom==='boss' || window.__essai) ? 'none' : 'block';
+  C.style.display = (!parCode() || window.__essai) ? 'none' : 'block';
   if(C.style.display==='none') return;
   const o=parGet();
   if(Date.now()-parServeurT>10*60000){ parServeurT=Date.now();
