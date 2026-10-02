@@ -38,6 +38,16 @@
   .fj tr.tot td{background:#fef3c7;font-weight:800}
   .fj .ko{color:var(--red);font-size:.75rem;font-weight:700}
   .fjtop{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .chbtn{display:block;text-align:center;border-radius:12px;padding:13px;font-weight:800;background:var(--violet);color:#fff;cursor:pointer;margin-bottom:6px}
+  .ch{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+  .ch th{background:#ede9fe;font-size:.7rem;padding:5px 2px;border:1px solid #ddd6fe}
+  .ch td{border:1px solid #ede9fe;padding:4px 2px;text-align:center;vertical-align:middle}
+  .ch td.n{text-align:left;font-weight:700;font-size:.82rem}
+  .ch input{width:100%;max-width:58px;font-size:1rem;padding:6px 2px;text-align:center;border:2px solid var(--border);border-radius:8px}
+  .ch input.diff{border-color:var(--red);background:#fee2e2;color:var(--red);font-weight:800}
+  .ch .app{display:block;font-size:.68rem;color:var(--red);font-weight:700}
+  .ch button{border:none;border-radius:8px;padding:7px 6px;font-weight:800;background:var(--green);color:#fff;font-size:.78rem}
+  .ch tr.ok td{background:#dcfce7}
   .fjtop input{flex:1;font-size:1rem;padding:8px;border-radius:10px;border:2px solid var(--border)}
 </style>
 </head>
@@ -57,6 +67,22 @@
     <div class="fjtop"><input type="date" id="fjDate" onchange="feuille()"><button onclick="feuille()" style="border:none;border-radius:10px;padding:9px 12px;font-weight:800;background:var(--violet);color:#fff">🔄</button></div>
     <div id="fjCorps" style="color:var(--text)">Chargement…</div>
   </div>
+  <div class="card" id="cahier">
+    <h2><span>📸 Contrôle avec le cahier</span></h2>
+    <div class="sub" style="text-align:left;margin:0 0 8px">1. Photo de la feuille papier · 2. Tapez les chiffres du cahier · 3. Les erreurs des filles sont en <b style="color:var(--red)">rouge</b> → ✔ Corriger</div>
+    <div class="fjtop"><input type="date" id="chDate" onchange="chCharger()"><button onclick="chCharger()" style="border:none;border-radius:10px;padding:9px 12px;font-weight:800;background:var(--violet);color:#fff">🔄</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <label class="chbtn">📸 Prendre une photo<input type="file" accept="image/*" capture="environment" id="chFile" onchange="chPhoto(this)" style="display:none"></label>
+      <label class="chbtn" style="background:#fff;color:var(--violet);border:2px solid var(--violet)">🖼️ Choisir une photo<input type="file" accept="image/*" id="chFile2" onchange="chPhoto(this)" style="display:none"></label>
+    </div>
+    <div id="chPhotoMsg" class="sub" style="text-align:left;margin:4px 0"></div>
+    <div id="chPhotoBox" style="display:none;position:sticky;top:0;z-index:5;background:var(--card);padding:4px 0 8px">
+      <img id="chImg" alt="cahier" onclick="chZoom()" style="width:100%;max-height:38vh;object-fit:contain;border-radius:10px;border:2px solid var(--border);background:#000">
+      <div class="sub" style="margin:2px 0 0">👆 toucher la photo pour l'agrandir</div>
+    </div>
+    <div id="chCorps">Chargement…</div>
+  </div>
+  <div id="chZoom" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:100001;background:#000;overflow:auto"><img id="chZoomImg" alt="" style="width:200%;max-width:none"><div style="position:fixed;top:10px;right:10px;background:#fff;border-radius:999px;padding:8px 14px;font-weight:800">✕</div></div>
   <div id="maj"></div>
   <a class="back" href="patron.html">← Espace patron</a>
 </div>
@@ -133,6 +159,97 @@ async function feuille(){
 }
 (()=>{ const b=new Date(Date.now()-6*3600e3); $('fjDate').value=isoJ(b); feuille(); })();
 setInterval(()=>{ if(!document.hidden) feuille(); }, 5*60000);
+
+// ===== 📸 CONTRÔLE AVEC LE CAHIER : photo de la feuille papier + chiffres du cahier → les différences sont corrigées =====
+let CH={jour:'', lignes:[], sans:[]};
+const PRX={l1:600,l2:800,hh:600};
+const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function chZoom(){ $('chZoomImg').src=$('chImg').src; $('chZoom').style.display='block'; }
+async function chPhoto(inp){
+  const f=inp.files&&inp.files[0]; if(!f) return; const jour=$('chDate').value; const M=$('chPhotoMsg');
+  M.textContent='⏳ Préparation de la photo…';
+  try{
+    const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(f); });
+    const k=Math.min(1,1800/Math.max(img.width,img.height)), c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height); const data=c.toDataURL('image/jpeg',0.75);
+    $('chImg').src=data; $('chPhotoBox').style.display='block';
+    M.textContent='⏳ Envoi de la photo dans Google Drive…';
+    const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'cahierphoto',jour,img:data})})));
+    if(!j.ok) throw j.err||'x';
+    M.innerHTML='✅ Photo rangée dans Drive → dossier « Cahier Pointage » · <a href="'+esc(j.url)+'" target="_blank">ouvrir</a>';
+  }catch(e){ M.textContent = e==='tok' ? '🔐 Activez ce téléphone patron' : '⚠️ Photo non envoyée dans Drive (elle reste affichée ici) — réessayez'; }
+  inp.value='';
+}
+async function chPhotosDrive(jour){
+  try{ const j=JSON.parse(await readTxt(await fetch(API+'?cahier='+jour+'&_='+Date.now())));
+    if(j.ok && j.photos && j.photos.length && $('chDate').value===jour && !$('chPhotoBox').style.display.includes('block'))
+      $('chPhotoMsg').innerHTML='🗂️ Déjà dans Drive pour ce jour : '+j.photos.map((p,i)=>'<a href="'+esc(p.url)+'" target="_blank">photo '+(j.photos.length-i)+'</a>').join(' · ');
+  }catch(e){}
+}
+async function chCharger(){
+  const jour=$('chDate').value, C=$('chCorps'); if(!jour) return; C.textContent='Chargement…';
+  $('chPhotoBox').style.display='none'; $('chPhotoMsg').textContent=''; chPhotosDrive(jour);
+  try{
+    const [B,M]=await Promise.all([
+      fetch(API+'?boss=1&pin=x&d='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse),
+      fetch(API+'?boss=1&pin=x&mjour='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse)]);
+    if(B.err||M.err){ C.textContent='🔐 Activez ce téléphone patron'; return; }
+    const J=M.jour||{}, emps=(B.emps||[]).filter(e=>!/^boss$/i.test(String(e.nom).trim()));
+    CH={jour, lignes:[], sans:[]};
+    emps.forEach(e=>{ const m=J[cle(e.nom,e.tel)], h=(B.hor||{})[e.label], prevue=h && h.deb<=jour && h.fin>=jour;
+      if(m) CH.lignes.push({label:e.label, nom:e.nom, app:{l1:+m.l1||0,l2:+m.l2||0,hh:+m.hh||0}});
+      else if(prevue && !e.bloque) CH.sans.push(e.nom); });
+    CH.lignes.sort((a,b)=>a.nom.localeCompare(b.nom));
+    chDessiner();
+  }catch(e){ C.textContent='⚠️ Pas de connexion — réessayez'; }
+}
+function chDessiner(){
+  const C=$('chCorps');
+  if(!CH.lignes.length){ C.innerHTML='<div class="sub">Aucune journée envoyée par les filles pour cette date.</div>'+(CH.sans.length?'<div class="sub" style="color:var(--red)">⚠️ Prévues mais sans journée : '+esc(CH.sans.join(', '))+'</div>':''); return; }
+  let h='<table class="ch"><tr><th>Nom</th><th>1 lady</th><th>2 lady</th><th>Happy H.</th><th></th></tr>';
+  CH.lignes.forEach((x,i)=>{ h+='<tr id="chR'+i+'"><td class="n">'+esc(x.nom)+'</td>';
+    ['l1','l2','hh'].forEach(k=>{ h+='<td><input type="number" min="0" step="'+(k==='l1'?1:1)+'" inputmode="numeric" id="ch_'+i+'_'+k+'" value="'+x.app[k]+'" oninput="chMaj()"><span class="app" id="cha_'+i+'_'+k+'"></span></td>'; });
+    h+='<td><button id="chB'+i+'" style="display:none" onclick="chCorriger('+i+')">✔ Corriger</button></td></tr>'; });
+  h+='</table>';
+  h+='<div class="kpis" style="margin:10px 0 0"><div class="k"><div class="l">📱 Selon les filles</div><div class="v" id="chTApp">–</div></div><div class="k"><div class="l">📖 Selon le cahier</div><div class="v" id="chTCah">–</div></div></div>';
+  h+='<div id="chEcart" style="text-align:center;font-weight:800;margin:8px 0"></div>';
+  h+='<button class="chbtn" id="chTout" style="display:none;width:100%;border:none;background:var(--green)" onclick="chToutCorriger()"></button>';
+  if(CH.sans.length) h+='<div class="sub" style="color:var(--red);text-align:left">⚠️ Prévues mais sans journée envoyée : <b>'+esc(CH.sans.join(', '))+'</b> — si elles ont travaillé, la fille doit valider sa journée dans l\'app (ensuite vous pourrez corriger ici).</div>';
+  h+='<div class="sub" style="text-align:left">2 lady et Happy Hour = nombre de passages (comme sur l\'app des filles). La correction met à jour Google et le téléphone de la fille.</div>';
+  C.innerHTML=h; chMaj();
+}
+function chVal(i,k){ return Math.max(0,+($('ch_'+i+'_'+k).value)||0); }
+function chMaj(){
+  let tA=0,tC=0,mA=0,mC=0,n=0;
+  CH.lignes.forEach((x,i)=>{ let diff=false;
+    ['l1','l2','hh'].forEach(k=>{ const v=chVal(i,k), a=x.app[k], el=$('ch_'+i+'_'+k), d=v!==a; el.classList.toggle('diff',d); $('cha_'+i+'_'+k).textContent=d?'app '+a:''; if(d) diff=true;
+      tA+=a*PRX[k]; tC+=v*PRX[k]; mA+=k==='l1'?a:a/2; mC+=k==='l1'?v:v/2; });
+    $('chB'+i).style.display=diff?'':'none'; if(diff) n++; });
+  const f=(m,t)=>(Math.round(m*10)/10).toLocaleString('en-US')+' 💆<br><span style="font-size:1rem">'+fmt(t)+' ฿</span>';
+  $('chTApp').innerHTML=f(mA,tA); $('chTCah').innerHTML=f(mC,tC);
+  const e=tC-tA; $('chEcart').innerHTML = n ? '<span style="color:var(--red)">❌ '+n+' fille'+(n>1?'s':'')+' avec erreur · écart '+(e>0?'+':'')+fmt(e)+' ฿</span>' : '<span style="color:var(--green)">✅ Le cahier et l\'app sont identiques</span>';
+  const b=$('chTout'); b.style.display=n>1?'block':'none'; b.textContent='✔ Corriger les '+n+' filles';
+}
+async function chCorriger(i, silencieux){
+  const x=CH.lignes[i], b=$('chB'+i), v={l1:chVal(i,'l1'),l2:chVal(i,'l2'),hh:chVal(i,'hh')};
+  if(!silencieux && !confirm('Corriger '+x.nom+' le '+CH.jour.split('-').reverse().join('/')+' ?\n\n1 lady '+x.app.l1+' → '+v.l1+'\n2 lady '+x.app.l2+' → '+v.l2+'\nHappy Hour '+x.app.hh+' → '+v.hh)) return false;
+  b.disabled=true; b.textContent='⏳';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'bosscorrige',label:x.label,date:CH.jour,l1:v.l1,l2:v.l2,hh:v.hh})})));
+    if(!j.ok) throw j.err||'x';
+    x.app={l1:+j.l1||0,l2:+j.l2||0,hh:+j.hh||0}; ['l1','l2','hh'].forEach(k=>$('ch_'+i+'_'+k).value=x.app[k]);
+    $('chR'+i).classList.add('ok'); b.disabled=false; b.textContent='✔ Corriger'; chMaj(); feuille(); return true;
+  }catch(e){ b.disabled=false; b.textContent='✔ Corriger';
+    if(!silencieux) alert(e==='tok'?'🔐 Activez ce téléphone patron':e==='ligne'?'❌ Aucune journée envoyée à cette date':e==='date'?'❌ Date non permise (60 jours max)':'❌ Pas envoyé — réessayez'); return false; }
+}
+async function chToutCorriger(){
+  const L=CH.lignes.map((x,i)=>i).filter(i=>$('chB'+i).style.display!=='none'); if(!L.length) return;
+  if(!confirm('Corriger '+L.length+' filles avec les chiffres du cahier ?')) return;
+  const b=$('chTout'); b.disabled=true; let ko=0;
+  for(const i of L){ b.textContent='⏳ '+CH.lignes[i].nom+'…'; if(!(await chCorriger(i,true))) ko++; }
+  b.disabled=false; chMaj(); if(ko) alert('⚠️ '+ko+' correction(s) non envoyée(s) — réessayez');
+}
+(()=>{ const b=new Date(Date.now()-6*3600e3); $('chDate').value=isoJ(b); $('chDate').max=isoJ(new Date()); chCharger(); })();
 charger(); setInterval(charger, 60000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) charger(); });
 </script>
