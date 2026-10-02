@@ -29,6 +29,16 @@
   .m{font-variant-numeric:tabular-nums;font-weight:700;min-width:64px;text-align:right}
   a.back{display:block;text-align:center;margin-top:10px;color:var(--violet);font-weight:700;text-decoration:none}
   #maj{text-align:center;color:var(--muted);font-size:.8rem}
+  .ctc{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px}
+  .ctc a,.ctc button{flex:1 1 30%;text-align:center;text-decoration:none;border:none;border-radius:9px;padding:8px 4px;font-weight:800;font-size:.85rem}
+  .fj{width:100%;border-collapse:collapse;font-size:.88rem;font-variant-numeric:tabular-nums}
+  .fj th{background:#ede9fe;font-size:.72rem;padding:6px 3px;text-align:center;border:1px solid #ddd6fe}
+  .fj td{border:1px solid #ede9fe;padding:6px 3px;text-align:center}
+  .fj td.n{text-align:left;font-weight:700}
+  .fj tr.tot td{background:#fef3c7;font-weight:800}
+  .fj .ko{color:var(--red);font-size:.75rem;font-weight:700}
+  .fjtop{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .fjtop input{flex:1;font-size:1rem;padding:8px;border-radius:10px;border:2px solid var(--border)}
 </style>
 </head>
 <body>
@@ -42,10 +52,15 @@
     <div class="k"><div class="l">💰 Chiffre du jour</div><div class="v" id="kCA">–</div></div>
   </div>
   <div id="liste"><div class="card">Chargement…</div></div>
+  <div class="card" id="feuille">
+    <h2><span>📋 Feuille du jour — massages validés</span></h2>
+    <div class="fjtop"><input type="date" id="fjDate" onchange="feuille()"><button onclick="feuille()" style="border:none;border-radius:10px;padding:9px 12px;font-weight:800;background:var(--violet);color:#fff">🔄</button></div>
+    <div id="fjCorps" class="sub">Chargement…</div>
+  </div>
   <div id="maj"></div>
   <a class="back" href="patron.html">← Espace patron</a>
 </div>
-<script src="autorisation.js?v=2"></script>
+<script src="autorisation.js?v=4"></script>
 <script>
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
@@ -64,6 +79,7 @@ async function charger(){
       fetch(API+'?boss=1&pin=x&d='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse),
       fetch(API+'?boss=1&pin=x&mjour='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse).catch(()=>({}))]);
     if(B.err){ $('liste').innerHTML='<div class="card">🔐 Activez ce téléphone patron pour voir le tableau.</div>'; return; }
+    if(window.autLineIds) await window.autLineIds();
     const J=M.jour||{}, groupes={}; let pres=0, abs=0, mas=0, ca=0;
     const emps=(B.emps||[]).filter(e=>!e.bloque);
     emps.forEach(e=>{
@@ -90,13 +106,33 @@ async function charger(){
         r.innerHTML='<div><b></b></div><div class="st"></div><div class="m"></div>';
         r.querySelector('b').textContent=x.nom; const s=r.querySelector('.st'); s.textContent=x.st; s.classList.add(x.cls);
         r.querySelector('.m').textContent=x.n?x.n+' 💆':'–';
-        if(x.cls==='ret'){ const a=document.createElement('a'); a.href='tel:'+x.tel; a.textContent=' 📞'; a.style.textDecoration='none'; r.querySelector('div').appendChild(a); }
+        if(x.cls==='ret' && window.autContact){ const z=document.createElement('div'); z.className='ctc'; window.autContact(z, {nom:x.nom, tel:x.tel, sh}); r.appendChild(z); }
         c.appendChild(r); });
       L.appendChild(c); });
     if(!L.children.length) L.innerHTML='<div class="card">Aucune employée prévue aujourd\'hui.</div>';
     $('maj').textContent='Mis à jour à '+now.toTimeString().slice(0,5)+' · actualisation toutes les minutes';
   }catch(e){ $('maj').textContent='⚠️ Pas de connexion — nouvel essai dans 1 minute'; }
 }
+// 📋 FEUILLE DU JOUR : journées validées par les filles (onglet Massages), détail par fille
+async function feuille(){
+  const C=$('fjCorps'), d=$('fjDate').value; if(!d) return; C.textContent='Chargement…';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API+'?jourdetail='+d+'&_='+Date.now())));
+    if(j.err){ C.textContent = j.err==='tok' ? '🔐 Activez ce téléphone patron' : '⚠️ Erreur'; return; }
+    const L=(j.lignes||[]).filter(x=>!/^boss$/i.test(x.nom.trim()) || x.ca);
+    if(!L.length){ C.textContent='Aucune journée validée pour cette date.'; return; }
+    const n2=v=>Math.round(v*2*100)/100, eq=x=>x.l1+x.l2+x.hh;
+    let h='<table class="fj"><tr><th>Fille</th><th>1 lady<br>600</th><th>2 lady<br>800</th><th>Happy<br>Hour</th><th>Total<br>💆</th><th>CA ฿</th><th>Heures</th></tr>', T={l1:0,l2:0,hh:0,ca:0};
+    L.forEach(x=>{ T.l1+=x.l1; T.l2+=x.l2; T.hh+=x.hh; T.ca+=x.ca;
+      const pb=[]; if(/Retard|Absent/i.test(x.sit)) pb.push(x.sit.replace(/,?\s*OK/,'')); if(x.pen) pb.push('-'+fmt(x.pen)+' ฿');
+      h+='<tr><td class="n">'+x.nom.replace(/[<>&]/g,'')+(pb.length?'<div class="ko">'+pb.join(' · ').replace(/[<>&]/g,'')+'</div>':'')+'</td><td>'+(x.l1||'–')+'</td><td>'+(n2(x.l2)||'–')+'</td><td>'+(n2(x.hh)||'–')+'</td><td><b>'+eq(x)+'</b></td><td>'+fmt(x.ca)+'</td><td style="font-size:.75rem">'+(x.arr||'?')+'<br>'+(x.dep||'?')+'</td></tr>'; });
+    h+='<tr class="tot"><td class="n">TOTAL ('+L.length+')</td><td>'+T.l1+'</td><td>'+n2(T.l2)+'</td><td>'+n2(T.hh)+'</td><td>'+(T.l1+T.l2+T.hh)+'</td><td>'+fmt(T.ca)+'</td><td></td></tr></table>';
+    h+='<div class="sub" style="margin-top:6px;text-align:left">2 lady et Happy Hour = nombre de massages · « Total 💆 » compte 2 lady et Happy Hour pour ½ · seules les journées validées apparaissent</div>';
+    C.innerHTML=h;
+  }catch(e){ C.textContent='⚠️ Pas de connexion — réessayez'; }
+}
+(()=>{ const b=new Date(Date.now()-6*3600e3); $('fjDate').value=isoJ(b); feuille(); })();
+setInterval(()=>{ if(!document.hidden) feuille(); }, 5*60000);
 charger(); setInterval(charger, 60000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) charger(); });
 </script>
