@@ -142,10 +142,13 @@
     try{
       const now=new Date(), base=new Date(now.getTime()-6*3600e3), jour=isoJ(base); base.setHours(0,0,0,0);
       const j=JSON.parse(await txt(await fetch(API+'?boss=1&pin=x&d='+jour+'&_='+Date.now()))); if(!j.emps) return;
+      // journée déjà envoyée par son téléphone → elle est là (le ▶️ a pu ne pas arriver) : pas d'alerte
+      const k9=(n,t)=>String(n||'').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(t||'').replace(/\D/g,'').slice(-9), ok={};
+      try{ const m=JSON.parse(await txt(await fetch(API+'?boss=1&pin=x&mjour='+jour+'&_='+Date.now()))); Object.keys(m.jour||{}).forEach(k=>{ const q=k.split('|'); ok[k9(q[0],q[1])]=1; }); }catch(e){}
       await lineIds(); const vu=cacheVu(), out=[];
       Object.keys(j.hor||{}).forEach(lab=>{
         const h=j.hor[lab]; if(!h || !h.deb || jour<h.deb || jour>h.fin) return;
-        const e=(j.emps||[]).find(x=>x.label===lab); if(!e || e.bloque || e.service || /^boss$/i.test(e.nom)) return;
+        const e=(j.emps||[]).find(x=>x.label===lab); if(!e || e.bloque || e.service || ok[k9(e.nom,e.tel)] || /^boss$/i.test(e.nom)) return;
         const d=debutMin(h.sh), f=finMin(h.sh); if(d===null) return;
         const min=(now-base)/60000; if(min<d+15 || (f!==null && min>f)) return;
         const k=jour+'|'+lab; if(vu[k]) return;
@@ -153,7 +156,7 @@
       });
       AZ.innerHTML='';
       out.forEach(o=>{ const el=document.createElement('div'); el.className='a';
-        el.innerHTML='⏰ <b></b> pas encore arrivée<br><span style="font-size:.85rem"></span><div class="r"></div>';
+        el.innerHTML='⏰ <b></b> : pas de ▶️ เริ่มงาน reçu<br><span style="font-size:.85rem"></span><div class="r"></div>';
         el.querySelector('b').textContent=o.nom; el.querySelector('span').textContent='Horaire '+o.sh+' · retard '+o.retard+' min';
         contactBoutons(el.querySelector('.r'), o, ()=>{ const v=cacheVu(); v[o.k]=1; try{ localStorage.setItem('patron_retard_vu', JSON.stringify(v)); }catch(e){} el.remove(); });
         AZ.appendChild(el); });

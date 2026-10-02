@@ -57,7 +57,7 @@
   <div class="sub" id="date"></div>
   <div class="kpis">
     <div class="k"><div class="l">👩 Présentes</div><div class="v" id="kPres">–</div></div>
-    <div class="k"><div class="l">⏰ Pas encore arrivées</div><div class="v" id="kAbs">–</div></div>
+    <div class="k"><div class="l">⏰ Pas de pointage reçu</div><div class="v" id="kAbs">–</div></div>
     <div class="k"><div class="l">💆 Massages du jour</div><div class="v" id="kMas">–</div></div>
     <div class="k"><div class="l">💰 Chiffre du jour</div><div class="v" id="kCA">–</div></div>
   </div>
@@ -86,7 +86,7 @@
   <div id="maj"></div>
   <a class="back" href="patron.html">← Espace patron</a>
 </div>
-<script src="autorisation.js?v=6"></script>
+<script src="autorisation.js?v=7"></script>
 <script>
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
@@ -101,22 +101,29 @@ async function charger(){
   const min=(now-base)/60000;
   $('date').textContent=base.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
   try{
-    const [B,M]=await Promise.all([
+    const [B,M,D]=await Promise.all([
       fetch(API+'?boss=1&pin=x&d='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse),
-      fetch(API+'?boss=1&pin=x&mjour='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse).catch(()=>({}))]);
+      fetch(API+'?boss=1&pin=x&mjour='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse).catch(()=>({})),
+      fetch(API+'?jourdetail='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse).catch(()=>({}))]);
     if(B.err){ $('liste').innerHTML='<div class="card">🔐 Activez ce téléphone patron pour voir le tableau.</div>'; return; }
     if(window.autLineIds) await window.autLineIds();
-    const J=M.jour||{}, groupes={}; let pres=0, abs=0, mas=0, ca=0;
+    // journée envoyée par le téléphone (onglet Massages) = elle a travaillé, même si le ▶️ du jour n'est pas arrivé dans Google
+    const k9=(n,t)=>String(n||'').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(t||'').replace(/\D/g,'').slice(-9);
+    const J={}, ARRV={};
+    Object.keys(M.jour||{}).forEach(k=>{ const q=k.split('|'); J[k9(q[0],q[1])]=M.jour[k]; });
+    (D.lignes||[]).forEach(x=>{ const k=k9(x.nom,x.tel); ARRV[k]=String(x.arr||'').replace(/[^\d:]/g,'').slice(0,5)||'✓'; if(!J[k]) J[k]={l1:x.l1,l2:x.l2,hh:x.hh}; });
+    const groupes={}; let pres=0, abs=0, mas=0, ca=0;
     const emps=(B.emps||[]).filter(e=>!e.bloque);
     emps.forEach(e=>{
       const h=(B.hor||{})[e.label], sh=h && h.deb<=jour && h.fin>=jour ? h.sh : '';
-      const m=J[cle(e.nom,e.tel)]||{}, n=(+m.l1||0)+(+m.l2||0)+(+m.hh||0), c=(+m.l1||0)*600+(+m.l2||0)*800+(+m.hh||0)*600;
+      const kk=k9(e.nom,e.tel), envoyee=!!J[kk] || !!ARRV[kk], m=J[kk]||{}, n=(+m.l1||0)+(+m.l2||0)+(+m.hh||0), c=(+m.l1||0)*600+(+m.l2||0)*800+(+m.hh||0)*600;
       if(!sh && !e.service && !n) return;                         // pas de contrat aujourd'hui
       const d=debutMin(sh), f=finMin(sh);
       let st, cls;
       if(e.service){ st='● arrivée '+(e.depuis||''); cls='ok'; pres++; }
-      else if(d!==null && min>=d+15 && (f===null || min<=f)){ st='⏰ retard '+Math.round(min-d)+' min'; cls='ret'; abs++; }
-      else if(d!==null && f!==null && min>f){ st='— absente'; cls='ret'; abs++; }
+      else if(envoyee){ st='✅ journée envoyée'+(ARRV[kk] && ARRV[kk]!=='✓'?' · arrivée '+ARRV[kk]:''); cls='ok'; pres++; }
+      else if(d!==null && min>=d+15 && (f===null || min<=f)){ st='⏰ pas de ▶️ reçu ('+Math.round(min-d)+' min)'; cls='ret'; abs++; }
+      else if(d!==null && f!==null && min>f){ st='❓ aucun pointage reçu'; cls='ret'; abs++; }
       else { st='⏳ à '+String(Math.floor((d||0)/60)).padStart(2,'0')+':'+String((d||0)%60).padStart(2,'0'); cls='att'; }
       mas+=n; ca+=c;
       (groupes[sh||'(sans horaire)']=groupes[sh||'(sans horaire)']||[]).push({nom:e.nom, tel:e.tel, st, cls, n});

@@ -36,6 +36,10 @@
   .filtre{display:flex;gap:6px;margin-bottom:10px}
   .filtre button{flex:1;border:2px solid var(--border);background:#fff;border-radius:10px;padding:8px 4px;font-weight:700;font-size:.85rem}
   .filtre button.on{border-color:var(--rose);color:var(--rose)}
+  .chip.ok{background:#16a34a;color:#fff}.chip.ko{background:#dc2626;color:#fff}
+  .rel{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .rel a{flex:1 1 45%;text-align:center;text-decoration:none;font-weight:800;font-size:.85rem;border-radius:10px;padding:9px 4px}
+  .objbox{background:var(--card);border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
 </style>
 </head>
 <body>
@@ -47,13 +51,14 @@
     <div class="k"><div class="l">📝 Réservations</div><div class="v" id="kRes">–</div></div>
     <div class="k"><div class="l">💰 À payer</div><div class="v" id="kPay">–</div></div>
   </div>
+  <div class="objbox" id="objBox" style="display:none"></div>
   <button class="btn" id="maj" onclick="recalculer()">🔄 Recalculer maintenant</button>
-  <div class="filtre"><button id="fT" class="on" onclick="filtre('tous')">Toutes</button><button id="fA" onclick="filtre('actives')">Ont partagé</button><button id="fZ" onclick="filtre('zero')">Jamais partagé</button></div>
+  <div class="filtre"><button id="fT" class="on" onclick="filtre('tous')">Toutes</button><button id="fA" onclick="filtre('actives')">Ont partagé</button><button id="fZ" onclick="filtre('zero')">Jamais partagé</button><button id="fO" onclick="filtre('obj')">🎯 Pas atteint</button></div>
   <div id="liste"></div>
   <div class="sub" style="margin-top:8px">Mise à jour automatique toutes les heures · « Envois » = appuis sur un bouton de partage (LINE ne dit pas à combien d'amies)</div>
   <a class="back" href="patron.html">← Espace patron</a>
 </div>
-<script src="autorisation.js?v=6"></script>
+<script src="autorisation.js?v=7"></script>
 <script>
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
@@ -61,18 +66,20 @@ let DATA=null, FILTRE='tous';
 async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
 const fmt=n=>(+n||0).toLocaleString('en-US');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function filtre(f){ FILTRE=f; ['fT','fA','fZ'].forEach(id=>$(id).classList.remove('on')); $({tous:'fT',actives:'fA',zero:'fZ'}[f]).classList.add('on'); dessiner(); }
+function filtre(f){ FILTRE=f; ['fT','fA','fZ','fO'].forEach(id=>$(id).classList.remove('on')); $({tous:'fT',actives:'fA',zero:'fZ',obj:'fO'}[f]).classList.add('on'); dessiner(); }
 function dessiner(){
   if(!DATA) return;
   const L=$('liste'); L.innerHTML='';
   let M=DATA.marraines||[];
   if(FILTRE==='actives') M=M.filter(m=>m.partages||m.resas);
   if(FILTRE==='zero') M=M.filter(m=>!m.partages && !m.resas && !m.bloque);
+  if(FILTRE==='obj') M=M.filter(m=>m.obj && m.obj.n<m.obj.but && !m.bloque);
   M.forEach(m=>{
     const F=(DATA.filleules||[]).filter(f=>f.ref===m.ref);
     const d=document.createElement('details'); d.className='emp';
     d.innerHTML='<summary><span class="nom">'+esc(m.nom)+(m.bloque?' 🚫':'')+'</span><span class="pay">'+(m.aPayer?'💰 '+fmt(m.aPayer)+' ฿':'')+'</span>'
       +'<span class="chips"><span class="chip">📤 '+fmt(m.partages)+' envois</span><span class="chip">👀 '+fmt(m.ouvertures)+' ouverts</span>'
+      +(m.obj?'<span class="chip '+(m.obj.n>=m.obj.but?'ok">🎯 '+m.obj.n+'/'+m.obj.but+' ✅':'ko">🎯 '+m.obj.n+'/'+m.obj.but+' ❌')+' · j'+m.obj.jour+'/'+m.obj.duree+'</span>':'')
       +'<span class="chip r">📝 '+fmt(m.resas)+' résa</span><span class="chip g">✅ '+fmt(m.deux)+' à 2 mois</span>'+(m.paye?'<span class="chip y">payé '+fmt(m.paye)+' ฿</span>':'')+'</span></summary>';
     const det=document.createElement('div'); det.className='det';
     let h='<div class="ln"><span class="muted">Applis utilisées :</span> '+(m.canaux?esc(m.canaux):'—')+'</div>';
@@ -81,9 +88,44 @@ function dessiner(){
     F.forEach(f=>{ h+='<div class="ln"><b>👭 '+esc(f.amie)+'</b> <span class="muted">'+esc(f.tel?('0'+f.tel).slice(-10):'')+'</span><br>'
       +'<span class="muted">réservée le '+esc(f.resa)+(f.premier?' · 1er jour '+esc(f.premier):'')+' · '+f.jours+' jours travaillés</span><br>'
       +esc(f.etat)+(f.com?' · <b>'+fmt(f.com)+' ฿</b>':'')+(f.paye?' · ✅ payée':'')+'</div>'; });
-    det.innerHTML=h; d.appendChild(det); L.appendChild(d);
+    if(m.obj) h+='<div class="ln"><b>🎯 Objectif : '+m.obj.but+' messages « 👭 ชวนเพื่อน » du '+dmy(m.obj.deb)+' au '+dmy(m.obj.fin)+'</b> → '+m.obj.n+' envoyé'+(m.obj.n>1?'s':'')+(m.obj.n>=m.obj.but?' ✅':' ❌ (il en manque '+(m.obj.but-m.obj.n)+')')+'</div>';
+    det.innerHTML=h;
+    if(m.obj && m.obj.n<m.obj.but && m.tel){
+      const R=document.createElement('div'); R.className='rel'; const t=msgRelance(m);
+      const b=(txt,bg,fg,f)=>{ const a=document.createElement('a'); a.textContent=txt; a.style.background=bg; a.style.color=fg; if(typeof f==='string'){ a.href=f; a.dataset.grp='1'; } else { a.href='#'; a.onclick=e=>{ e.preventDefault(); f(a); }; } R.appendChild(a); };
+      b('📲 Message dans son app','#db2777','#fff', a=>relanceApp(m,a));
+      const lid=LIGNES[(m.nom||'').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(m.tel).replace(/\D/g,'')];
+      if(lid) b('💬 LINE','#06c755','#fff', async()=>{ await copier(t); alert('📋 Message copié.\nLINE va s\'ouvrir sur le profil de '+m.nom+' : touchez « Chat » puis collez.'); location.href='https://line.me/R/ti/p/~'+encodeURIComponent(lid); });
+      b('✉️ SMS','#2563eb','#fff','sms:'+m.tel+(/iPhone|iPad|iPod/.test(navigator.userAgent)?'&':'?')+'body='+encodeURIComponent(t));
+      b('📢 Groupe LINE','#111827','#fff', ()=>window.autGroupe ? window.autGroupe(msgGroupeObj([m])) : copier(msgGroupeObj([m])));
+      det.appendChild(R);
+    }
+    d.appendChild(det); L.appendChild(d);
   });
   if(!M.length) L.innerHTML='<div class="emp" style="padding:14px">Aucune employée dans cette liste.</div>';
+}
+const dmy=s=>String(s||'').split('-').reverse().join('/');
+let LIGNES={};
+async function copier(t){ try{ await navigator.clipboard.writeText(t); return true; }catch(e){ try{ const a=document.createElement('textarea'); a.value=t; document.body.appendChild(a); a.select(); const ok=document.execCommand('copy'); a.remove(); return ok; }catch(x){ return false; } } }
+function msgRelance(m){ const o=m.obj; return 'สวัสดี '+m.nom+' 🙏\n🎯 รอบนี้คุณส่งข้อความ 👭 ชวนเพื่อน แล้ว '+o.n+'/'+o.but+'\nหัวหน้าขอให้ส่งให้ครบ '+o.but+' คน ภายในวันที่ '+dmy(o.fin)+'\n👉 เปิดแอป → 🤝 ชวนเพื่อน → 👭 ชวนเพื่อน → ส่งทาง LINE\nเพื่อนทำงานครบ 2 เดือน = คุณได้ 2,000 ฿ 💰 ขอบคุณค่ะ 🥰'; }
+function msgGroupeObj(L){ return '📢 🎯 ชวนเพื่อน '+PAR_OBJ_TXT+'\n'+L.map(m=>'@'+m.nom+' → '+m.obj.n+'/'+m.obj.but+' (ภายใน '+dmy(m.obj.fin)+')').join('\n')
+  +'\n👉 เปิดแอป → 🤝 ชวนเพื่อน → 👭 ชวนเพื่อน → ส่งทาง LINE\nเพื่อนทำงานครบ 2 เดือน = 2,000 ฿ 💰'; }
+const PAR_OBJ_TXT='5 คน ต่อรอบ 10 วัน — ยังไม่ครบ:';
+async function relanceApp(m,a){
+  if(!confirm('Envoyer ce message dans l\'app de '+m.nom+' ?\n\n'+msgRelance(m))) return;
+  const t0=a.textContent; a.textContent='⏳ …';
+  try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'parrelance',nom:m.nom,tel:m.tel,txt:msgRelance(m)})})));
+    if(!j.ok) throw j.err||'x'; a.textContent='✅ Envoyé'; a.style.background='#16a34a'; }
+  catch(e){ a.textContent=t0; alert(e==='tok'?'🔐 Activez ce téléphone patron':e==='onglet'?'⚠️ Onglet « 💬 Messages » introuvable':'⚠️ Pas envoyé — réessayez'); }
+}
+function objResume(){
+  const B=$('objBox'), A=(DATA&&DATA.marraines||[]).filter(m=>m.obj && !m.bloque); if(!A.length){ B.style.display='none'; return; }
+  const ko=A.filter(m=>m.obj.n<m.obj.but);
+  B.style.display='block';
+  B.innerHTML='<div style="font-weight:800;font-size:1.05rem">🎯 Objectif : 5 « 👭 ชวนเพื่อน » par contrat de 10 jours</div>'
+    +'<div style="margin:6px 0;font-size:1.1rem"><b style="color:var(--green)">✅ '+(A.length-ko.length)+'</b> atteint · <b style="color:var(--red)">❌ '+ko.length+'</b> pas atteint</div>'
+    +(ko.length?'<div class="muted" style="font-size:.85rem;margin-bottom:8px">'+ko.map(m=>esc(m.nom)+' '+m.obj.n+'/'+m.obj.but).join(' · ')+'</div><a href="#" id="relTous" style="display:block;text-align:center;text-decoration:none;font-weight:800;border-radius:12px;padding:12px;background:#06c755;color:#fff">📢 Relancer dans le groupe LINE ('+ko.length+')</a>':'');
+  const r=$('relTous'); if(r) r.onclick=e=>{ e.preventDefault(); const t=msgGroupeObj(ko); window.autGroupe ? window.autGroupe(t) : copier(t); };
 }
 function afficher(j){
   if(!j || j.err){ $('sub').textContent = j && j.err==='tok' ? '🔐 Activez ce téléphone patron' : '⚠️ Pas de données — réessayez'; return; }
@@ -92,7 +134,7 @@ function afficher(j){
   $('kRes').textContent=fmt(M.reduce((a,m)=>a+(m.resas||0),0));
   $('kPay').textContent=fmt(M.reduce((a,m)=>a+(m.aPayer||0),0))+' ฿';
   $('sub').textContent=M.length+' employées · '+M.filter(m=>m.partages).length+' ont partagé · données du '+(j.lu||'');
-  dessiner();
+  objResume(); dessiner();
 }
 async function charger(){ try{ afficher(JSON.parse(await readTxt(await fetch(API+'?parrainliste=1&_='+Date.now())))); }catch(e){ $('sub').textContent='⚠️ Pas de connexion — réessayez'; } }
 async function recalculer(){
@@ -101,6 +143,7 @@ async function recalculer(){
   b.disabled=false; b.textContent='🔄 Recalculer maintenant';
 }
 charger();
+(async()=>{ try{ if(window.autLineIds){ LIGNES=await window.autLineIds()||{}; if(DATA) dessiner(); } }catch(e){} })();
 </script>
 </body>
 </html>
