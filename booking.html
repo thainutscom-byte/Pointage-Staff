@@ -123,7 +123,7 @@
       <div id="essaiDispo" class="small" style="margin-top:8px"></div>
     </div>
     <div class="card modeC">
-      <label style="margin-top:0">ช่วงเวลาทำงาน <span class="small">(สูงสุด 4 คน ต่อช่วงเวลา)</span></label>
+      <label style="margin-top:0">ช่วงเวลาทำงาน <span class="small">(สูงสุด 4 คน ต่อช่วงเวลา · 1 พ.ย. – 30 มี.ค.: 5 คน)</span></label>
       <div id="shifts" class="small">เลือกวันที่เริ่มงานก่อน</div>
     </div>
     <button class="big" id="go" disabled onclick="reserver()">📝 จองเลย</button>
@@ -273,12 +273,12 @@ async function charger(){
 function draw(){
   const S=$('shifts'), n=$('contract').value; S.innerHTML='';
   SH[n].forEach(([k,l])=>{
-    const x=res[k]||{v:'',max:0}, libre=Math.max(0,4-(+x.max||0));
+    const cap=capPeriode($('start').value, n), x=res[k]||{v:'',max:0}, libre=Math.max(0,cap-(+x.max||0)), plein=(x.v && x.v.startsWith('plein')) || libre<=0;
     const b=document.createElement('button'); b.className='sh'+(choix===k?' on':'');
-    let etat = x.v ? (x.v.startsWith('plein')?'🔴 เต็ม':x.v.startsWith('meme')?'⛔ มีคนเริ่มวันนี้แล้ว':'🔄 ต้องเปลี่ยน') : '✅ ว่าง '+libre+'/4';
+    let etat = plein ? '🔴 เต็ม' : x.v ? (x.v.startsWith('meme')?'⛔ มีคนเริ่มวันนี้แล้ว':'🔄 ต้องเปลี่ยน') : '✅ ว่าง '+libre+'/'+cap;
     b.innerHTML='<span></span><small></small>'; b.querySelector('span').textContent=l; b.querySelector('small').textContent=etat;
-    b.querySelector('small').style.color = x.v ? 'var(--red)' : 'var(--green)';
-    b.disabled=!!x.v; b.onclick=()=>{ choix=k; draw(); check(); };
+    b.querySelector('small').style.color = (x.v||plein) ? 'var(--red)' : 'var(--green)';
+    b.disabled=!!x.v || plein; b.onclick=()=>{ choix=k; draw(); check(); };
     S.appendChild(b);
   });
 }
@@ -329,6 +329,10 @@ function parValide(){ const t=$('phone').value.replace(/\D/g,''), n=$('name').va
   return PAR && !(t.slice(-4)===PAR.slice(-4) && PAR.replace(/\d+$/,'')===n.slice(0,12)) ? PAR : ''; }   // pas de parrainage sur soi-même
 function parTh(){ const r=parValide(); return r ? ' · 🤝 ref '+r : ''; }
 function parResa(p){ const r=parValide(); if(r) scan('📝 réservation parrainée — ref '+r+' — '+p.name+' '+p.phone); }
+
+// 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
+function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? 5 : 4; }
+function capPeriode(deb, n){ let c=5; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
 function ctl(){ return (SIG.thai?'✅ ภาษาไทย':'⚠️ langue '+(SIG.lang||'?'))+' · '+(SIG.bkk?'heure BKK':'⚠️ '+(SIG.tz||'?'))+' · '+SIG.model+' · quiz ✅'; }
 function scan(res){ try{ fetch(API,{method:'POST',body:JSON.stringify({type:'scan',page:'booking',src:SRC,lang:SIG.lang,tz:SIG.tz,model:SIG.model,thai:SIG.thai,res})}).catch(()=>{}); }catch(e){} }
 const mel=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);

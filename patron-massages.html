@@ -95,7 +95,7 @@
       <div class="small" style="text-align:left;margin-top:6px">Brut − pénalités. Contrats en cours = provisoire. Logement, uniformes et autres retenues : onglet « 💰 Paie contrats » de Google Sheets.</div>
     </div>
     <div class="card" style="margin-top:14px">
-      <h2>🗓️ Places disponibles <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(4 max par horaire)</span></h2>
+      <h2>🗓️ Places disponibles <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(4 max par horaire · 5 du 01/11 au 30/03)</span></h2>
       <div id="places">Chargement…</div>
     </div>
         <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
@@ -104,6 +104,10 @@
 </div>
 <script src="autorisation.js?v=2"></script>
 <script>
+
+// 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
+function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? 5 : 4; }
+function capPeriode(deb, n){ let c=5; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
 function getPin(){ return 'x'; }   // plus de code patron
@@ -120,8 +124,9 @@ async function places(){
     const [a,b]=await Promise.all([q(1),q(10)]);
     const col=l=>l<=0?'var(--red)':l===1?'#ea580c':'var(--green)';
     let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
-    SH.forEach(([k,l])=>{ const la=4-((a[k]||{}).max||0), lb=4-((b[k]||{}).max||0);
-      h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px 0">'+l+'</td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/4</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/4</td></tr>'; });
+    const ca=capJour(isoJ(0)), cb=capPeriode(isoJ(0),10);
+    SH.forEach(([k,l])=>{ const la=ca-((a[k]||{}).max||0), lb=cb-((b[k]||{}).max||0);
+      h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px 0">'+l+'</td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/'+ca+'</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/'+cb+'</td></tr>'; });
     P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
   }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
 }
