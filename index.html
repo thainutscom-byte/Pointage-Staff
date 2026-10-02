@@ -213,6 +213,12 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div style="text-align:center;font-size:3rem;">🔒</div>
     <div style="text-align:center;font-size:1.15rem;font-weight:800;margin:6px 0 2px;">สัญญาจบแล้ว</div>
     <div id="rnFin" style="text-align:center;font-size:.9rem;color:#6b7280;margin-bottom:14px;"></div>
+    <div id="rnPaie" style="background:#fff;border:3px solid #16a34a;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+      <div style="font-weight:800;margin-bottom:6px;">💵 สรุปเงินสัญญาที่แล้ว</div>
+      <div id="rnPaieTxt" style="line-height:1.7;"></div>
+      <button type="button" id="rnPaieOk" onclick="paieSigner()" style="width:100%;margin-top:10px;padding:13px;border:none;border-radius:12px;background:#16a34a;color:#fff;font-size:1.02rem;font-weight:800;">✅ ได้รับเงินแล้ว (ยืนยัน)</button>
+      <div class="small" style="margin-top:6px;text-align:center;">📄 กด PDF เพื่อดูรายละเอียดทั้งหมด</div>
+    </div>
     <div style="background:#fff;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
       <div style="font-weight:800;margin-bottom:10px;">📄 เลือกสัญญาใหม่</div>
       <label style="font-size:.85rem;font-weight:700;">ประเภทสัญญา</label>
@@ -244,6 +250,15 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
   </div>
 </div>
 <button type="button" id="btnRefresh" onclick="actualiser()" aria-label="รีเฟรช" style="position:fixed;top:calc(6px + env(safe-area-inset-top,0px));right:6px;z-index:99999;border:none;border-radius:50%;width:42px;height:42px;padding:0;font-size:1.3rem;line-height:42px;background:rgba(37,99,235,.92);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25);">🔄</button>
+<div id="autGate" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(17,24,39,.88);color:#fff;align-items:center;justify-content:center;padding:20px;">
+  <div style="max-width:360px;width:100%;text-align:center;">
+    <div style="font-size:3rem;">👑</div>
+    <div style="font-size:1.2rem;font-weight:800;margin:8px 0;">ส่งคำขอถึงหัวหน้าแล้ว</div>
+    <div id="autTxt" style="line-height:1.6;color:#d1d5db;"></div>
+    <div style="font-size:2rem;margin:14px 0;" id="autAnim">⏳</div>
+    <button type="button" onclick="window.__autAnnule=true" style="border:none;border-radius:12px;padding:12px 22px;font-weight:800;background:#e5e7eb;color:#111827;">ยกเลิก</button>
+  </div>
+</div>
 <div id="plageGate" style="display:none;position:fixed;inset:0;z-index:99990;background:#111827;color:#fff;overflow:auto;">
   <div style="max-width:380px;margin:0 auto;padding:calc(70px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
     <div style="font-size:3.4rem;">🔒</div>
@@ -266,12 +281,13 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
 <div id="accessGate" style="display:none;position:fixed;inset:0;z-index:99999;background:var(--bg);overflow:auto;">
   <div style="max-width:380px;margin:0 auto;padding:calc(48px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
     <div style="font-size:3rem;">🔐</div>
-    <h2 style="margin:10px 0 4px;font-size:1.25rem;">กรอกรหัสเข้าใช้งาน</h2>
-    <div class="small" style="margin-bottom:18px;">ขอรหัสจากหัวหน้า</div>
+    <h2 style="margin:10px 0 4px;font-size:1.25rem;">ขออนุญาตเข้าใช้งาน</h2>
+    <div class="small" style="margin-bottom:18px;">กดปุ่มด้านล่าง แล้วรอหัวหน้าอนุมัติ</div>
     <input id="accessCode" type="tel" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"
-      style="text-align:center;font-size:2rem;letter-spacing:.5em;font-weight:700;padding:12px;border-radius:14px;">
-    <button onclick="checkAccess()" style="width:100%;margin-top:14px;background:var(--blue);color:#fff;border:none;padding:14px;border-radius:12px;font-size:1.05rem;font-weight:700;">✅ เข้าใช้งาน</button>
+      style="display:none;text-align:center;font-size:2rem;letter-spacing:.5em;font-weight:700;padding:12px;border-radius:14px;">
+    <button onclick="checkAccess()" style="display:none;width:100%;margin-top:14px;background:var(--blue);color:#fff;border:none;padding:14px;border-radius:12px;font-size:1.05rem;font-weight:700;">✅ เข้าใช้งาน</button>
     <div id="accessMsg" style="margin-top:12px;font-weight:700;color:var(--red);min-height:1.4em;"></div>
+    <button onclick="demanderPatron('nouvelle').then(ok=>{ if(ok) accessOuvrir('✅ accès autorisé par le patron'); })" style="width:100%;margin-top:6px;background:#16a34a;color:#fff;border:none;padding:14px;border-radius:12px;font-size:1.05rem;font-weight:800;">📲 ขออนุญาตจากหัวหน้า</button>
   </div>
 </div>
 <div id="iosBanner" style="display:none;position:sticky;top:0;z-index:50;background:#1d4ed8;color:#fff;padding:12px 40px 12px 14px;font-size:.85rem;line-height:1.55;">
@@ -715,6 +731,7 @@ function selfieKey(day){ return getKey()+'_selfie_'+day.dataset.d; }
 function nameIsEn(){ const v=(document.getElementById('name').value||'').trim(); return !!v && /^[A-Za-z][A-Za-z .'-]*$/.test(v); }
 // ===== 👑 BOSS : saisie directe des massages du jour (sans cycle) =====
 let bossLoaded='', bossTouched=false;
+function patronTok(){ try{ return localStorage.getItem('patron_aut_tok')||''; }catch(e){ return ''; } }   // jeton du téléphone patron (activé sur les pages patron)
 function isBossName(){ return (document.getElementById('name').value||'').trim().toLowerCase()==='boss'; }
 function bossTot(t){ const v=id=>Math.max(0,+document.getElementById(id).value||0);
   document.getElementById('bossCa').textContent='Total : '+(v('bL1')*600+v('bL2')*800+v('bHH')*600).toLocaleString('en-US')+' ฿';
@@ -723,13 +740,13 @@ function bossCardUpdate(){
   const c=document.getElementById('bossCard'); if(!c) return; const on=isBossName(); c.style.display=on?'block':'none'; if(!on) return;
   const d=isoD(workToday()); document.getElementById('bossDate').textContent='('+fmtDate(workToday()).slice(0,5)+')';
   if(bossLoaded===d) return; bossLoaded=d;
-  fetch(SHEET_URL+'?boss=1&pin=x&d='+d+'&_='+Date.now()).then(r=>r.text()).then(t=>{ const j=JSON.parse(t);
+  fetch(SHEET_URL+'?boss=1&pin=x&tok='+encodeURIComponent(patronTok())+'&d='+d+'&_='+Date.now()).then(r=>r.text()).then(t=>{ const j=JSON.parse(t);
     if(j.moi && !bossTouched){ document.getElementById('bL1').value=j.moi.l1||0; document.getElementById('bL2').value=j.moi.l2||0; document.getElementById('bHH').value=j.moi.hh||0; bossTot(0); } }).catch(()=>{ bossLoaded=''; });
 }
 async function bossSend(){
   const b=document.getElementById('bossOk'), m=document.getElementById('bossMsg'); b.disabled=true; b.textContent='⏳ …';
   try{
-    const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'bossday',date:isoD(workToday()),
+    const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'bossday',tok:patronTok(),date:isoD(workToday()),
       l1:+document.getElementById('bL1').value||0,l2:+document.getElementById('bL2').value||0,hh:+document.getElementById('bHH').value||0})});
     const j=JSON.parse(await r.text()); if(!j.ok) throw 0;
     bossTouched=false; m.style.color='var(--green)'; m.textContent='✅ Enregistré dans Google ('+j.ca.toLocaleString('en-US')+' ฿)';
@@ -747,11 +764,12 @@ function showSelfie(day){
   const img=day.querySelector('.selfieImg');
   if(day.dataset.selfie){ img.src=day.dataset.selfie; img.style.display='block'; } else { img.removeAttribute('src'); img.style.display='none'; }
 }
-function handleSelfie(inp){
+async function handleSelfie(inp){
   const file=inp.files[0]; if(!file) return;
   const day=inp.closest('.day');
   if(day.dataset.locked==='1' || day.querySelector('.arrival').value) return;
   const hm=fmtHM(new Date());
+  if(!(await gpsAuSalon())){ inp.value=''; return; }      // 📍 doit être au salon (ou autorisée par le patron)
   const reader=new FileReader();
   reader.onload=e=>{
     const im=new Image();
@@ -843,12 +861,10 @@ function applyFreeze(){
   note.textContent = anyLocked ? '🔒 มีวันที่ยืนยันแล้ว — เปลี่ยนวันที่เริ่ม/แพ็กเกจไม่ได้ (กด 🗑️ รอบใหม่ ก่อน)' : '';
 }
 function bossLock(){ bossUnlocked=false; clearTimeout(bossTimer); applyFreeze(); }
-function bossUnlock(){
+async function bossUnlock(){
   if(bossUnlocked) return;
-  const v=prompt('🔑 กรอกรหัสหัวหน้า');
-  if(v===null) return;
-  if(v.trim()===todayCode()){ bossUnlocked=true; clearTimeout(bossTimer); bossTimer=setTimeout(bossLock, 3*60*1000); applyFreeze(); }
-  else alert('❌ รหัสไม่ถูกต้อง');
+  if(!(await demanderPatron('freeze'))) return;
+  bossUnlocked=true; clearTimeout(bossTimer); bossTimer=setTimeout(bossLock, 3*60*1000); applyFreeze();
 }
 
 // ===== ABSENCE JUSTIFIÉE + CERTIFICAT (à envoyer dans les 4 h après le début du shift) =====
@@ -1377,9 +1393,8 @@ setTimeout(tryRestore, window.__autoRestore ? 800 : 2500);
 
 // 🔓 le patron débloque l'employée sur son téléphone avec le code du jour
 async function bossUnblock(){
-  const v=prompt('👑 Code patron / รหัสหัวหน้า'); if(v===null) return;
-  const msg=document.getElementById('blockMsg');
-  if(v.trim()!==todayCode()){ alert('❌ รหัสไม่ถูกต้อง'); return; }
+  if(!(await demanderPatron('debloquer'))) return;
+  const v=todayCode(), msg=document.getElementById('blockMsg');
   msg.textContent='⏳ …';
   try{
     const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'debloquer',code:v.trim(),name:document.getElementById('name').value.trim(),phone:document.getElementById('phone').value.trim()})});
@@ -1884,7 +1899,7 @@ function rnMontrer(){
     const d=document.getElementById('rnDate'); d.min=isoD(f1); const t=new Date(); t.setHours(0,0,0,0); if(t>f1) d.min=isoD(t);
     if(!d.value) d.value=document.getElementById('nextStart').value||'';
     document.getElementById('rnFree').textContent='เริ่มได้โดยไม่มีค่าปรับ: '+TH_DAYS[f1.getDay()]+' '+fmtDate(f1)+' หรือ '+TH_DAYS[f2.getDay()]+' '+fmtDate(f2);
-    rnType(rnT||N, true); document.getElementById('rnErr').textContent='';
+    rnType(rnT||N, true); document.getElementById('rnErr').textContent=''; paieAff();
     g.style.display='block'; document.body.style.overflow='hidden';
   }
 }
@@ -1930,9 +1945,8 @@ async function rnValider(){
 
 // 🔓 RÉOUVERTURE PAR LE PATRON : elle a validé son départ par erreur → code du jour → la journée se rouvre
 //    (heure de départ effacée, journée déverrouillée) ; l'app reste ouverte au moins 2 h, puis les règles normales reprennent
-function plRouvrir(){
-  const v=prompt('🔓 รหัสหัวหน้า / Code patron'); if(v===null) return;
-  if(v.trim()!==todayCode()){ alert('❌ รหัสไม่ถูกต้อง'); return; }
+async function plRouvrir(){
+  if(!(await demanderPatron('rouvrir'))) return;
   let iso=isoD(workToday()); try{ const dep=JSON.parse(localStorage.getItem('pointage_depart')||'null'); if(dep && dep.d) iso=dep.d; }catch(e){}
   const day=[...document.querySelectorAll('.day')].find(d=>{ const dd=dayDate(+d.dataset.d); return dd && isoD(dd)===iso; });
   if(!day){ alert('⚠️ ไม่พบวันทำงาน '+iso); return; }
@@ -1996,9 +2010,8 @@ function payeAff(){
       alert('💰 วันนี้ (วันทำงานวันที่ 2) กรุณาชำระ\n'+(D.dep?'🛏️ มัดจำห้องพัก '+D.dep.toLocaleString('en-US')+' ฿\n':'')+(D.uni?'👕 ยูนิฟอร์ม '+D.uni.toLocaleString('en-US')+' ฿\n':'')+'รวม '+D.total.toLocaleString('en-US')+' ฿\n\n📲 พร้อมเพย์ 095-253-5316\nส่งสลิปให้หัวหน้า'); }
   }catch(e){}
 }
-function payeConfirmer(){
-  const v=prompt('👑 Code patron — paiement reçu ?'); if(v===null) return;
-  if(v.trim()!==todayCode()){ alert('❌ รหัสไม่ถูกต้อง'); return; }
+async function payeConfirmer(){
+  if(!(await demanderPatron('paye'))) return;
   const D=payeDu(), P=payeGet(); if(D.dep) P.dep=Date.now(); P.uni=Date.now();
   try{ localStorage.setItem(payeCle(), JSON.stringify(P)); }catch(e){}
   const n=(document.getElementById('name').value||'').trim(), t=(document.getElementById('phone').value||'').replace(/\D/g,'');
@@ -2119,11 +2132,122 @@ async function actualiser(){
   location.replace(u.toString());
 }
 setInterval(()=>{ const b=document.getElementById('btnRefresh'); if(b) b.style.display = window.__BOSS ? 'none' : ''; }, 1000);
+
+// ===== 👑 AUTORISATION À DISTANCE : l'action patron envoie une demande → le patron autorise sur SA page patron =====
+//   (si le serveur n'a pas encore le fichier « Autorisation », l'ancien code du jour reste possible)
+const AUT_TXT={boss:'👑 เปิดโหมดหัวหน้า', freeze:'🔑 แก้ไขวันที่ / ช่วงเวลา', debloquer:'🔓 ปลดล็อกโทรศัพท์', rouvrir:'🔓 เปิดวันทำงานอีกครั้ง', paye:'💰 ยืนยันการชำระเงิน', nouvelle:'🆕 พนักงานใหม่ ขอเข้าใช้แอป', gps:'📍 เริ่มงานโดยไม่ผ่าน GPS'};
+async function demanderPatron(act){
+  let support=false;
+  try{ const c=new AbortController(); const tm=setTimeout(()=>c.abort(),12000);
+       const t=await readTxt(await fetch(SHEET_URL+'?autping=1&_='+Date.now(),{signal:c.signal})); clearTimeout(tm); support=t.indexOf('"aut":1')>=0; }catch(e){}
+  if(!support){
+    const v=prompt('👑 Code patron / รหัสหัวหน้า'); if(v===null) return false;
+    if(v.trim()!==todayCode()){ alert('❌ รหัสไม่ถูกต้อง'); return false; } return true;
+  }
+  const id=(Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)).slice(0,22);
+  const nom=(document.getElementById('name').value||'').trim()||'(nouvelle)', tel=(document.getElementById('phone').value||'').replace(/\D/g,'');
+  try{ const t=await readTxt(await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'autdem', id, act, nom, tel})})); if(t.indexOf('"ok":1')<0) throw 0; }
+  catch(e){ alert('⚠️ ส่งคำขอไม่ได้ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'); return false; }
+  const G=document.getElementById('autGate'); window.__autAnnule=false;
+  document.getElementById('autTxt').innerHTML='<b>'+(AUT_TXT[act]||act)+'</b><br>รอหัวหน้ากด ✅ อนุมัติ ในหน้าหัวหน้า<br><span style="font-size:.85rem">(ภายใน 10 นาที)</span>';
+  G.style.display='flex';
+  const fin=Date.now()+10*60000; let k=0;
+  try{
+    while(Date.now()<fin){
+      if(window.__autAnnule) return false;
+      await new Promise(r=>setTimeout(r,3000)); k++; document.getElementById('autAnim').textContent=['⏳','⌛'][k%2];
+      if(window.__autAnnule) return false;
+      try{ const t=await readTxt(await fetch(SHEET_URL+'?autor='+id+'&_='+Date.now())); const st=(JSON.parse(t)||{}).st;
+        if(st==='ok'){ appScan('👑 autorisé par le patron : '+act); return true; }
+        if(st==='non'){ alert('❌ หัวหน้าไม่อนุมัติ'); return false; }
+        if(st==='exp'){ alert('⌛ หมดเวลา — ลองใหม่อีกครั้ง'); return false; }
+      }catch(e){}
+    }
+    alert('⌛ หมดเวลา — ลองใหม่อีกครั้ง'); return false;
+  } finally { G.style.display='none'; }
+}
+
+// ===== 📍 GPS : « ▶️ เริ่มงาน » seulement au salon (position enregistrée par le patron, rayon 200 m) =====
+async function gpsSalon(){
+  try{ const c=JSON.parse(localStorage.getItem('pointage_gps_salon')||'null'); if(c && Date.now()-c.t<6*3600e3) return c.v; }catch(e){}
+  try{ const t=await readTxt(await fetch(SHEET_URL+'?gps=1&_='+Date.now())); const v=t[0]==='{'?JSON.parse(t):{};
+       try{ localStorage.setItem('pointage_gps_salon', JSON.stringify({t:Date.now(), v})); }catch(e){} return v; }catch(e){ return {}; }
+}
+function gpsDist(a,b,c,d){ const R=6371000, r=x=>x*Math.PI/180, x=r(c-a), y=r(d-b); const h=Math.sin(x/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(y/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+async function gpsAuSalon(){
+  if(window.__BOSS || window.__essai || isBossName()) return true;
+  const S=await gpsSalon(); if(!S || !S.lat) return true;            // position du salon pas encore enregistrée → pas de contrôle
+  const pos=await new Promise(res=>{ if(!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(p=>res(p), ()=>res(null), {enableHighAccuracy:true, timeout:15000, maximumAge:30000}); });
+  const nom=(document.getElementById('name').value||'').trim();
+  if(!pos){
+    alert('📍 กรุณาเปิดตำแหน่ง (Location) ให้แอปนี้\nตั้งค่า → ความเป็นส่วนตัว → บริการหาตำแหน่ง → เปิด\n\nหรือขอให้หัวหน้าอนุมัติ');
+    const ok=await demanderPatron('gps'); appScan('📍 GPS refusé/indisponible → '+(ok?'autorisé par le patron':'refusé')+' — '+nom); return ok;
+  }
+  const d=Math.round(gpsDist(S.lat,S.lng,pos.coords.latitude,pos.coords.longitude)), acc=Math.round(pos.coords.accuracy||0), R=S.r||200;
+  if(d-Math.min(acc,150) <= R){ appScan('📍 เริ่มงาน au salon ('+d+' m, précision '+acc+' m) — '+nom); return true; }
+  appScan('📍⛔ เริ่มงาน HORS du salon ('+d+' m, précision '+acc+' m) — '+nom);
+  if(!confirm('⛔ คุณอยู่ห่างจากร้าน '+(d>=1000?(d/1000).toFixed(1)+' กม.':d+' ม.')+'\nเริ่มงานได้เฉพาะที่ร้านเท่านั้น\n\nขอให้หัวหน้าอนุมัติไหม?')) return false;
+  return await demanderPatron('gps');
+}
+
+// ===== 📥 JOURNÉES MANQUANTES : une journée validée dans Google mais vide sur ce téléphone est reprise automatiquement =====
+let completerFait=false;
+async function completerJours(){
+  try{
+    if(completerFait || window.__BOSS) return;
+    const n=document.getElementById('name').value.trim(), t=document.getElementById('phone').value.replace(/\D/g,''), sv=document.getElementById('startDate').value;
+    if(!SHEET_URL || !n || !/^0\d{9}$/.test(t) || !sv) return;
+    completerFait=true;
+    const j=JSON.parse(await readTxt(await fetch(SHEET_URL+'?restore=1&emp='+encodeURIComponent(n)+'&tel='+encodeURIComponent(t)+'&_='+Date.now())));
+    if(!j || j.deb!==sv || !(j.jours||[]).length) return;
+    const auj=isoD(workToday()), k=empKey(); let nb=0;
+    j.jours.forEach(x=>{
+      if(!x.d || x.d>=auj) return;
+      const day=[...document.querySelectorAll('.day')].find(d=>{ const dd=dayDate(+d.dataset.d); return dd && isoD(dd)===x.d; }); if(!day) return;
+      const q=s=>day.querySelector(s);
+      if(day.dataset.locked==='1' || q('.arrival').value || q('.solo').value || q('.duo').value || q('.duo8').value) return;
+      q('.solo').value=x.l1?String(x.l1):''; q('.duo8').value=x.l2?String(Math.round(x.l2*2*100)/100):''; q('.duo').value=x.hh?String(Math.round(x.hh*2*100)/100):'';
+      q('.arrival').value=x.arr||''; q('.finish').value=x.fin||'';
+      q('.c-abs').checked=/Absent|Absence/.test(x.sit||''); q('.c-med').checked=/justifi/.test(x.sit||'');
+      q('.c-l1529').checked=/15-29/.test(x.sit||''); q('.c-l3059').checked=/30-59/.test(x.sit||''); q('.c-l60').checked=/60\+/.test(x.sit||''); q('.pen').value=String(x.pen||0);
+      day.querySelectorAll('input,button').forEach(i=>i.disabled=true); const b=q('button[onclick^="lockDay"]'); if(b) b.style.display='none';
+      q('.lockedTag').style.display='block'; day.dataset.locked='1'; collapseDay(day); markSent(k+'|'+x.d); nb++;
+    });
+    if(nb){ calc(); saveState(); appScan('📥 '+nb+' journée(s) reprise(s) depuis Google — '+n); }
+  }catch(e){}
+}
+setTimeout(completerJours, 6000);
+// 📶 retour d'internet → envoi automatique de ce qui attend
+window.addEventListener('online', ()=>{ try{ syncSheet(); }catch(e){} });
+// 📴 HORS LIGNE : l'app s'ouvre même sans internet (dernière version gardée sur le téléphone)
+try{ if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js'); }catch(e){}
+
+// ===== 💵 FICHE DE PAIE SIGNÉE : en fin de contrat, l'employée confirme « ได้รับเงินแล้ว » → noté dans Google (💵 Paies signées) =====
+function paieCle(){ return 'pointage_paie_ok_'+empKey()+'_'+(document.getElementById('startDate').value||''); }
+function paieAff(){
+  try{
+    const sv=document.getElementById('startDate').value, fin=cycleEndDate(); if(!sv||!fin) return;
+    calc(); const net=(document.getElementById('sNet').textContent||'').trim(), mas=(document.getElementById('sMass').textContent||'').trim();
+    let signe=null; try{ signe=localStorage.getItem(paieCle()); }catch(e){}
+    document.getElementById('rnPaieTxt').innerHTML='📅 '+fmtDate(new Date(sv+'T00:00:00'))+' → '+fmtDate(fin)+'<br>💆 นวดรวม <b>'+mas+'</b><br>💰 เงินสุทธิ <b style="font-size:1.25rem">'+net+'</b>'
+      +(signe?'<br><span style="color:#16a34a;font-weight:800">✅ ยืนยันรับเงินแล้ว '+fmtDate(new Date(+signe))+'</span>':'');
+    const b=document.getElementById('rnPaieOk'); b.style.display=signe?'none':'block';
+  }catch(e){}
+}
+function paieSigner(){
+  const sv=document.getElementById('startDate').value, fin=cycleEndDate(), net=(document.getElementById('sNet').textContent||'').trim();
+  if(!confirm('✅ ยืนยันว่าได้รับเงิน '+net+' ครบแล้ว?')) return;
+  const n=(document.getElementById('name').value||'').trim(), t=(document.getElementById('phone').value||'').replace(/\D/g,'');
+  try{ localStorage.setItem(paieCle(), String(Date.now())); }catch(e){}
+  appScan('💵 paie reçue — '+n+' '+t+' — '+(N===10?'Freelance 10 j':'Mensuel 30 j')+' '+fmtDate(new Date(sv+'T00:00:00')).slice(0,5)+'→'+fmtDate(fin).slice(0,5)+' — net '+net.replace(/[^\d-]/g,'')+' ฿ — massages '+(document.getElementById('sMass').textContent||'').trim());
+  paieAff();
+}
 setInterval(plVerifier, 1000); setTimeout(plVerifier, 1200);
 
 // ===== 📋 RÈGLEMENT : lecture chapitre par chapitre, texte non sélectionnable / non copiable,
 //        filigrane nom + téléphone + date, écran masqué quand l'app passe en arrière-plan =====
-const REGLES=[{"t": "1. สัญญาและช่วงเวลาทำงาน", "items": [{"tbl": [["สัญญา", "ระยะเวลา", "ช่วงเวลาที่เลือกได้"], ["ฟรีแลนซ์", "10 วัน · วันละ 6 ชั่วโมง", "10:00-16:00 · 13:00-19:00 · 16:00-22:00 · 19:00-01:00 · 21:00-03:00"], ["รายเดือน", "30 วัน", "09:00-17:00 · 17:00-01:00"]], "w": [1800, 2400, 5160]}, {"b": ["สูงสุด 4 คน ต่อช่วงเวลา ต่อวัน", "ห้ามเริ่มงานวันเดียวกันในช่วงเวลาเดียวกัน (วันเดียวกันแต่คนละช่วงเวลาได้)", "ทำช่วงเวลาเดิมครบ 2 สัญญาติดกัน ต้องเปลี่ยนช่วงเวลา"]}]}, {"t": "2. ค่าตอบแทน", "items": [{"p": "การนับรอบนวด: 1 เลดี้ = 1 รอบ · 2 เลดี้ = ½ รอบ · Happy Hour = ½ รอบ · ราคาลูกค้า: 1 เลดี้ 600 ฿ · 2 เลดี้ 800 ฿ · Happy Hour 600 ฿"}, {"p": "ฟรีแลนซ์ (รวม 10 วัน):"}, {"tbl": [["จำนวนรอบใน 10 วัน", "ค่าตอบแทน"], ["50 รอบขึ้นไป", "13,000 ฿ + 135 ฿ ต่อรอบที่เกิน 50"], ["40 – 49 รอบ", "11,500 ฿ + 135 ฿ ต่อรอบที่เกิน 40"], ["30 – 39 รอบ", "10,000 ฿ + 135 ฿ ต่อรอบที่เกิน 30"], ["20 – 29 รอบ", "135 ฿ ต่อรอบ"], ["ต่ำกว่า 20 รอบ", "100 ฿ ต่อรอบ (เรทฉุกเฉิน)"]], "w": [3200, 6160]}, {"p": "รายเดือน (รวม 30 วัน):"}, {"tbl": [["จำนวนรอบใน 30 วัน", "ค่าตอบแทน"], ["90 รอบขึ้นไป", "เหมาจ่าย 15,000 ฿"], ["60 – 89 รอบ", "167 ฿ ต่อรอบ"], ["30 – 59 รอบ", "135 ฿ ต่อรอบ"], ["ต่ำกว่า 30 รอบ", "100 ฿ ต่อรอบ (เรทฉุกเฉิน)"]], "w": [3200, 6160]}, {"b": ["วันจ่ายเงิน: 2 วันหลังจบสัญญา", "วันที่นวด 0 รอบ ไม่ถือว่าผิด แต่ต้องกดยืนยันวันนี้ทุกครั้ง"]}]}, {"t": "3. รายการหักเงิน", "items": [{"tbl": [["รายการ", "จำนวน"], ["แพ็กเกจที่พัก (ถ้าเลือก)", "ฟรีแลนซ์: 1,500 ฿ (100 ฿ × 10 วัน + ค่าทำความสะอาด 500 ฿) · รายเดือน: วันละ 100 ฿"], ["มัดจำห้องพัก (ถ้าเลือกที่พัก)", "1,000 ฿ ชำระในวันทำงานวันที่ 2"], ["กางเกงขาสั้นยูนิฟอร์ม", "ตัวละ 200 ฿ (0 – 2 ตัว)"], ["เสื้อยืดยูนิฟอร์ม", "ตัวละ 250 ฿ (0 – 2 ตัว)"], ["ค่าปรับ", "มาสาย, โทรศัพท์, เริ่มรอบใหม่ช้า, ลาเกิน (ดูด้านล่าง)"], ["การชำระเงิน", "มัดจำห้องพัก + ยูนิฟอร์ม: ชำระในวันทำงานวันที่ 2 ทางพร้อมเพย์ 095-253-5316"]], "w": [2800, 6560]}]}, {"t": "4. การมาสาย", "items": [{"tbl": [["มาสาย", "ค่าปรับ"], ["น้อยกว่า 15 นาที", "ไม่ปรับ"], ["15 – 30 นาที", "นาทีละ 20 ฿"], ["31 – 59 นาที", "นาทีละ 30 ฿"], ["60 นาทีขึ้นไป ครั้งที่ 1", "ปรับ 500 ฿"], ["60 นาทีขึ้นไป ครั้งที่ 2", "นับเป็นวันลา (2,000 ฿)"], ["เกิน 3 ชั่วโมง", "นับเป็นขาดงาน"]], "w": [3600, 5760]}, {"b": ["เวลาเริ่มงาน = เวลาที่ถ่ายเซลฟี่ตอนกด “▶️ เริ่มงาน”"]}]}, {"t": "5. กฎกิโยติน", "items": [{"p": "ถ้าในสัญญามี มาสาย 3 ครั้ง หรือ ขาดงาน 1 วัน (ไม่มีใบรับรองแพทย์) หรือ ใช้โทรศัพท์หน้าตู้กระจกครั้งที่ 4 → ทุกรอบนวดในสัญญาจ่าย 100 ฿ ต่อรอบ (เรทฉุกเฉิน)"}]}, {"t": "6. การขาดงานและใบรับรองแพทย์", "items": [{"b": ["ขาดงานมีใบรับรองแพทย์ (ถ่ายรูปในแอป) = ไม่ปรับ ไม่กิโยติน", "ต้องส่งใบรับรองแพทย์ภายใน 4 ชั่วโมงหลังเวลาเริ่มงาน มิฉะนั้นนับเป็นขาดงาน"]}]}, {"t": "7. ใช้โทรศัพท์หน้าตู้กระจกร้าน (กล้องวงจรปิด)", "items": [{"tbl": [["ครั้งที่ (นับต่อสัญญา)", "บทลงโทษ"], ["1", "ตักเตือนอย่างเป็นทางการ"], ["2", "ปรับ 200 ฿"], ["3", "ปรับ 500 ฿ + ยกเลิกค่าการันตีรายวัน (จ่าย 135 ฿ ต่อรอบ)"], ["4", "ปรับ 500 ฿ + กฎกิโยติน"]], "w": [3200, 6160]}]}, {"t": "8. เริ่มสัญญาฟรีแลนซ์รอบใหม่", "items": [{"b": ["เริ่มรอบใหม่ได้ฟรีภายใน 2 วันหลังจบรอบ 10 วัน", "หลังจากนั้นปรับวันละ 1,000 ฿ (สูงสุด 7 วัน)"]}]}, {"t": "9. การลา (สัญญารายเดือน)", "items": [{"b": ["ลาได้ 4 วันติดต่อกันฟรี · เกิน 4 วัน ปรับวันละ 1,000 ฿ (เกินได้สูงสุด 7 วัน)", "ต้องแจ้งล่วงหน้าอย่างน้อย 15 วัน และไม่เกิน 2 เดือน", "วันห้ามลา: 01/01 – 20/04, 10/02, 12/02, 14/02, 24/02, 06/04, 13/04, 01/05, 05/05, 22/05, 03/06, 01/07, 20/07, 28/07, 15/08, 13/10, 23/10, 15/11, 05/12, 10/12, 20/12 – 31/12"]}]}, {"t": "10. การเปลี่ยนช่วงเวลาระหว่างสัญญา", "items": [{"b": ["เปลี่ยนช่วงเวลาได้ แต่จะเสียค่าตอบแทนการนวดทั้งหมดก่อนหน้านี้ รวมถึงวันที่เปลี่ยน (เริ่มได้เงินอีกครั้งวันถัดไป) — แอปจะแจ้งเตือนสีแดงก่อนยืนยัน"]}]}, {"t": "11. การทำงานในแต่ละวัน", "items": [{"b": ["เริ่มงาน: กด “▶️ เริ่มงาน” แล้วถ่ายเซลฟี่ · เลิกงาน: กด “⏹️ เลิกงาน”", "ต้องกด “✔️ ยืนยันวันนี้” ทุกวัน · ยืนยันแล้วแก้ไขไม่ได้", "ถ้ายังไม่ยืนยัน แอปจะแจ้งเตือน 2 ชั่วโมงหลังเลิกงาน", "ใช้แอปจากไอคอนบนหน้าจอหลักเสมอ"]}]}, {"t": "12. การระงับบัญชีอัตโนมัติ", "items": [{"tbl": [["กรณี", "ตรวจสอบเมื่อ"], ["ไม่ยืนยันวันทำงาน 2 วันติดต่อกันระหว่างสัญญา (ละทิ้งงาน)", "ทุกวัน 08:00 น."], ["ขาดงานโดยไม่มีใบรับรองแพทย์", "เมื่อส่งข้อมูลวันทำงาน"], ["ไม่ส่งใบรับรองแพทย์ภายใน 4 ชั่วโมง", "ทุกชั่วโมง"], ["ค่าปรับรวมในเดือนเกิน 2,000 ฿", "ทุกวันทำงาน"], ["มาสาย 5 ครั้งในสัญญาเดียวกัน", "ทุกวันทำงาน"]], "w": [6560, 2800]}]}, {"t": "13. ทดลองงาน 1 วัน", "items": [{"b": ["12:00 – 20:00 น. (8 ชั่วโมง) · รับประกัน 500 ฿ หากไม่มีลูกค้าเลยทั้งวัน · ไม่มีประสบการณ์ ฝึกงานฟรี", "รับวันละ 1 คน · จองผ่านลิงก์ / QR code", "วันทดลองงาน: กรอกจำนวนนวดในแอป (Miss Essai) · จบวันเลือกได้ว่าจะทำสัญญา 10 วัน หรือไม่"]}]}, {"t": "14. การจอง", "items": [{"b": ["ต้องตอบคำถามภาษาไทย 2 ข้อ", "ต้องใช้เบอร์โทรศัพท์ไทย (06 / 08 / 09) และเขียนชื่อเล่นเป็นภาษาอังกฤษ"]}]}];
+const REGLES=[{"t": "1. สัญญาและช่วงเวลาทำงาน", "items": [{"tbl": [["สัญญา", "ระยะเวลา", "ช่วงเวลาที่เลือกได้"], ["ฟรีแลนซ์", "10 วัน · วันละ 6 ชั่วโมง", "10:00-16:00 · 13:00-19:00 · 16:00-22:00 · 19:00-01:00 · 21:00-03:00"], ["รายเดือน", "30 วัน", "09:00-17:00 · 17:00-01:00"]], "w": [1800, 2400, 5160]}, {"b": ["สูงสุด 4 คน ต่อช่วงเวลา ต่อวัน", "ห้ามเริ่มงานวันเดียวกันในช่วงเวลาเดียวกัน (วันเดียวกันแต่คนละช่วงเวลาได้)", "ทำช่วงเวลาเดิมครบ 2 สัญญาติดกัน ต้องเปลี่ยนช่วงเวลา"]}]}, {"t": "2. ค่าตอบแทน", "items": [{"p": "การนับรอบนวด: 1 เลดี้ = 1 รอบ · 2 เลดี้ = ½ รอบ · Happy Hour = ½ รอบ · ราคาลูกค้า: 1 เลดี้ 600 ฿ · 2 เลดี้ 800 ฿ · Happy Hour 600 ฿"}, {"p": "ฟรีแลนซ์ (รวม 10 วัน):"}, {"tbl": [["จำนวนรอบใน 10 วัน", "ค่าตอบแทน"], ["50 รอบขึ้นไป", "13,000 ฿ + 135 ฿ ต่อรอบที่เกิน 50"], ["40 – 49 รอบ", "11,500 ฿ + 135 ฿ ต่อรอบที่เกิน 40"], ["30 – 39 รอบ", "10,000 ฿ + 135 ฿ ต่อรอบที่เกิน 30"], ["20 – 29 รอบ", "135 ฿ ต่อรอบ"], ["ต่ำกว่า 20 รอบ", "100 ฿ ต่อรอบ (เรทฉุกเฉิน)"]], "w": [3200, 6160]}, {"p": "รายเดือน (รวม 30 วัน):"}, {"tbl": [["จำนวนรอบใน 30 วัน", "ค่าตอบแทน"], ["90 รอบขึ้นไป", "เหมาจ่าย 15,000 ฿"], ["60 – 89 รอบ", "167 ฿ ต่อรอบ"], ["30 – 59 รอบ", "135 ฿ ต่อรอบ"], ["ต่ำกว่า 30 รอบ", "100 ฿ ต่อรอบ (เรทฉุกเฉิน)"]], "w": [3200, 6160]}, {"b": ["วันจ่ายเงิน: 2 วันหลังจบสัญญา", "วันที่นวด 0 รอบ ไม่ถือว่าผิด แต่ต้องกดยืนยันวันนี้ทุกครั้ง"]}]}, {"t": "3. รายการหักเงิน", "items": [{"tbl": [["รายการ", "จำนวน"], ["แพ็กเกจที่พัก (ถ้าเลือก)", "ฟรีแลนซ์: 1,500 ฿ (100 ฿ × 10 วัน + ค่าทำความสะอาด 500 ฿) · รายเดือน: วันละ 100 ฿"], ["มัดจำห้องพัก (ถ้าเลือกที่พัก)", "1,000 ฿ ชำระในวันทำงานวันที่ 2"], ["กางเกงขาสั้นยูนิฟอร์ม", "ตัวละ 200 ฿ (0 – 2 ตัว)"], ["เสื้อยืดยูนิฟอร์ม", "ตัวละ 250 ฿ (0 – 2 ตัว)"], ["การชำระเงินวันที่ 2", "มัดจำ + ยูนิฟอร์ม โอนทางพร้อมเพย์ 095-253-5316 (แอปจะแจ้งเตือน) · ชำระยูนิฟอร์มแล้ว ไม่หักจากเงินเดือน"], ["ค่าปรับ", "มาสาย, โทรศัพท์, เริ่มรอบใหม่ช้า, ลาเกิน (ดูด้านล่าง)"]], "w": [2800, 6560]}]}, {"t": "4. การมาสาย", "items": [{"tbl": [["มาสาย", "ค่าปรับ"], ["น้อยกว่า 15 นาที", "ไม่ปรับ"], ["15 – 30 นาที", "นาทีละ 20 ฿"], ["31 – 59 นาที", "นาทีละ 30 ฿"], ["60 นาทีขึ้นไป ครั้งที่ 1", "ปรับ 500 ฿"], ["60 นาทีขึ้นไป ครั้งที่ 2", "นับเป็นวันลา (2,000 ฿)"], ["เกิน 3 ชั่วโมง", "นับเป็นขาดงาน"]], "w": [3600, 5760]}, {"b": ["เวลาเริ่มงาน = เวลาที่ถ่ายเซลฟี่ตอนกด “▶️ เริ่มงาน”"]}]}, {"t": "5. กฎกิโยติน", "items": [{"p": "ถ้าในสัญญามี มาสาย 3 ครั้ง หรือ ขาดงาน 1 วัน (ไม่มีใบรับรองแพทย์) หรือ ใช้โทรศัพท์หน้าตู้กระจกครั้งที่ 4 → ทุกรอบนวดในสัญญาจ่าย 100 ฿ ต่อรอบ (เรทฉุกเฉิน)"}]}, {"t": "6. การขาดงานและใบรับรองแพทย์", "items": [{"b": ["ขาดงานมีใบรับรองแพทย์ (ถ่ายรูปในแอป) = ไม่ปรับ ไม่กิโยติน", "ต้องส่งใบรับรองแพทย์ภายใน 4 ชั่วโมงหลังเวลาเริ่มงาน มิฉะนั้นนับเป็นขาดงาน"]}]}, {"t": "7. ใช้โทรศัพท์หน้าตู้กระจกร้าน (กล้องวงจรปิด)", "items": [{"tbl": [["ครั้งที่ (นับต่อสัญญา)", "บทลงโทษ"], ["1", "ตักเตือนอย่างเป็นทางการ"], ["2", "ปรับ 200 ฿"], ["3", "ปรับ 500 ฿ + ยกเลิกค่าการันตีรายวัน (จ่าย 135 ฿ ต่อรอบ)"], ["4", "ปรับ 500 ฿ + กฎกิโยติน"]], "w": [3200, 6160]}]}, {"t": "8. เริ่มสัญญาฟรีแลนซ์รอบใหม่", "items": [{"b": ["เริ่มรอบใหม่ได้ฟรีภายใน 2 วันหลังจบรอบ 10 วัน", "หลังจากนั้นปรับวันละ 1,000 ฿ (สูงสุด 7 วัน)"]}]}, {"t": "9. การลา (สัญญารายเดือน)", "items": [{"b": ["ลาได้ 4 วันติดต่อกันฟรี · เกิน 4 วัน ปรับวันละ 1,000 ฿ (เกินได้สูงสุด 7 วัน)", "ต้องแจ้งล่วงหน้าอย่างน้อย 15 วัน และไม่เกิน 2 เดือน", "วันห้ามลา: 01/01 – 20/04, 10/02, 12/02, 14/02, 24/02, 06/04, 13/04, 01/05, 05/05, 22/05, 03/06, 01/07, 20/07, 28/07, 15/08, 13/10, 23/10, 15/11, 05/12, 10/12, 20/12 – 31/12"]}]}, {"t": "10. การเปลี่ยนช่วงเวลาระหว่างสัญญา", "items": [{"b": ["เปลี่ยนช่วงเวลาได้ แต่จะเสียค่าตอบแทนการนวดทั้งหมดก่อนหน้านี้ รวมถึงวันที่เปลี่ยน (เริ่มได้เงินอีกครั้งวันถัดไป) — แอปจะแจ้งเตือนสีแดงก่อนยืนยัน"]}]}, {"t": "11. การทำงานในแต่ละวัน", "items": [{"b": ["เริ่มงาน: กด “▶️ เริ่มงาน” แล้วถ่ายเซลฟี่ · เลิกงาน: กด “⏹️ เลิกงาน”", "ต้องกด “✔️ ยืนยันวันนี้” ทุกวัน · ยืนยันแล้วแก้ไขไม่ได้", "ถ้ายังไม่ยืนยัน แอปจะแจ้งเตือน 2 ชั่วโมงหลังเลิกงาน", "ใช้แอปจากไอคอนบนหน้าจอหลักเสมอ", "แอปเปิด 1 ชั่วโมงก่อนเวลาเริ่มงาน และปิด 15 นาทีหลังกด “⏹️ เลิกงาน” (ช้าสุด 2 ชั่วโมงหลังหมดเวลางาน — ระบบยืนยันวันให้อัตโนมัติ)", "กด “▶️ เริ่มงาน” ได้เฉพาะที่ร้านเท่านั้น (GPS 200 เมตร) · ถ้าไม่อยู่ที่ร้าน ต้องขอให้หัวหน้าอนุมัติ", "วันแรกของสัญญาแรก ไม่นับการมาสาย ไม่มีค่าปรับ", "ต้องอ่านและยอมรับกฎระเบียบในแอป", "จบสัญญา: กด “✅ ได้รับเงินแล้ว” เพื่อยืนยันการรับเงิน"]}]}, {"t": "12. การระงับบัญชีอัตโนมัติ", "items": [{"tbl": [["กรณี", "ตรวจสอบเมื่อ"], ["ไม่ยืนยันวันทำงาน 2 วันติดต่อกันระหว่างสัญญา (ละทิ้งงาน)", "ทุกวัน 08:00 น."], ["ขาดงานโดยไม่มีใบรับรองแพทย์", "เมื่อส่งข้อมูลวันทำงาน"], ["ไม่ส่งใบรับรองแพทย์ภายใน 4 ชั่วโมง", "ทุกชั่วโมง"], ["ค่าปรับรวมในเดือนเกิน 2,000 ฿", "ทุกวันทำงาน"], ["มาสาย 5 ครั้งในสัญญาเดียวกัน", "ทุกวันทำงาน"]], "w": [6560, 2800]}]}, {"t": "13. ทดลองงาน 1 วัน", "items": [{"b": ["12:00 – 20:00 น. (8 ชั่วโมง) · รับประกัน 500 ฿ หากไม่มีลูกค้าเลยทั้งวัน · ไม่มีประสบการณ์ ฝึกงานฟรี", "รับวันละ 1 คน · จองผ่านลิงก์ / QR code", "วันทดลองงาน: กรอกจำนวนนวดในแอป (Miss Essai) · จบวันเลือกได้ว่าจะทำสัญญา 10 วัน หรือไม่"]}]}, {"t": "14. การจอง", "items": [{"b": ["ต้องตอบคำถามภาษาไทย 2 ข้อ", "ต้องใช้เบอร์โทรศัพท์ไทย (06 / 08 / 09) และเขียนชื่อเล่นเป็นภาษาอังกฤษ", "อายุ 18 – 35 ปี (กรอกวันเกิด) · ต้องนำบัตรประชาชนมาในวันแรก", "หลังจองแล้ว: เข้ากลุ่ม LINE และส่งรูปถ่ายเต็มตัวให้หัวหน้า"]}]}, {"t": "15. ชวนเพื่อนมาทำงาน", "items": [{"b": ["ทุกคนมีลิงก์ของตัวเอง (ปุ่ม “🤝 ชวนเพื่อน” ในแอป: LINE, Messenger, Instagram, TikTok, SMS)", "เพื่อนจองผ่านลิงก์ของคุณ และทำงานครบ 2 เดือน (ทำงานอย่างน้อย 45 วัน) → คุณได้รับ 2,000 ฿ ต่อคน", "ชวนได้ไม่จำกัด · ชวนตัวเองหรือคนที่เคยทำงานแล้วไม่นับ"]}]}];
 let rgI=0;
 function rgEsc(t){ return String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 let rgOblig=false, rgVu=0;
@@ -2156,7 +2280,8 @@ function reglesDessiner(){
 }
 function reglesAller(d){ if(rgI===REGLES.length-1 && d>0){ reglesFermer(); return; } rgI=Math.max(0,Math.min(REGLES.length-1,rgI+d)); reglesDessiner(); }
 // ✅ RÈGLEMENT OBLIGATOIRE pour TOUTES les employées qui ne l'ont pas encore accepté (dès que nom + téléphone + date de début sont remplis)
-function rgCle(){ return 'pointage_regles_ok_'+(empKey()||''); }
+const REGLES_VERSION='0210';   // changer ce numéro = tout le monde doit relire et accepter
+function rgCle(){ return 'pointage_regles_ok_'+REGLES_VERSION+'_'+(empKey()||''); }
 function reglesAcceptees(){ try{ return !!localStorage.getItem(rgCle()); }catch(e){ return true; } }
 function reglesAccepter(){
   if(!document.getElementById('rgAccord').checked) return;
@@ -2188,7 +2313,7 @@ function reglesFermer(){ if(rgOblig) return; document.getElementById('reglesGate
 
 // 👋 ACCUEIL (fiche vide) : nouvelle employée → code du patron ; déjà inscrite → 4 derniers chiffres du téléphone → fiche récupérée
 let wMode='';
-function wChoix(m){ wMode=m; document.getElementById('wStep1').style.display='none'; document.getElementById('wStep2').style.display='block';
+function wChoix(m){ if(m==='new'){ demanderPatron('nouvelle').then(ok=>{ if(ok){ appScan('🆕 nouvelle employée → autorisée par le patron'); wFermer(); document.getElementById('name').focus(); } }); return; } wMode=m; document.getElementById('wStep1').style.display='none'; document.getElementById('wStep2').style.display='block';
   document.getElementById('wLabel').textContent = m==='new' ? '🔐 กรอกรหัสจากหัวหน้า' : m==='essai' ? '🧪 กรอกรหัสทดลองงาน (จากหัวหน้า)' : '📱 กรอกเลข 4 ตัวท้ายของเบอร์โทรศัพท์';
   document.getElementById('wInput').value=''; document.getElementById('wMsg').textContent=''; document.getElementById('wNoms').innerHTML=''; document.getElementById('wInput').focus(); }
 function wRetour(){ document.getElementById('wStep1').style.display='block'; document.getElementById('wStep2').style.display='none'; }
@@ -2407,10 +2532,9 @@ function appScan(res){
 // ===== 👑 MODE PATRON SUR LE TÉLÉPHONE DE L'EMPLOYÉE (code du jour) =====
 // Tout devient modifiable 10 minutes : heures d'arrivée / départ, massages, amendes, journées validées,
 // date de début, contrat, horaire. « Enregistrer » renvoie les journées modifiées à Google.
-function bossMode(){
+async function bossMode(){
   if(window.__BOSS) return;
-  const v=prompt('👑 Code patron / รหัสหัวหน้า'); if(v===null) return;
-  if(v.trim()!==todayCode()){ alert('❌ รหัสไม่ถูกต้อง'); return; }
+  if(!(await demanderPatron('boss'))) return;
   let snap=null; try{ snap=localStorage.getItem(getKey()); }catch(e){}
   window.__BOSS={snap, until:Date.now()+10*60000, dirty:new Set(), t:null};
   ['startDate','pkg','contract','shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ const e=document.getElementById(id); if(e) e.disabled=false; });
@@ -2467,12 +2591,18 @@ function bossCancel(){
   window.__BOSS=null; location.reload();
 }
 let accessFails=0;
+function accessOuvrir(txt){
+  appScan(txt);
+  setTimeout(()=>{ try{ tryRestore(); }catch(e){} }, 300);
+  try{ localStorage.setItem('pointage_access_ok','1'); }catch(e){}
+  try{ sessionStorage.setItem('pointage_access_ok','1'); }catch(e){}
+  document.getElementById('accessGate').style.display='none';
+  document.body.style.overflow='';
+}
 function checkAccess(){
   const v=(document.getElementById('accessCode').value||'').trim();
   try{ const st=+localStorage.getItem('pointage_access_stop')||0; if(Date.now()<st){ document.getElementById('accessMsg').textContent='⛔ รอ '+Math.ceil((st-Date.now())/60000)+' นาที แล้วลองใหม่'; document.getElementById('accessCode').value=''; return; } }catch(e){}
-  if(v===todayCode()){
-    appScan('✅ bon code → accès à l\'app');
-    setTimeout(()=>{ try{ tryRestore(); }catch(e){} }, 300);
+  if(false){
     try{ localStorage.setItem('pointage_access_ok','1'); }catch(e){}
     try{ sessionStorage.setItem('pointage_access_ok','1'); }catch(e){}
     document.getElementById('accessGate').style.display='none';

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#7c3aed">
+<title>📊 Aujourd'hui</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--orange:#ea580c;--violet:#7c3aed;--border:#e5e7eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:520px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px));}
+  h1{font-size:1.25rem;margin:4px 0 2px;text-align:center}
+  .sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:12px}
+  .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .k{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .k .v{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .k .l{font-size:.8rem;color:var(--muted);font-weight:700}
+  .card{background:var(--card);border-radius:16px;padding:12px 14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .card h2{font-size:1rem;margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+  .card h2 small{font-weight:600;color:var(--muted);font-size:.8rem}
+  .row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--border);font-size:.95rem}
+  .row:first-of-type{border-top:none}
+  .st{font-weight:800;font-size:.85rem;white-space:nowrap}
+  .ok{color:var(--green)} .ret{color:var(--red)} .att{color:var(--orange)} .fin{color:var(--muted)}
+  .m{font-variant-numeric:tabular-nums;font-weight:700;min-width:64px;text-align:right}
+  a.back{display:block;text-align:center;margin-top:10px;color:var(--violet);font-weight:700;text-decoration:none}
+  #maj{text-align:center;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📊 Aujourd'hui en direct</h1>
+  <div class="sub" id="date"></div>
+  <div class="kpis">
+    <div class="k"><div class="l">👩 Présentes</div><div class="v" id="kPres">–</div></div>
+    <div class="k"><div class="l">⏰ Pas encore arrivées</div><div class="v" id="kAbs">–</div></div>
+    <div class="k"><div class="l">💆 Massages du jour</div><div class="v" id="kMas">–</div></div>
+    <div class="k"><div class="l">💰 Chiffre du jour</div><div class="v" id="kCA">–</div></div>
+  </div>
+  <div id="liste"><div class="card">Chargement…</div></div>
+  <div id="maj"></div>
+  <a class="back" href="patron.html">← Espace patron</a>
+</div>
+<script src="autorisation.js?v=2"></script>
+<script>
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const $=id=>document.getElementById(id);
+const isoJ=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+function debutMin(sh){ const m=String(sh||'').match(/^(\d{1,2})[h:](\d{2})?/); return m ? (+m[1])*60+(+(m[2]||0)) : null; }
+function finMin(sh){ const m=String(sh||'').match(/-(\d{1,2})[h:]?(\d{2})?/); if(!m) return null; let f=(+m[1])*60+(+(m[2]||0)); const d=debutMin(sh); if(d!==null && f<=d) f+=1440; return f; }
+const cle=(nom,tel)=>String(nom||'').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(tel||'').replace(/\D/g,'');
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+async function charger(){
+  const now=new Date(), base=new Date(now.getTime()-6*3600e3), jour=isoJ(base); base.setHours(0,0,0,0);
+  const min=(now-base)/60000;
+  $('date').textContent=base.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+  try{
+    const [B,M]=await Promise.all([
+      fetch(API+'?boss=1&pin=x&d='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse),
+      fetch(API+'?boss=1&pin=x&mjour='+jour+'&_='+Date.now()).then(readTxt).then(JSON.parse).catch(()=>({}))]);
+    if(B.err){ $('liste').innerHTML='<div class="card">🔐 Activez ce téléphone patron pour voir le tableau.</div>'; return; }
+    const J=M.jour||{}, groupes={}; let pres=0, abs=0, mas=0, ca=0;
+    const emps=(B.emps||[]).filter(e=>!e.bloque);
+    emps.forEach(e=>{
+      const h=(B.hor||{})[e.label], sh=h && h.deb<=jour && h.fin>=jour ? h.sh : '';
+      const m=J[cle(e.nom,e.tel)]||{}, n=(+m.l1||0)+(+m.l2||0)+(+m.hh||0), c=(+m.l1||0)*600+(+m.l2||0)*800+(+m.hh||0)*600;
+      if(!sh && !e.service && !n) return;                         // pas de contrat aujourd'hui
+      const d=debutMin(sh), f=finMin(sh);
+      let st, cls;
+      if(e.service){ st='● arrivée '+(e.depuis||''); cls='ok'; pres++; }
+      else if(d!==null && min>=d+15 && (f===null || min<=f)){ st='⏰ retard '+Math.round(min-d)+' min'; cls='ret'; abs++; }
+      else if(d!==null && f!==null && min>f){ st='— absente'; cls='ret'; abs++; }
+      else { st='⏳ à '+String(Math.floor((d||0)/60)).padStart(2,'0')+':'+String((d||0)%60).padStart(2,'0'); cls='att'; }
+      mas+=n; ca+=c;
+      (groupes[sh||'(sans horaire)']=groupes[sh||'(sans horaire)']||[]).push({nom:e.nom, tel:e.tel, st, cls, n});
+    });
+    $('kPres').textContent=pres; $('kAbs').textContent=abs; $('kAbs').style.color=abs?'var(--red)':'';
+    $('kMas').textContent=mas.toLocaleString('en-US'); $('kCA').textContent=fmt(ca)+' ฿';
+    const L=$('liste'); L.innerHTML='';
+    Object.keys(groupes).sort((a,b)=>(debutMin(a)??999)-(debutMin(b)??999)).forEach(sh=>{
+      const c=document.createElement('div'); c.className='card';
+      const g=groupes[sh]; c.innerHTML='<h2><span></span><small></small></h2>';
+      c.querySelector('span').textContent='🕐 '+sh; c.querySelector('small').textContent=g.filter(x=>x.cls==='ok').length+'/'+g.length+' présentes';
+      g.forEach(x=>{ const r=document.createElement('div'); r.className='row';
+        r.innerHTML='<div><b></b></div><div class="st"></div><div class="m"></div>';
+        r.querySelector('b').textContent=x.nom; const s=r.querySelector('.st'); s.textContent=x.st; s.classList.add(x.cls);
+        r.querySelector('.m').textContent=x.n?x.n+' 💆':'–';
+        if(x.cls==='ret'){ const a=document.createElement('a'); a.href='tel:'+x.tel; a.textContent=' 📞'; a.style.textDecoration='none'; r.querySelector('div').appendChild(a); }
+        c.appendChild(r); });
+      L.appendChild(c); });
+    if(!L.children.length) L.innerHTML='<div class="card">Aucune employée prévue aujourd\'hui.</div>';
+    $('maj').textContent='Mis à jour à '+now.toTimeString().slice(0,5)+' · actualisation toutes les minutes';
+  }catch(e){ $('maj').textContent='⚠️ Pas de connexion — nouvel essai dans 1 minute'; }
+}
+charger(); setInterval(charger, 60000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) charger(); });
+</script>
+</body>
+</html>

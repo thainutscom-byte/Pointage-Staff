@@ -1,0 +1,179 @@
+// ============================================================
+//  👑 AUTORISATION À DISTANCE PAR LE PATRON — fichier À AJOUTER dans Apps Script (ne remplace rien)
+//  Apps Script → « + » à côté de « Fichiers » → Script → nom : Autorisation → coller ce code → 💾
+//  Puis : choisir « installerAutorisation » en haut → ▶️ Exécuter (une fois) → Déployer → Gérer les déploiements → ✏️ → Nouvelle version
+//
+//  Sur le téléphone d'une employée, les actions patron (👑 mode patron, 🔓 déblocage, 🔓 réouverture de journée,
+//  💰 paiement reçu, 🆕 nouvelle employée) envoient une DEMANDE. Le patron la voit sur ses pages patron :
+//  « ✅ Autoriser / ❌ Refuser ». Plus de code du jour à taper.
+//  Le téléphone du patron est activé UNE fois avec le code d'activation affiché dans l'onglet « 🔐 Autorisations » (case B1).
+// ============================================================
+const AUT_ONGLET = '🔐 Autorisations', AUT_DUREE_MIN = 10;
+// 🔒 actions réservées au patron : refusées sans téléphone patron activé (dès qu'au moins 1 téléphone patron est activé)
+const AUT_POST_PATRON = ['bossday', 'bossarrivee', 'bosscorrige', 'bosshoraire', 'bossdemission', 'infraction', 'autgps'];
+const AUT_GET_PATRON = ['boss', 'annuleessai', 'vcf'];
+const AUT_GPS_RAYON = 200;          // mètres autour du salon pour « ▶️ เริ่มงาน »
+const AUT_SAUV_GARDER = 8;          // nombre de sauvegardes hebdomadaires gardées dans Drive
+const AUT_ACTIONS = { boss: '👑 Mode patron sur son téléphone (10 min)', freeze: '🔑 Modifier date / horaire', debloquer: '🔓 Débloquer son téléphone',
+                      rouvrir: '🔓 Rouvrir sa journée', paye: '💰 Confirmer paiement reçu (dépôt / uniformes)', nouvelle: '🆕 Nouvelle employée : accès à l\'app',
+                      gps: '📍 Commencer le travail HORS du salon / sans GPS' };
+
+function installerAutorisation() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), P = PropertiesService.getScriptProperties();
+  let t = ss.getSheetByName(AUT_ONGLET); if (!t) t = ss.insertSheet(AUT_ONGLET);
+  if (!P.getProperty('AUT_CODE')) P.setProperty('AUT_CODE', String(100000 + Math.floor(Math.random() * 900000)));
+  t.getRange('A1').setValue('🔑 Code d\'activation du téléphone patron :').setFontWeight('bold');
+  t.getRange('B1').setValue(P.getProperty('AUT_CODE')).setFontWeight('bold').setFontSize(16).setBackground('#fef08a');
+  t.getRange('C1').setValue('À taper UNE fois sur votre téléphone (pages patron → « 🔐 Activer »). Nouveau code : fonction « nouveauCodeActivation ».').setFontColor('#6b7280');
+  t.getRange(3, 1, 1, 7).setValues([['Demandée le', 'Employée', 'Téléphone', 'Demande', 'Réponse', 'Répondu le', 'ID']]).setFontWeight('bold').setBackground('#e9d5ff');
+  t.setFrozenRows(3); t.setColumnWidth(1, 130); t.setColumnWidth(2, 120); t.setColumnWidth(4, 300); t.setColumnWidth(5, 130); t.setColumnWidth(6, 130); t.hideColumns(7);
+  // ⏰ tâches automatiques : sauvegarde chaque lundi 04:00, paies signées chaque heure
+  ScriptApp.getProjectTriggers().forEach(function (tr) { if (/^(sauvegardeHebdo|majPaiesSignees)$/.test(tr.getHandlerFunction())) ScriptApp.deleteTrigger(tr); });
+  ScriptApp.newTrigger('sauvegardeHebdo').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(4).create();
+  ScriptApp.newTrigger('majPaiesSignees').timeBased().everyHours(1).create();
+  ss.toast('🔐 Autorisation installée — code d\'activation : ' + P.getProperty('AUT_CODE'), 'OK', 10);
+}
+// nouveau code d'activation + tous les téléphones patron désactivés (téléphone perdu…)
+function nouveauCodeActivation() {
+  const P = PropertiesService.getScriptProperties();
+  P.setProperty('AUT_CODE', String(100000 + Math.floor(Math.random() * 900000)));
+  P.setProperty('AUT_TOKENS', '[]');
+  installerAutorisation();
+}
+
+function autJson_(o) { return ContentService.createTextOutput(JSON.stringify(o)); }
+function autLire_(id) { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('AUT_' + id) || 'null'); } catch (e) { return null; } }
+function autStrict_() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('AUT_TOKENS') || '[]').length > 0; } catch (e) { return false; } }
+function autTokOk_(tok) { try { return !!tok && JSON.parse(PropertiesService.getScriptProperties().getProperty('AUT_TOKENS') || '[]').indexOf(String(tok)) >= 0; } catch (e) { return false; } }
+function autEtat_(o) { if (o && o.st === 'att' && Date.now() - o.at > AUT_DUREE_MIN * 60000) o.st = 'exp'; return o; }
+function autLog_(id, o, rep) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet(); let t = ss.getSheetByName(AUT_ONGLET); if (!t) { installerAutorisation(); t = ss.getSheetByName(AUT_ONGLET); }
+  if (!rep) {
+    t.insertRowBefore(4);
+    t.getRange(4, 1, 1, 7).setValues([[new Date(o.at), o.nom, "'" + o.tel, AUT_ACTIONS[o.act] || o.act, '⏳ en attente', '', id]]);
+    t.getRange(4, 1).setNumberFormat('dd/mm/yyyy hh:mm');
+    if (t.getLastRow() > 503) t.deleteRows(504, t.getLastRow() - 503);
+    return;
+  }
+  const n = t.getLastRow(); if (n < 4) return;
+  const ids = t.getRange(4, 7, n - 3, 1).getValues();
+  for (let i = 0; i < ids.length; i++) if (String(ids[i][0]) === id) {
+    t.getRange(i + 4, 5, 1, 2).setValues([[rep, new Date()]]); t.getRange(i + 4, 6).setNumberFormat('dd/mm/yyyy hh:mm');
+    t.getRange(i + 4, 1, 1, 6).setBackground(/✅/.test(rep) ? '#dcfce7' : '#fee2e2'); break;
+  }
+}
+function autNettoyer_() {
+  const P = PropertiesService.getScriptProperties(), all = P.getProperties(), lim = Date.now() - 86400000;
+  Object.keys(all).forEach(function (k) { if (k.indexOf('AUT_') === 0 && !/^AUT_(CODE|TOKENS|ESSAIS|GPS)$/.test(k)) { try { if (JSON.parse(all[k]).at < lim) P.deleteProperty(k); } catch (e) { P.deleteProperty(k); } } });
+}
+
+// ----- GET -----
+function autGet_(e) {
+  const p = e.parameter;
+  if (p.autping) return autJson_({ aut: 1 });
+  if (p.gps) { try { return autJson_(JSON.parse(PropertiesService.getScriptProperties().getProperty('AUT_GPS') || '{}')); } catch (x) { return autJson_({}); } }
+  if (p.autor) { const o = autEtat_(autLire_(String(p.autor))); return autJson_({ st: o ? o.st : 'inconnu' }); }
+  if (p.autliste) {
+    if (!autTokOk_(p.tok)) return autJson_({ err: 'tok' });
+    const all = PropertiesService.getScriptProperties().getProperties(), out = [];
+    Object.keys(all).forEach(function (k) {
+      if (k.indexOf('AUT_') !== 0 || /^AUT_(CODE|TOKENS|ESSAIS|GPS)$/.test(k)) return;
+      let o; try { o = autEtat_(JSON.parse(all[k])); } catch (x) { return; }
+      if (o.st === 'att') out.push({ id: k.slice(4), act: o.act, txt: AUT_ACTIONS[o.act] || o.act, nom: o.nom, tel: o.tel, at: o.at });
+    });
+    out.sort(function (a, b) { return a.at - b.at; });
+    return autJson_({ ok: 1, dem: out });
+  }
+  return null;
+}
+// ----- POST -----
+function autPost_(d) {
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const P = PropertiesService.getScriptProperties();
+    if (d.type === 'autdem') {
+      const id = String(d.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 24); if (id.length < 12 || !AUT_ACTIONS[d.act]) return autJson_({ err: 'x' });
+      const o = { act: d.act, nom: String(d.nom || '?').slice(0, 40), tel: String(d.tel || '').replace(/\D/g, '').slice(0, 10), at: Date.now(), st: 'att' };
+      P.setProperty('AUT_' + id, JSON.stringify(o)); autLog_(id, o); try { autNettoyer_(); } catch (x) {}
+      return autJson_({ ok: 1 });
+    }
+    if (d.type === 'autrep') {
+      if (!autTokOk_(d.tok)) return autJson_({ err: 'tok' });
+      const id = String(d.id || ''), o = autEtat_(autLire_(id)); if (!o) return autJson_({ err: 'id' });
+      if (o.st !== 'att') return autJson_({ ok: 1, st: o.st });
+      o.st = d.ok ? 'ok' : 'non'; o.rep = Date.now(); P.setProperty('AUT_' + id, JSON.stringify(o));
+      autLog_(id, o, d.ok ? '✅ autorisé' : '❌ refusé');
+      return autJson_({ ok: 1, st: o.st });
+    }
+    if (d.type === 'autgps') {
+      if (!autTokOk_(d.tok)) return autJson_({ err: 'tok' });
+      const lat = +d.lat, lng = +d.lng; if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180) || (!lat && !lng)) return autJson_({ err: 'x' });
+      P.setProperty('AUT_GPS', JSON.stringify({ lat: lat, lng: lng, r: AUT_GPS_RAYON, acc: Math.round(+d.acc || 0), at: Date.now() }));
+      return autJson_({ ok: 1, r: AUT_GPS_RAYON });
+    }
+    if (d.type === 'autlink') {
+      const es = JSON.parse(P.getProperty('AUT_ESSAIS') || '{"n":0,"t":0}');
+      if (es.n >= 5 && Date.now() - es.t < 30 * 60000) return autJson_({ err: 'stop' });
+      if (String(d.code || '').trim() !== P.getProperty('AUT_CODE')) { P.setProperty('AUT_ESSAIS', JSON.stringify({ n: es.n + 1, t: Date.now() })); return autJson_({ err: 'code' }); }
+      P.setProperty('AUT_ESSAIS', '{"n":0,"t":0}');
+      const tok = Utilities.getUuid().replace(/-/g, ''), L = JSON.parse(P.getProperty('AUT_TOKENS') || '[]');
+      L.push(tok); while (L.length > 5) L.shift(); P.setProperty('AUT_TOKENS', JSON.stringify(L));
+      return autJson_({ ok: 1, tok: tok });
+    }
+  } finally { lock.releaseLock(); }
+  return null;
+}
+
+// 🔌 BRANCHEMENT AUTOMATIQUE sur doGet / doPost (tout le reste continue vers Code.gs)
+(function () {
+  try {
+    if (typeof doGet === 'function' && !doGet.__autor) {
+      var g0 = doGet;
+      var g1 = function (e) {
+        var p = (e && e.parameter) || {};
+        if (p.autping || p.autor || p.autliste || p.gps) { var r = autGet_(e); if (r) return r; }
+        if (AUT_GET_PATRON.some(function (k) { return p[k] !== undefined; }) && autStrict_() && !autTokOk_(p.tok)) return autJson_({ err: 'tok' });
+        return g0(e);
+      };
+      for (var k in g0) g1[k] = g0[k];
+      g1.__autor = true; doGet = g1;
+    }
+    if (typeof doPost === 'function' && !doPost.__autor) {
+      var p0 = doPost;
+      var p1 = function (e) {
+        var d = null; try { d = JSON.parse(e.postData.contents); } catch (x) {}
+        if (d && /^aut(dem|rep|link|gps)$/.test(String(d.type || ''))) { var r = autPost_(d); if (r) return r; return autJson_({ err: 'x' }); }
+        if (d && AUT_POST_PATRON.indexOf(String(d.type || '')) >= 0 && autStrict_() && !autTokOk_(d.tok)) return autJson_({ err: 'tok' });
+        return p0(e);
+      };
+      p1.__autor = true; doPost = p1;
+    }
+  } catch (x) {}
+})();
+
+// ===== 💾 SAUVEGARDE AUTOMATIQUE : copie complète du classeur chaque lundi dans Drive « Sauvegardes Pointage » (8 gardées) =====
+function sauvegardeHebdo() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), nomD = 'Sauvegardes Pointage';
+  const it = DriveApp.getFoldersByName(nomD), dossier = it.hasNext() ? it.next() : DriveApp.createFolder(nomD);
+  DriveApp.getFileById(ss.getId()).makeCopy(ss.getName() + ' — sauvegarde ' + Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd'), dossier);
+  const L = []; const f = dossier.getFiles(); while (f.hasNext()) L.push(f.next());
+  L.sort(function (a, b) { return b.getDateCreated() - a.getDateCreated(); });
+  L.slice(AUT_SAUV_GARDER).forEach(function (x) { x.setTrashed(true); });
+}
+
+// ===== 💵 PAIES SIGNÉES : « ✅ ได้รับเงินแล้ว » sur le téléphone en fin de contrat → onglet « 💵 Paies signées » =====
+function majPaiesSignees() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), S = ss.getSheetByName('📷 Scans'); if (!S || S.getLastRow() < 2) return;
+  let T = ss.getSheetByName('💵 Paies signées');
+  if (!T) { T = ss.insertSheet('💵 Paies signées'); T.appendRow(['Signée le', 'Employée', 'Téléphone', 'Contrat', 'Net reçu (฿)', 'Détail', 'Clé']);
+            T.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#bbf7d0'); T.setFrozenRows(1); T.hideColumns(7); }
+  const vus = {}; if (T.getLastRow() > 1) T.getRange(2, 7, T.getLastRow() - 1, 1).getValues().forEach(function (x) { vus[String(x[0])] = 1; });
+  const nouv = [];
+  S.getRange(2, 1, S.getLastRow() - 1, 8).getValues().forEach(function (x) {
+    const r = String(x[7] || ''); if (!/^💵 paie reçue/.test(r) || !(x[0] instanceof Date)) return;
+    const q = r.split(' — '), cle = x[0].getTime() + '|' + r; if (vus[cle]) return; vus[cle] = 1;
+    const nt = String(q[1] || '').trim().split(' '), tel = nt.pop();
+    nouv.push([x[0], nt.join(' '), "'" + tel, q[2] || '', +String(q[3] || '').replace(/[^\d-]/g, '') || 0, q.slice(4).join(' — '), cle]);
+  });
+  if (nouv.length) { T.getRange(T.getLastRow() + 1, 1, nouv.length, 7).setValues(nouv); T.getRange(2, 1, T.getLastRow() - 1, 1).setNumberFormat('dd/mm/yyyy hh:mm'); }
+}
