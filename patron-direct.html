@@ -55,7 +55,7 @@
   <div class="card" id="feuille">
     <h2><span>📋 Feuille du jour — massages validés</span></h2>
     <div class="fjtop"><input type="date" id="fjDate" onchange="feuille()"><button onclick="feuille()" style="border:none;border-radius:10px;padding:9px 12px;font-weight:800;background:var(--violet);color:#fff">🔄</button></div>
-    <div id="fjCorps" class="sub">Chargement…</div>
+    <div id="fjCorps" style="color:var(--text)">Chargement…</div>
   </div>
   <div id="maj"></div>
   <a class="back" href="patron.html">← Espace patron</a>
@@ -120,14 +120,14 @@ async function feuille(){
     const j=JSON.parse(await readTxt(await fetch(API+'?jourdetail='+d+'&_='+Date.now())));
     if(j.err){ C.textContent = j.err==='tok' ? '🔐 Activez ce téléphone patron' : '⚠️ Erreur'; return; }
     const L=(j.lignes||[]).filter(x=>!/^boss$/i.test(x.nom.trim()) || x.ca);
-    if(!L.length){ C.textContent='Aucune journée validée pour cette date.'; return; }
-    const n2=v=>Math.round(v*2*100)/100, eq=x=>x.l1+x.l2+x.hh;
-    let h='<table class="fj"><tr><th>Fille</th><th>1 lady<br>600</th><th>2 lady<br>800</th><th>Happy<br>Hour</th><th>Total<br>💆</th><th>CA ฿</th><th>Heures</th></tr>', T={l1:0,l2:0,hh:0,ca:0};
+    if(!L.length){ C.innerHTML='<div class="sub">Aucune journée validée pour cette date.</div>'; return; }
+    const n2=v=>Math.round(v*2*100)/100;
+    let h='<table class="fj"><tr><th>Nom</th><th>1 lady</th><th>2 lady</th><th>Happy Hour</th></tr>', T={l1:0,l2:0,hh:0,ca:0};
     L.forEach(x=>{ T.l1+=x.l1; T.l2+=x.l2; T.hh+=x.hh; T.ca+=x.ca;
-      const pb=[]; if(/Retard|Absent/i.test(x.sit)) pb.push(x.sit.replace(/,?\s*OK/,'')); if(x.pen) pb.push('-'+fmt(x.pen)+' ฿');
-      h+='<tr><td class="n">'+x.nom.replace(/[<>&]/g,'')+(pb.length?'<div class="ko">'+pb.join(' · ').replace(/[<>&]/g,'')+'</div>':'')+'</td><td>'+(x.l1||'–')+'</td><td>'+(n2(x.l2)||'–')+'</td><td>'+(n2(x.hh)||'–')+'</td><td><b>'+eq(x)+'</b></td><td>'+fmt(x.ca)+'</td><td style="font-size:.75rem">'+(x.arr||'?')+'<br>'+(x.dep||'?')+'</td></tr>'; });
-    h+='<tr class="tot"><td class="n">TOTAL ('+L.length+')</td><td>'+T.l1+'</td><td>'+n2(T.l2)+'</td><td>'+n2(T.hh)+'</td><td>'+(T.l1+T.l2+T.hh)+'</td><td>'+fmt(T.ca)+'</td><td></td></tr></table>';
-    h+='<div class="sub" style="margin-top:6px;text-align:left">2 lady et Happy Hour = nombre de massages · « Total 💆 » compte 2 lady et Happy Hour pour ½ · seules les journées validées apparaissent</div>';
+      h+='<tr><td class="n">'+x.nom.replace(/[<>&]/g,'')+'</td><td>'+(x.l1||'–')+'</td><td>'+(n2(x.l2)||'–')+'</td><td>'+(n2(x.hh)||'–')+'</td></tr>'; });
+    h+='<tr class="tot"><td class="n">TOTAL</td><td>'+T.l1+'</td><td>'+n2(T.l2)+'</td><td>'+n2(T.hh)+'</td></tr></table>';
+    h+='<div class="kpis" style="margin:10px 0 0"><div class="k"><div class="l">💆 Total massages</div><div style="font-size:.7rem;color:var(--muted)">2 lady / Happy Hour = ½</div><div class="v">'+(Math.round((T.l1+T.l2+T.hh)*10)/10).toLocaleString('en-US')+'</div></div>'
+      +'<div class="k"><div class="l">💰 Total</div><div class="v">'+fmt(T.ca)+' ฿</div></div></div>';
     C.innerHTML=h;
   }catch(e){ C.textContent='⚠️ Pas de connexion — réessayez'; }
 }
