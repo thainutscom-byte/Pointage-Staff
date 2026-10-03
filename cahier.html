@@ -167,22 +167,22 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
 <body>
 <div class="wrap">
   <div class="demo-bar" id="demoBar" hidden>
-    <span>🧪 โหมดฝึก · MODE ENTRAÎNEMENT — ข้อมูลตัวอย่าง ไม่บันทึกจริง · rien n'est enregistré</span>
-    <button type="button" id="demoOut">✖ ออกจากโหมดฝึก · Quitter</button>
+    <span>🧪 โหมดฝึก — ข้อมูลตัวอย่าง ไม่บันทึกจริง</span>
+    <button type="button" id="demoOut">✖ ออกจากโหมดฝึก</button>
   </div>
   <header>
-    <h1>🗒️ <span class="ti">สมุดลงงาน · Cahier du jour</span> </h1>
+    <h1>🗒️ <span class="ti">สมุดลงงาน</span> </h1>
     <div class="hd-r">
-      <button class="icon-btn demobtn" id="btnDemo" type="button">🧪 ฝึก · Entraînement</button>
+      <button class="icon-btn demobtn" id="btnDemo" type="button">🧪 ฝึก</button>
       <span class="sync" id="sync"></span>
       <span class="clock" id="clock">--:--</span>
       <button class="icon-btn cashbtn" id="btnCash" type="button">💰 แคชเชียร์</button>
-      <button class="icon-btn bossbtn" id="btnBoss" type="button">👑 Boss</button>
+      <button class="icon-btn bossbtn" id="btnBoss" type="button">👑 หัวหน้า</button>
     </div>
   </header>
 
   <div class="panel cash" id="cashPanel" hidden>
-    <div class="cash-h"><h2>💰 แคชเชียร์วันนี้ · Caissière du jour</h2><button class="cancel" id="cashClose" type="button">ปิด</button></div>
+    <div class="cash-h"><h2>💰 แคชเชียร์วันนี้</h2><button class="cancel" id="cashClose" type="button">ปิด</button></div>
     <div class="chips" id="cCash"></div>
     <div id="cashBody"></div>
   </div>
@@ -194,7 +194,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
 
   <div class="panel" id="setPanel" hidden>
     <div class="set">
-      <label for="nbRooms"><b>จำนวนห้อง</b> · nombre de chambres</label>
+      <label for="nbRooms"><b>จำนวนห้อง</b></label>
       <input id="nbRooms" type="number" min="1" max="20" inputmode="numeric">
       <button class="ok" id="setOk" type="button" style="flex:0 0 auto">✅ บันทึก</button>
     </div>
@@ -204,49 +204,50 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     <div class="rooms" id="rooms"></div>
   </section>
   <section aria-label="Journée terminée" id="finSec" hidden>
-    <div class="fins"><b>🏁 จบงานแล้ว · Journée terminée</b><span id="finList"></span></div>
+    <div class="fins"><b>🏁 จบงานแล้ว</b><span id="finList"></span></div>
   </section>
   <section aria-label="Dehors" id="dehorsSec" hidden>
     <div class="rooms" id="dehors"></div>
   </section>
 
-  <button class="new" id="btnNew" type="button">➕ เริ่มนวด · Nouveau massage</button>
+  <button class="new" id="btnNew" type="button">➕ เริ่มนวด</button>
 
   <div class="panel" id="form" hidden>
     <div class="step">
-      <h2>1 · <b>ลูกค้า</b> Réf (C)</h2>
+      <h2>1 · <b>ลูกค้า</b></h2>
       <div class="chips" id="cRef"></div>
     </div>
     <div class="step">
-      <h2>2 · <b>Option</b> 1 à 5 (info) — <span id="total" style="color:var(--accent);font-weight:700"></span></h2>
+      <h2>2 · <b>ออปชั่น</b> 1–5 <span id="total" style="color:var(--accent);font-weight:700"></span></h2>
       <div class="chips" id="cQty"></div>
     </div>
     <div class="step">
-      <h2>3 · <b>ประเภท</b> Massage du client</h2>
+      <h2>3 · <b>ประเภท</b></h2>
       <div class="chips" id="cType"></div>
     </div>
     <div class="step">
-      <h2>4 · <b>ชื่อ</b> Nom (NAME) — 2 lady = 2 ชื่อ · 3 lady = แตะ 2 คนคู่ก่อน แล้วคนที่ 3 (1 lady)</h2>
+      <h2>4 · <b>ชื่อ</b></h2>
       <div class="chips" id="cNames"></div>
     </div>
     <div class="step" id="stRoom">
-      <h2>5 · <b>ห้อง</b> Chambre (Room) — ห้องที่มีคนอยู่กดไม่ได้</h2>
+      <h2>5 · <b>ห้อง</b> — ห้องที่มีคนอยู่กดไม่ได้</h2>
       <div class="chips" id="cRooms"></div>
     </div>
+
     <p class="hint" id="hint"></p>
     <div class="actions">
-      <button class="ok" id="start" type="button" disabled>▶️ เริ่ม · Début maintenant</button>
+      <button class="ok" id="start" type="button" disabled>▶️ เริ่มเลย</button>
       <button class="cancel" id="cancel" type="button">ยกเลิก</button>
     </div>
   </div>
 
   <section class="book" aria-label="Cahier du jour" id="bookSec" hidden>
-    <div class="book-h"><h2>📋 วันนี้ · Aujourd'hui</h2><span id="sum"></span></div>
+    <div class="book-h"><h2>📋 วันนี้</h2><span id="sum"></span></div>
     <div class="tbl">
       <table>
         <thead><tr>
-          <th>N° (S)</th><th>ชื่อ<small>Nom (NAME)</small></th><th>เริ่ม<small>Début (START)</small></th><th>เสร็จ<small>Fin (FINH)</small></th>
-          <th>ห้อง<small>Chambre (Room)</small></th><th>นวด<small>Massage</small></th><th>จ่าย<small>Paiement (Pay)</small></th><th>ลูกค้า<small>Réf (C)</small></th><th></th>
+          <th>#</th><th>ชื่อ</th><th>เริ่ม</th><th>เสร็จ</th>
+          <th>ห้อง</th><th>นวด</th><th>จ่าย</th><th>ลูกค้า</th><th></th>
         </tr></thead>
         <tbody id="rows"></tbody>
       </table>
@@ -265,10 +266,10 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
 </div>
 <div class="air" id="addN" hidden role="dialog" aria-modal="true" aria-labelledby="addNT">
   <div class="air-box" style="border-color:#2dd4bf">
-    <div class="air-t" id="addNT" style="font-size:1.35rem;color:#5eead4">➕ ชื่ออื่น · ajouter un nom</div>
-    <div class="air-s">Miss Essai, nouvelle sans contrat… · pour aujourd'hui seulement</div>
-    <input id="addNIn" maxlength="30" autocomplete="off" placeholder="ชื่อเล่น · surnom" style="font:inherit;font-size:1.3rem;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);text-align:center">
-    <button class="ok" type="button" id="addNOk">✅ เพิ่ม · Ajouter</button>
+    <div class="air-t" id="addNT" style="font-size:1.35rem;color:#5eead4">➕ ชื่ออื่น</div>
+    <div class="air-s">เช่น พนักงานทดลองงาน · เฉพาะวันนี้</div>
+    <input id="addNIn" maxlength="30" autocomplete="off" placeholder="ชื่อเล่น" style="font:inherit;font-size:1.3rem;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);text-align:center">
+    <button class="ok" type="button" id="addNOk">✅ เพิ่ม</button>
     <button class="cancel" type="button" id="addNX">ยกเลิก</button>
   </div>
 </div>
@@ -283,10 +284,10 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
 <div class="air" id="annul" hidden role="dialog" aria-modal="true" aria-labelledby="annT">
   <div class="air-box" style="border-color:var(--busy)">
     <div class="air-t" id="annT" style="font-size:1.35rem;color:var(--busy)"></div>
-    <div class="air-s">เหตุผล · raison de l'annulation</div>
+    <div class="air-s">เหตุผลที่ยกเลิก</div>
     <div class="chips" id="annC" style="justify-content:center"></div>
-    <input id="annTxt" maxlength="80" placeholder="อื่นๆ · autre raison (écrire)" style="font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">
-    <button class="ok" type="button" id="annGo" style="background:var(--busy);color:#2a0710">❌ ยกเลิก · rester en attente du client</button>
+    <input id="annTxt" maxlength="80" placeholder="อื่นๆ (เขียน)" style="font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">
+    <button class="ok" type="button" id="annGo" style="background:var(--busy);color:#2a0710">❌ ยกเลิก · รอลูกค้ายืนยัน</button>
     <button class="cancel" type="button" id="annX">ปิด</button>
   </div>
 </div>
@@ -295,8 +296,8 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     <div class="air-t" id="modeT" style="font-size:1.4rem;color:var(--gold)"></div>
     <div class="air-s" id="modeS"></div>
     <div class="chips" style="justify-content:center">
-      <button class="chip" type="button" data-mode="cash" style="--c:#4ade80;font-size:1.3rem;padding:20px 26px">💵 เงินสด<small>Espèces</small></button>
-      <button class="chip" type="button" data-mode="qr" style="--c:#60a5fa;font-size:1.3rem;padding:20px 26px">📱 โอน / QR<small>Virement</small></button>
+      <button class="chip" type="button" data-mode="cash" style="--c:#4ade80;font-size:1.3rem;padding:20px 26px">💵 เงินสด</button>
+      <button class="chip" type="button" data-mode="qr" style="--c:#60a5fa;font-size:1.3rem;padding:20px 26px">📱 โอน / QR</button>
     </div>
     <button class="cancel" type="button" data-mode="x">ยกเลิก</button>
   </div>
@@ -306,8 +307,8 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     <div class="air-ic">❄️</div>
     <div class="air-t" id="airT">อย่าลืมปิดแอร์!</div>
     <div class="air-r" id="airRoom"></div>
-    <div class="air-s">N'oubliez pas de couper le climatiseur · Turn off the air-con</div>
-    <button class="air-ok" id="airOk" type="button">✅ ปิดแอร์แล้ว · Climatiseur coupé</button>
+    
+    <button class="air-ok" id="airOk" type="button">✅ ปิดแอร์แล้ว</button>
   </div>
 </div>
 
@@ -329,6 +330,8 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   const TYPES=[['l1','1 lady',600,1],['l2','2 lady',800,2],['hh','Happy Hour',600,2],['l3','3 lady (2+1)',null,3],
                ['out','🚗 Massage outside',null,0,true,120],['bf','🍸 Barfine',3000,0,true,0]];
   const typ=c=>TYPES.find(x=>x[0]===c);
+  // 🇹🇭 noms affichés sur la tablette (thaï seulement) · TYPES[1] garde le nom pour le tableau Google du patron
+  const TH={l1:'1 เลดี้',l2:'2 เลดี้',hh:'แฮปปี้ฮาวร์',l3:'3 เลดี้',out:'🚗 นวดนอกร้าน',bf:'🍸 บาร์ไฟน์'};
   // 🕓 Happy Hour de 16:00 à 20:00 : 2 filles = Happy Hour · le reste du temps : 2 lady
   const HH_DEB=16, HH_FIN=20;
   const hhNow=()=>{ const h=new Date().getHours(); return h>=HH_DEB && h<HH_FIN; };
@@ -380,7 +383,10 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   const live=()=>actifs().filter(r=>!r.end);
   const roomOf=k=>live().find(r=>!dehors(r) && r.room===k);
   const busyNames=()=>new Set(live().flatMap(r=>r.names));
-  const noms=()=>STAFF.concat((S.extra||[]).filter(x=>!STAFF.some(y=>y.toLowerCase()===x.toLowerCase())));
+  // 🧪 2 noms toujours proposés pour les filles à l'essai (pas encore dans la liste) : Lady 1 et Lady 2
+  const ESSAI=['Lady 1','Lady 2'];
+  const noms=()=>{ const L=STAFF.concat((S.extra||[]).filter(x=>!STAFF.some(y=>y.toLowerCase()===x.toLowerCase())));
+    return L.concat(ESSAI.filter(x=>!L.some(y=>y.toLowerCase()===x.toLowerCase()))); };
   const finie=n=>FINS.some(f=>String(f.n).trim().toLowerCase()===String(n).trim().toLowerCase());
 
   // ===== ☁️ ENREGISTREMENT DANS GOOGLE (onglets 🗒️ Cahier et 💰 Caisse) =====
@@ -389,9 +395,9 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     const t=typ(r.type), p=PAY.find(x=>x[0]===r.pay), c=REF.find(x=>x[0]===r.ref), an=r.annul;
     const etat=annule(r)?'annule':(an?'attente':!r.end?'cours':!r.payOk?'apayer':'paye');
     return { date:jourFr(JOUR), n:r.n, noms:r.names.join(' + '), debut:hm(r.start), fin:r.end?hm(r.end):'', chambre:dehors(r)?'นอกร้าน':(r.room||''),
-      massage:libType(r), option:'Option '+(r.qty||1), client:c?c[2]:'', paiement:r.payOk&&p?p[2]:'',
+      massage:libType(r,true), option:'Option '+(r.qty||1), client:c?c[2]:'', paiement:r.payOk&&p?p[2]:'',
       montant:r.payOk&&!annule(r)&&prix(r)!=null?prix(r):'', paye:r.payOk?r.payOk.par+' '+hm(r.payOk.t):'',
-      annul:an?(an.etat==='ok'?'❌ annulé : ':'⏳ attente client : ')+an.raison+' ('+an.par+' '+hm(an.ok||an.t)+')':'',
+      annul:an?(an.etat==='ok'?'❌ annulé : ':'⏳ attente client : ')+(RAISON_FR[an.raison]||an.raison)+' ('+an.par+' '+hm(an.ok||an.t)+')':'',
       ajout:r.ajout?r.ajout.qui+' '+hm(r.ajout.t):'', etat };
   }
   function evts(){ return S.remises.map(x=>({id:JOUR+'|r'+x.t, ev:Object.assign({k:'r'},x), a:{date:jourFr(JOUR), heure:hm(x.t), evenement:'👑 Argent remis au patron', caissiere:x.par, vers:'Patron', montant:x.montant}}))
@@ -434,7 +440,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
         const last=cible.passes[cible.passes.length-1]; cible.caissiere=last?last.a:null;
         cible.plan={}; cible.passes.forEach(x=>{ const d=new Date(x.t), mn=d.getHours()*60+d.getMinutes();      // planning des caissières retrouvé
           const c=CRENEAUX.find(z=>mn>=z.deb*60-15 && mn<z.fin*60); if(c) cible.plan[c.k]=x.a; });
-        lsS('cahier_envoye',sent); lsS('cahier_'+JOUR,cible); toast('☁️ โหลดสมุดวันนี้จาก Google แล้ว · cahier rechargé');
+        lsS('cahier_envoye',sent); lsS('cahier_'+JOUR,cible); toast('☁️ โหลดสมุดวันนี้แล้ว');
       }
       if(!DEMO) planCaisse();                                   // tirage des caissières APRÈS le rechargement éventuel
       draw(); if(!$('form').hidden) drawForm();
@@ -448,21 +454,21 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     let h='';
     for(let k=1;k<=S.rooms;k++){
       const r=roomOf(k);
-      if(r) h+='<div class="room busy"><div class="rn">ห้อง '+k+'<span class="st">ไม่ว่าง · OCCUPÉE</span></div>'
+      if(r) h+='<div class="room busy"><div class="rn">ห้อง '+k+'<span class="st">ไม่ว่าง</span></div>'
         +'<div class="who">'+r.names.map(esc).join(' + ')+'</div>'
         +'<div class="since">▶ '+hm(r.start)+' · '+mins(r.start)+' นาที</div>'
-        +(r.type==='l1'&&r.names.length===1?'<button class="add2" type="button" data-add="'+r.n+'">👭 + เลดี้ · '+(hhA(r.start)?'Happy Hour':'2 lady')+'</button>'
-          :(r.type==='l2'||r.type==='hh')&&r.names.length===2?'<button class="add2" type="button" data-add="'+r.n+'">👤 + เลดี้ · 3 lady</button>':'')
-        +'<button class="fin" type="button" data-fin="'+r.n+'">⏹ เสร็จ · Fin</button></div>';
-      else h+='<div class="room free"><div class="rn">ห้อง '+k+'<span class="st">ว่าง · LIBRE</span></div>'
+        +(r.type==='l1'&&r.names.length===1?'<button class="add2" type="button" data-add="'+r.n+'">👭 + เลดี้ · '+(hhA(r.start)?TH.hh:TH.l2)+'</button>'
+          :(r.type==='l2'||r.type==='hh')&&r.names.length===2?'<button class="add2" type="button" data-add="'+r.n+'">👤 + เลดี้ · '+TH.l3+'</button>':'')
+        +'<button class="fin" type="button" data-fin="'+r.n+'">⏹ เสร็จ</button></div>';
+      else h+='<div class="room free"><div class="rn">ห้อง '+k+'<span class="st">ว่าง</span></div>'
         +'<div class="since">—</div><button class="go" type="button" data-go="'+k+'">➕ ใช้ห้องนี้</button></div>';
     }
     // 💰 4e case : massages finis pas encore payés (paiement à valider par la caissière)
     const dus=actifs().filter(r=>r.end && !r.payOk).sort((a,b)=>a.n-b.n);
-    h+='<div class="room unpaid'+(dus.length?' has':'')+'"><div class="rn">💰 ยังไม่จ่าย<span class="st">NON PAYÉS'+(dus.length?' · '+dus.length:'')+'</span></div>'
-      +(dus.length?dus.map(r=>{ const t=typ(r.type); return '<div class="due-l"><span><b>N° '+r.n+'</b> '+r.names.map(esc).join(' + ')+'<small>'+(t?t[1]:'')+' · ⏹ '+hm(r.end)+'</small></span>'
+    h+='<div class="room unpaid'+(dus.length?' has':'')+'"><div class="rn">💰 ยังไม่จ่าย<span class="st">'+(dus.length?dus.length:'')+'</span></div>'
+      +(dus.length?dus.map(r=>{ const t=typ(r.type); return '<div class="due-l"><span><b>#'+r.n+'</b> '+r.names.map(esc).join(' + ')+'<small>'+esc(libType(r))+' · ⏹ '+hm(r.end)+'</small></span>'
         +'<button class="paybtn" type="button" data-paye="'+r.n+'">💰</button></div>'; }).join('')
-        :'<div class="since">✅ จ่ายครบแล้ว · tout est payé</div>')
+        :'<div class="since">✅ จ่ายครบแล้ว</div>')
       +'</div>';
     $('rooms').innerHTML=h;
     // 🏁 filles qui ont terminé leur journée (« ⏹ เลิกงาน » dans l'app)
@@ -472,17 +478,17 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     const D=live().filter(dehors);
     $('dehorsSec').hidden=!D.length;
     $('dehors').innerHTML=D.map(r=>{ const t=typ(r.type), m=mins(r.start), reste=t[5]?t[5]-m:null, late=reste!=null && reste<0;
-      return '<div class="room out'+(late?' late':'')+'"><div class="rn">'+t[1]+'<span class="st">นอกร้าน · DEHORS</span></div>'
+      return '<div class="room out'+(late?' late':'')+'"><div class="rn">'+TH[r.type]+'<span class="st">นอกร้าน</span></div>'
         +'<div class="who">'+r.names.map(esc).join(' + ')+'</div>'
         +'<div class="since">▶ '+hm(r.start)+' · '+Math.floor(m/60)+' ชม. '+(m%60)+' นาที</div>'
         +(reste==null?'':late?'<div class="over">⚠️ เกิน 2 ชม. แล้ว '+(-reste)+' นาที</div>':'<div class="since">⏳ เหลือ '+Math.floor(reste/60)+' ชม. '+(reste%60)+' นาที (สูงสุด 2 ชม.)</div>')
-        +'<button class="fin" type="button" data-fin="'+r.n+'">🏠 กลับมาแล้ว · Retour</button></div>'; }).join('');
+        +'<button class="fin" type="button" data-fin="'+r.n+'">🏠 กลับมาแล้ว</button></div>'; }).join('');
   }
   // ---------- cahier ----------
   let armed=null;    // confirmation en 2 touches (fin / supprimer)
   function drawRows(){
     const rows=S.rows.slice().sort((a,b)=>b.n-a.n);
-    if(!rows.length){ $('rows').innerHTML='<tr><td colspan="9" class="empty">ยังไม่มีการนวดวันนี้ · Aucun massage aujourd\'hui</td></tr>'; }
+    if(!rows.length){ $('rows').innerHTML='<tr><td colspan="9" class="empty">ยังไม่มีการนวดวันนี้</td></tr>'; }
     else $('rows').innerHTML=rows.map(r=>{
       const p=PAY.find(x=>x[0]===r.pay)||['','⏳'], c=REF.find(x=>x[0]===r.ref)||['','—'];
       if(annule(r)) return '<tr class="annul"><td class="num">'+r.n+'</td><td><b>'+r.names.map(esc).join(' + ')+'</b></td><td class="t">'+hm(r.start)+'</td><td class="t">'+(r.end?hm(r.end):'—')+'</td>'
@@ -502,11 +508,12 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     const occ=live().filter(r=>!dehors(r)).length, out=live().filter(dehors).length;
     $('sum').textContent=n+' รอบ · '+nw+' ลูกค้าใหม่ · '+(n-nw)+' ลูกค้าเก่า · '+occ+' ห้องไม่ว่าง'+(out?' · '+out+' นอกร้าน':'')+(nx?' · '+nx+' ยกเลิก':'');
   }
-  function libType(r){ const t=typ(r.type); if(!t) return '';
-    if(r.type==='l3') return (hhA(r.start)?'Happy Hour':'2 lady')+' '+(r.names.slice(0,2).join('+'))+' + 1 lady '+(r.names[2]||'');
-    return t[1]; }
+  function libType(r,fr){ const t=typ(r.type); if(!t) return '';
+    const N=fr?{l1:'1 lady',l2:'2 lady',hh:'Happy Hour'}:TH;
+    if(r.type==='l3') return (hhA(r.start)?N.hh:N.l2)+' '+(r.names.slice(0,2).join('+'))+' + '+N.l1+' '+(r.names[2]||'');
+    return fr?t[1]:TH[r.type]; }
   function massTxt(r){ const t=typ(r.type); if(!t) return '—';
-    return '<b>'+esc(libType(r))+'</b> · Option '+(r.qty||1); }
+    return '<b>'+esc(libType(r))+'</b> · ออปชั่น '+(r.qty||1); }
   function draw(){ drawRooms(); drawRows(); try{ drawCash(); drawBoss(); }catch(e){} }
 
   // ---------- saisie ----------
@@ -514,19 +521,23 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   function chip(label,sub,on,dis,attr,col){ return '<button class="chip'+(on?' on':'')+'" type="button" '+(col?'style="--c:'+col+'" ':'')+attr+(dis?' disabled':'')+'>'+label+(sub?'<small>'+sub+'</small>':'')+'</button>'; }
   function drawForm(){
     const bn=busyNames();
-    $('cNames').innerHTML=(noms().length?'':'<p class="note">⚠️ ยังไม่มีรายชื่อพนักงานวันนี้ (ต้องมีสัญญาในแท็บ Employés) · aucune fille en contrat aujourd\'hui — vérifier internet</p>')+noms().map(s=>chip(esc(s), bn.has(s)?'กำลังนวด':finie(s)?'🏁 จบงานแล้ว':(S.extra||[]).includes(s)?'➕ วันนี้':'', F.names.includes(s), bn.has(s)||finie(s), 'data-name="'+esc(s)+'"', '#2dd4bf')).join('')
-      +chip('➕ ชื่ออื่น','autre nom · code du jour',false,false,'data-addname="1"','#64748b');
+    $('cNames').innerHTML=(STAFF.length?'':'<p class="note">⚠️ ยังไม่มีรายชื่อพนักงานวันนี้ — ตรวจอินเทอร์เน็ต</p>')+noms().map(s=>chip(esc(s), bn.has(s)?'กำลังนวด':finie(s)?'🏁 จบงานแล้ว':(S.extra||[]).includes(s)?'➕ วันนี้':'', F.names.includes(s), bn.has(s)||finie(s), 'data-name="'+esc(s)+'"', ESSAI.includes(s)?'#fde047':'#2dd4bf')).join('')
+      +chip('➕ ชื่ออื่น','รหัสหัวหน้า',false,false,'data-addname="1"','#64748b');
     let rh=''; for(let k=1;k<=S.rooms;k++){ const r=roomOf(k); rh+=chip('ห้อง '+k, r?'🔴 '+r.names.map(esc).join('+'):'🟢 ว่าง', F.room===k, !!r, 'data-room="'+k+'"', '#34d399'); }
     $('cRooms').innerHTML=rh;
     const hh=hhNow(); if((F.type==='hh' && !hh) || (F.type==='l2' && hh)) F.type=type2();
-    $('cType').innerHTML=TYPES.map(t=>chip(t[1], t[0]==='l3'?'👭+👤 3 ชื่อ · '+(hh?'HH + 1 lady':'2 lady + 1 lady'):t[0]==='hh'?(hh?'👭 2 ชื่อ · 16:00–20:00':'16:00–20:00 เท่านั้น'):t[0]==='l2'&&hh?'Happy Hour ตอนนี้':t[5]?'สูงสุด 2 ชม. · ไม่ใช้ห้อง':t[4]?'ไม่ใช้ห้อง':t[3]===2?'👭 2 ชื่อ':'1 ชื่อ', F.type===t[0], (t[0]==='hh'&&!hh)||(t[0]==='l2'&&hh), 'data-type="'+t[0]+'"', ({l1:'#f472b6',l2:'#a78bfa',hh:'#fb923c',l3:'#facc15',out:'#60a5fa',bf:'#e879f9'})[t[0]])).join('');
-    $('cQty').innerHTML=[1,2,3,4,5].map(q=>chip('Option '+q, '', F.qty===q, false, 'data-qty="'+q+'"', '#38bdf8')).join('');
+    const sousT=t=>t[0]==='l3'?'3 ชื่อ · '+(hh?TH.hh:TH.l2)+' + '+TH.l1:t[0]==='hh'?(hh?'2 ชื่อ · 16:00–20:00':'16:00–20:00 เท่านั้น'):t[0]==='l2'&&hh?TH.hh+' ตอนนี้':t[5]?'สูงสุด 2 ชม. · ไม่ใช้ห้อง':t[4]?'ไม่ใช้ห้อง':t[3]===2?'2 ชื่อ':'1 ชื่อ';
+    const COUL={l1:'#f472b6',l2:'#a78bfa',hh:'#fb923c',l3:'#facc15',out:'#60a5fa',bf:'#e879f9'};
+    const puce=t=>chip(TH[t[0]], sousT(t), F.type===t[0], (t[0]==='hh'&&!hh)||(t[0]==='l2'&&hh), 'data-type="'+t[0]+'"', COUL[t[0]]);
+    $('cType').innerHTML=TYPES.map(puce).join('');
+    $('cQty').innerHTML=[1,2,3,4,5].map(q=>chip('ออปชั่น '+q, '', F.qty===q, false, 'data-qty="'+q+'"', '#38bdf8')).join('');
     $('total').textContent='';
-    $('cRef').innerHTML=REF.map(p=>chip(p[1],p[2],F.ref===p[0],false,'data-ref="'+p[0]+'"', p[0]==='new'?'#fbbf24':'#c084fc')).join('');
+    $('cRef').innerHTML=REF.map(p=>chip(p[1],'',F.ref===p[0],false,'data-ref="'+p[0]+'"', p[0]==='new'?'#fbbf24':'#c084fc')).join('');
     const T=typ(F.type);
-    $('stRoom').hidden=!!(T && T[4]);
-    const manque=!F.ref?'1 · เลือกลูกค้าใหม่ / เก่า':!T?'3 · เลือกประเภท (1 lady / 2 lady / Happy Hour / Outside / Barfine)'
-      :!F.names.length?'4 · เลือกชื่อ':(T[3]===2 && F.names.length!==2)?'4 · '+T[1]+' = ต้องเลือก 2 ชื่อ':(T[3]===3 && F.names.length!==3)?'4 · 3 lady = ต้องเลือก 3 ชื่อ':(T[3]===1 && F.names.length!==1)?'4 · 1 lady = เลือก 1 ชื่อ'
+    // นอกร้าน / บาร์ไฟน์ : pas de chambre → chambres grisées
+    if(T && T[4]){ F.room=null; $('cRooms').querySelectorAll('button').forEach(b=>b.disabled=true); }
+    const manque=!F.ref?'1 · เลือกลูกค้าใหม่ / เก่า':!T?'3 · เลือกประเภท'
+      :!F.names.length?'4 · เลือกชื่อ':(T[3]===2 && F.names.length!==2)?'4 · '+TH[F.type]+' = ต้องเลือก 2 ชื่อ':(T[3]===3 && F.names.length!==3)?'4 · '+TH.l3+' = ต้องเลือก 3 ชื่อ':(T[3]===1 && F.names.length!==1)?'4 · '+TH.l1+' = เลือก 1 ชื่อ':(T[3]===0 && F.names.length>2)?'4 · เลือก 1–2 ชื่อ'
       :(!T[4] && !F.room)?'5 · เลือกห้อง':'';
     $('start').disabled=!!manque; $('hint').textContent=manque?'👉 '+manque:'';
   }
@@ -538,10 +549,10 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   $('form').addEventListener('click',e=>{
     const b=e.target.closest('button'); if(!b || b.disabled) return;
     if(b.dataset.addname){
-      demanderCode('➕ ชื่ออื่น', 'รหัสหัวหน้า · code du jour', v=>v===codeJour()).then(ok=>{ if(!ok) return;
+      demanderCode('➕ ชื่ออื่น', 'รหัสหัวหน้า', v=>v===codeJour()).then(ok=>{ if(!ok) return;
         $('addNIn').value=''; $('addN').hidden=false; setTimeout(()=>$('addNIn').focus(),50); });
       return; }
-    if(b.dataset.name){ const s=b.dataset.name; F.names=F.names.includes(s)?F.names.filter(x=>x!==s):F.names.concat(s).slice(F.type==='l3'?-3:-2); }
+    if(b.dataset.name){ const s=b.dataset.name; F.names=F.names.includes(s)?F.names.filter(x=>x!==s):F.names.concat(s).slice(F.type==='l3'||!F.type?-3:-2); }
     if(b.dataset.room){ F.room=+b.dataset.room; }
     if(b.dataset.type){ F.type=b.dataset.type; }
     if(b.dataset.qty){ F.qty=+b.dataset.qty; }
@@ -551,24 +562,24 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   });
   $('start').onclick=()=>{
     const T=typ(F.type); if(T[4]) F.room=null;
-    if(!T[4] && roomOf(F.room)){ toast('⛔ ห้อง '+F.room+' มีคนอยู่แล้ว · chambre occupée'); drawForm(); return; }
+    if(!T[4] && roomOf(F.room)){ toast('⛔ ห้อง '+F.room+' มีคนอยู่แล้ว'); drawForm(); return; }
     const n=S.rows.reduce((m,r)=>Math.max(m,r.n),0)+1;
     S.rows.push({n,names:F.names.slice(),start:Date.now(),end:null,room:F.room,type:F.type,qty:F.qty,pay:null,ref:F.ref});
-    save(); closeForm(); draw(); toast('▶️ N° '+n+' · '+F.names.join(' + ')+' · '+(T[4]?'นอกร้าน':'ห้อง '+F.room)+' · '+T[1]+' · Option '+F.qty+' · เริ่ม '+hm(Date.now()));
+    save(); closeForm(); draw(); toast('▶️ #'+n+' · '+F.names.join(' + ')+' · '+(T[4]?'นอกร้าน':'ห้อง '+F.room)+' · '+TH[F.type]+' · ออปชั่น '+F.qty+' · เริ่ม '+hm(Date.now()));
   };
   document.addEventListener('click',e=>{
     const b=e.target.closest('button'); if(!b) return;
     if(b.dataset.go){ openForm(+b.dataset.go); return; }
     if(b.dataset.fin){ const n=+b.dataset.fin;
       if(armed!=='f'+n){ armed='f'+n; b.textContent='แตะอีกครั้ง ✔'; setTimeout(()=>{ if(armed==='f'+n){ armed=null; draw(); } },4000); return; }
-      armed=null; const r=S.rows.find(x=>x.n===n); if(r && !r.end){ r.end=Date.now(); save(); if(!dehors(r) && !live().some(x=>!dehors(x))) rappelAir(r); toast('💰 แคชเชียร์: ยืนยันรับเงิน N° '+r.n+' · '+(dehors(r)?'🏠 กลับมาแล้ว · ':'⏹ ห้อง '+r.room+' ว่างแล้ว · ')+r.names.join(' + ')+' '+hm(r.start)+'–'+hm(r.end)); }
+      armed=null; const r=S.rows.find(x=>x.n===n); if(r && !r.end){ r.end=Date.now(); save(); if(!dehors(r) && !live().some(x=>!dehors(x))) rappelAir(r); toast('💰 แคชเชียร์: ยืนยันรับเงิน #'+r.n+' · '+(dehors(r)?'🏠 กลับมาแล้ว · ':'⏹ ห้อง '+r.room+' ว่างแล้ว · ')+r.names.join(' + ')+' '+hm(r.start)+'–'+hm(r.end)); }
       draw(); if(!$('form').hidden) drawForm(); return; }
     // 💰 paiement validé par la caissière (son code) — seulement après la fin du massage
     // 👭 le client change d'avis : 2e fille ajoutée → 2 lady (ou Happy Hour de 16:00 à 20:00)
     if(b.dataset.add){ const n=+b.dataset.add, r=S.rows.find(x=>x.n===n); if(!r || r.end || r.names.length>2) return;
       const bn=busyNames(), nt=r.names.length===2?'l3':(hhA(r.start)?'hh':'l2');
       $('pickT').textContent='👭 ห้อง '+r.room+' · '+r.names.join(' + ')+' + ?';
-      $('pickS').textContent='เปลี่ยนเป็น '+typ(nt)[1]+' · le massage devient '+typ(nt)[1];
+      $('pickS').textContent='เปลี่ยนเป็น '+TH[nt];
       $('pickC').innerHTML=noms().map(x=>chip(esc(x), bn.has(x)?'กำลังนวด':finie(x)?'🏁 จบงานแล้ว':'', false, bn.has(x)||finie(x), 'data-pick="'+esc(x)+'"', '#2dd4bf')).join('');
       $('pick').hidden=false;
       $('pickC').onclick=ev=>{ const c=ev.target.closest('button'); if(!c || c.disabled) return;
@@ -576,37 +587,37 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
         toast('👭 ห้อง '+r.room+': '+libType(r)); };
       return; }
     if(b.dataset.paye){ const n=+b.dataset.paye, r=S.rows.find(x=>x.n===n); if(!r || r.payOk) return;
-      if(!S.caissiere){ toast('⚠️ เลือกแคชเชียร์วันนี้ก่อน (💰 แคชเชียร์) · choisir la caissière'); return; }
+      if(!S.caissiere){ toast('⚠️ เลือกแคชเชียร์วันนี้ก่อน (💰 แคชเชียร์)'); return; }
       const t=typ(r.type);
-      $('modeT').textContent='💰 N° '+n+' · '+r.names.join(' + '); $('modeS').textContent=(t?t[1]:'')+' — ลูกค้าจ่ายแบบไหน? · mode de paiement';
+      $('modeT').textContent='💰 #'+n+' · '+r.names.join(' + '); $('modeS').textContent=libType(r)+' — ลูกค้าจ่ายแบบไหน?';
       $('mode').hidden=false;
       $('mode').onclick=ev=>{ const m=ev.target.closest('button'); if(!m || !m.dataset.mode) return; $('mode').hidden=true; if(m.dataset.mode==='x') return;
         const mode=m.dataset.mode, p=PAY.find(x=>x[0]===mode);
-        demanderCode('💰 ยืนยันรับเงิน · N° '+n, r.names.join(' + ')+' · '+(t?t[1]:'')+' · '+p[1]+' — รหัสแคชเชียร์ '+S.caissiere,
+        demanderCode('💰 ยืนยันรับเงิน · #'+n, r.names.join(' + ')+' · '+libType(r)+' · '+p[1]+' — รหัสแคชเชียร์ '+S.caissiere,
           v=>codeOk(S.caissiere,v)).then(ok=>{ if(!ok) return;
-            r.pay=mode; r.payOk={t:Date.now(), par:S.caissiere}; save(); draw(); toast('✅ N° '+n+' รับเงินแล้ว ('+p[1]+') · '+S.caissiere); }); };
+            r.pay=mode; r.payOk={t:Date.now(), par:S.caissiere}; save(); draw(); toast('✅ #'+n+' รับเงินแล้ว ('+p[1]+') · '+S.caissiere); }); };
       return; }
     // ❌ ANNULATION : la caissière du jour (son code) + une raison → en attente de la confirmation du client
     if(b.dataset.ann){ const n=+b.dataset.ann, r=S.rows.find(x=>x.n===n); if(!r || r.annul || r.payOk) return;
-      if(!S.caissiere){ toast('⚠️ เลือกแคชเชียร์วันนี้ก่อน (💰 แคชเชียร์) · choisir la caissière'); return; }
-      demanderCode('❌ ยกเลิก N° '+n, r.names.join(' + ')+' — รหัสแคชเชียร์ '+S.caissiere, v=>codeOk(S.caissiere,v)).then(ok=>{ if(!ok) return;
-        $('annT').textContent='❌ ยกเลิก N° '+n+' · '+r.names.join(' + '); $('annTxt').value=''; annRaison=null; drawAnn(); $('annul').hidden=false;
+      if(!S.caissiere){ toast('⚠️ เลือกแคชเชียร์วันนี้ก่อน (💰 แคชเชียร์)'); return; }
+      demanderCode('❌ ยกเลิก #'+n, r.names.join(' + ')+' — รหัสแคชเชียร์ '+S.caissiere, v=>codeOk(S.caissiere,v)).then(ok=>{ if(!ok) return;
+        $('annT').textContent='❌ ยกเลิก #'+n+' · '+r.names.join(' + '); $('annTxt').value=''; annRaison=null; drawAnn(); $('annul').hidden=false;
         $('annGo').onclick=()=>{ const autre=($('annTxt').value||'').trim(); const raison=annRaison==='autre'?autre:annRaison;
-          if(!raison){ toast('👉 เลือกเหตุผล · choisir la raison'); return; }
+          if(!raison){ toast('👉 เลือกเหตุผล'); return; }
           r.annul={etat:'attente', raison, par:S.caissiere, t:Date.now()}; save(); $('annul').hidden=true; draw();
-          toast('⏳ N° '+n+' รอลูกค้ายืนยันการยกเลิก · attente confirmation du client'); }; });
+          toast('⏳ #'+n+' รอลูกค้ายืนยันการยกเลิก'); }; });
       return; }
     if(b.dataset.annok){ const n=+b.dataset.annok, r=S.rows.find(x=>x.n===n); if(!r || !r.annul) return;
-      demanderCode('✅ ลูกค้ายืนยันการยกเลิก N° '+n, 'Le client confirme · รหัสแคชเชียร์ '+S.caissiere, v=>codeOk(S.caissiere,v)).then(ok=>{ if(!ok) return;
+      demanderCode('✅ ลูกค้ายืนยันการยกเลิก #'+n, 'รหัสแคชเชียร์ '+S.caissiere, v=>codeOk(S.caissiere,v)).then(ok=>{ if(!ok) return;
         const enCours=!r.end; r.annul.etat='ok'; r.annul.ok=Date.now(); if(enCours) r.end=Date.now(); save(); draw(); if(!$('form').hidden) drawForm();
         if(enCours && !dehors(r) && !live().some(x=>!dehors(x))) rappelAir(r);
-        toast('❌ N° '+n+' ยกเลิกแล้ว · annulé ('+r.annul.raison+')'); });
+        toast('❌ #'+n+' ยกเลิกแล้ว ('+r.annul.raison+')'); });
       return; }
     if(b.dataset.annno){ const n=+b.dataset.annno, r=S.rows.find(x=>x.n===n); if(!r || !r.annul) return;
-      delete r.annul; save(); draw(); toast('↩️ N° '+n+' ไม่ยกเลิก · annulation retirée'); return; }
+      delete r.annul; save(); draw(); toast('↩️ #'+n+' ไม่ยกเลิกแล้ว'); return; }
   });
   // ❄️ dernière chambre libérée (toutes les chambres vides) → rappel : couper le climatiseur
-  function rappelAir(r){ $('airRoom').textContent='ทุกห้องว่างแล้ว · Toutes les chambres sont vides'; $('air').hidden=false; $('airOk').focus(); }
+  function rappelAir(r){ $('airRoom').textContent='ทุกห้องว่างแล้ว'; $('air').hidden=false; $('airOk').focus(); }
   $('airOk').onclick=()=>{ $('air').hidden=true; };
   // ===== 🔢 PAVÉ CODE (4 chiffres) =====
   function demanderCode(titre, sous, valide){
@@ -619,7 +630,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
         if(k==='✖'){ $('pad').hidden=true; res(false); return; }
         if(k==='⌫'){ v=v.slice(0,-1); dots(); return; }
         if(v.length<4){ v+=k; dots(); }
-        if(v.length===4){ if(valide(v)){ $('pad').hidden=true; res(true); } else { $('padM').textContent='❌ รหัสไม่ถูกต้อง · code incorrect'; v=''; setTimeout(dots,250); } } };
+        if(v.length===4){ if(valide(v)){ $('pad').hidden=true; res(true); } else { $('padM').textContent='❌ รหัสไม่ถูกต้อง'; v=''; setTimeout(dots,250); } } };
     });
   }
   // ---------- réglages ----------
@@ -664,26 +675,26 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   function drawCash(){ try{ majBook(); }catch(e){}
     $('btnCash').textContent='💰 แคชเชียร์'+(S.caissiere?' · '+S.caissiere:'');
     if($('cashPanel').hidden) return;
-    $('cCash').innerHTML=(S.caissiere?'<p class="note" style="flex-basis:100%">🔄 เปลี่ยนแคชเชียร์: แตะชื่อคนใหม่ แล้วใส่รหัสของคนใหม่ · changer : toucher le nouveau nom puis son code</p>':'')
+    $('cCash').innerHTML=(S.caissiere?'<p class="note" style="flex-basis:100%">🔄 เปลี่ยนแคชเชียร์: แตะชื่อคนใหม่ แล้วใส่รหัสของคนใหม่</p>':'')
       +STAFF.map(n=>chip(esc(n), S.caissiere===n?'แคชเชียร์ตอนนี้':'', S.caissiere===n, false, 'data-caisse="'+esc(n)+'"', '#fbbf24')).join('');
-    $('cCash').insertAdjacentHTML('afterbegin','<p class="note" style="flex-basis:100%;font-size:.95rem;color:var(--ink)">'+planTxt()+'<br><span style="color:var(--muted)">สุ่มจากคนที่มาทำงานแล้ว · tirage au sort parmi les filles arrivées</span></p>');
-    if(!S.caissiere){ $('cashBody').innerHTML='<p class="note">⏳ แคชเชียร์จะถูกสุ่มเมื่อมีพนักงานมาถึง (12:45) · ou choisir un nom</p>'; return; }
+    $('cCash').insertAdjacentHTML('afterbegin','<p class="note" style="flex-basis:100%;font-size:.95rem;color:var(--ink)">'+planTxt()+'<br><span style="color:var(--muted)">สุ่มจากคนที่มาทำงานแล้ว</span></p>');
+    if(!S.caissiere){ $('cashBody').innerHTML='<p class="note">⏳ แคชเชียร์จะถูกสุ่มเมื่อมีพนักงานมาถึง (12:45) · หรือเลือกชื่อ</p>'; return; }
     const c=caisse(), sans=actifs().filter(r=>prix(r)==null).length;
     $('cashBody').innerHTML='<div class="money">'
-      +'<div class="mbox"><span>💵 เงินสดที่รับแล้ว · espèces encaissées</span><b>'+baht(c.cash)+'</b></div>'
-      +'<div class="mbox"><span>📱 โอน / QR · virements</span><b>'+baht(c.qr)+'</b></div>'
-      +'<div class="mbox"><span>👑 จ่ายหัวหน้าแล้ว · déjà remis</span><b>'+baht(c.remis)+'</b></div>'
-      +'<div class="mbox due"><span>💰 ต้องจ่ายหัวหน้า · à remettre</span><b>'+baht(c.reste)+'</b></div></div>'
-      +(c.attente?'<p class="note" style="color:var(--gold);font-weight:700">⏳ รอยืนยันรับเงิน '+c.attente+' รายการ (แถวสีเหลืองในสมุด) · '+c.attente+' paiement(s) à valider</p>':'')
-      +'<button class="paid" id="paid" type="button"'+(c.reste>0?'':' disabled')+'>'+(payArmed?'แตะอีกครั้งเพื่อยืนยัน ✔ '+baht(c.reste):'✅ จ่ายหัวหน้าแล้ว · Patron payé ('+baht(c.reste)+')')+'</button>'
+      +'<div class="mbox"><span>💵 เงินสดที่รับแล้ว</span><b>'+baht(c.cash)+'</b></div>'
+      +'<div class="mbox"><span>📱 โอน / QR</span><b>'+baht(c.qr)+'</b></div>'
+      +'<div class="mbox"><span>👑 จ่ายหัวหน้าแล้ว</span><b>'+baht(c.remis)+'</b></div>'
+      +'<div class="mbox due"><span>💰 ต้องจ่ายหัวหน้า</span><b>'+baht(c.reste)+'</b></div></div>'
+      +(c.attente?'<p class="note" style="color:var(--gold);font-weight:700">⏳ รอยืนยันรับเงิน '+c.attente+' รายการ (แถวสีเหลืองในสมุด)</p>':'')
+      +'<button class="paid" id="paid" type="button"'+(c.reste>0?'':' disabled')+'>'+(payArmed?'แตะอีกครั้งเพื่อยืนยัน ✔ '+baht(c.reste):'✅ จ่ายหัวหน้าแล้ว ('+baht(c.reste)+')')+'</button>'
       +((S.remises.length||S.passes.length)?'<ul class="remises">'+S.remises.map(x=>({t:x.t,h:'👑 '+hm(x.t)+' · '+esc(x.par)+' จ่ายหัวหน้า → '+baht(x.montant)}))
           .concat(S.passes.map(x=>({t:x.t,h:x.de?(x.auto?'🎲 ':'🔄 ')+hm(x.t)+' · '+esc(x.de)+' → '+esc(x.a)+' (ส่งต่อเงินสด '+baht(x.montant)+')':'💰 '+hm(x.t)+' · แคชเชียร์วันนี้ '+esc(x.a)})))
           .sort((a,b)=>b.t-a.t).map(x=>'<li>'+x.h+'</li>').join('')+'</ul>':'')
-      +(sans?'<p class="note">ℹ️ Barfine ไม่รวมในยอด ('+sans+' รายการ) · non compté : tarif non renseigné</p>':'');
+      ;
   }
   $('btnCash').onclick=async()=>{
     if(!$('cashPanel').hidden){ $('cashPanel').hidden=true; return; }
-    if(S.caissiere && !(await demanderCode('💰 รหัสแคชเชียร์ · '+S.caissiere, '4 ตัวแรกของเบอร์โทร · 4 premiers chiffres du téléphone', v=>codeOk(S.caissiere,v)))) return;
+    if(S.caissiere && !(await demanderCode('💰 รหัสแคชเชียร์ · '+S.caissiere, '4 ตัวแรกของเบอร์โทร', v=>codeOk(S.caissiere,v)))) return;
     payArmed=false; $('cashPanel').hidden=false; drawCash(); };
   $('cashClose').onclick=()=>{ $('cashPanel').hidden=true; };
   $('cashPanel').addEventListener('click',async e=>{
@@ -729,7 +740,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   }
   $('btnBoss').onclick=async()=>{
     if(!$('bossPanel').hidden){ $('bossPanel').hidden=true; $('setPanel').hidden=true; return; }
-    if(!(await demanderCode('👑 Code Boss', 'Code du jour', v=>v===codeJour()))) return;
+    if(!(await demanderCode('👑 รหัสหัวหน้า', '', v=>v===codeJour()))) return;
     $('bossPanel').hidden=false; $('setPanel').hidden=false; $('nbRooms').value=S.rooms; drawBoss(); };
   $('bossClose').onclick=()=>{ $('bossPanel').hidden=true; $('setPanel').hidden=true; };
 
@@ -755,22 +766,24 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     if(!DEMO) return; S=VRAI; VRAI=null; DEMO=false; STAFF=STAFF_V||[]; FINS=FINS_V||[];
     document.body.classList.remove('demo'); $('demoBar').hidden=true; $('btnDemo').hidden=false;
     ['cashPanel','bossPanel','setPanel','form'].forEach(id=>$(id).hidden=true); draw();
-    toast('✅ กลับสู่สมุดจริง · retour au vrai cahier');
+    toast('✅ กลับสู่สมุดจริง');
   }
-  const RAISONS=[['ใส่ผิด · erreur de saisie','#94a3b8'],['ลูกค้าเปลี่ยนใจ · client a changé d\'avis','#fb923c'],['ลูกค้าไม่พอใจ · client mécontent','#f472b6'],['autre','#a78bfa']];
+  const RAISONS=[['ใส่ผิด','#94a3b8'],['ลูกค้าเปลี่ยนใจ','#fb923c'],['ลูกค้าไม่พอใจ','#f472b6'],['autre','#a78bfa']];
+  // pour le tableau Google (patron) : raison traduite
+  const RAISON_FR={'ใส่ผิด':'ใส่ผิด · erreur de saisie','ลูกค้าเปลี่ยนใจ':'ลูกค้าเปลี่ยนใจ · client a changé d\'avis','ลูกค้าไม่พอใจ':'ลูกค้าไม่พอใจ · client mécontent'};
   let annRaison=null;
-  function drawAnn(){ $('annC').innerHTML=RAISONS.map(x=>chip(x[0]==='autre'?'อื่นๆ · autre':x[0],'',annRaison===x[0],false,'data-r="'+esc(x[0])+'"',x[1])).join(''); $('annTxt').hidden=annRaison!=='autre'; }
+  function drawAnn(){ $('annC').innerHTML=RAISONS.map(x=>chip(x[0]==='autre'?'อื่นๆ':x[0],'',annRaison===x[0],false,'data-r="'+esc(x[0])+'"',x[1])).join(''); $('annTxt').hidden=annRaison!=='autre'; }
   $('annC').onclick=e=>{ const c=e.target.closest('button'); if(!c) return; annRaison=c.dataset.r; drawAnn(); };
   $('annX').onclick=()=>{ $('annul').hidden=true; };
   $('addNX').onclick=()=>{ $('addN').hidden=true; };
   $('addNOk').onclick=()=>{ const v=($('addNIn').value||'').trim().replace(/\s+/g,' ');
-    if(!/^[A-Za-z\u0E00-\u0E7F][A-Za-z\u0E00-\u0E7F .'-]{0,29}$/.test(v)){ toast('⚠️ ชื่อเล่น (A-Z) · surnom'); return; }
+    if(!/^[A-Za-z\u0E00-\u0E7F][A-Za-z\u0E00-\u0E7F .'-]{0,29}$/.test(v)){ toast('⚠️ ชื่อเล่น (A-Z)'); return; }
     S.extra=(S.extra||[]); if(!noms().some(x=>x.toLowerCase()===v.toLowerCase())) S.extra.push(v); save(); $('addN').hidden=true; drawForm(); toast('➕ '+v+' · วันนี้'); };
   $('pickX').onclick=()=>{ $('pick').hidden=true; };
   $('btnDemo').onclick=entrerDemo; $('demoOut').onclick=sortirDemo;
   setInterval(envoyer,30000); setTimeout(envoyer,2000);
   setTimeout(chargerJour,500); setInterval(chargerJour,2*60000);
-  setInterval(()=>{ const j=jourIso(); if(j!==JOUR && !DEMO){ JOUR=j; S=charger(); STAFF=[]; HASH={}; FINS=[]; ['cashPanel','bossPanel','setPanel','form'].forEach(id=>$(id).hidden=true); draw(); chargerJour(); toast('📅 วันใหม่ · nouveau jour '+jourFr(JOUR)); } },60000);
+  setInterval(()=>{ const j=jourIso(); if(j!==JOUR && !DEMO){ JOUR=j; S=charger(); STAFF=[]; HASH={}; FINS=[]; ['cashPanel','bossPanel','setPanel','form'].forEach(id=>$(id).hidden=true); draw(); chargerJour(); toast('📅 วันใหม่ '+jourFr(JOUR)); } },60000);
   function tick(){ $('clock').textContent=hm(Date.now()); }
   tick(); draw(); etatSync();
   setInterval(()=>{ tick(); drawRooms(); }, 20000);
