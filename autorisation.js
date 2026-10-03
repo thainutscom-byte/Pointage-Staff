@@ -6,7 +6,7 @@
   const CFG=(document.currentScript && document.currentScript.dataset) || {};
   const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
   const K='patron_aut_tok';
-  const tok=()=>{ try{ return localStorage.getItem(K)||''; }catch(e){ return ''; } };
+  const tok=()=>{ try{ return localStorage.getItem(K)||'libre'; }catch(e){ return 'libre'; } };   // 🔓 plus de code patron : tous les appareils sont « patron »
   const txt=async r=>{ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; };
   // 🔑 jeton patron ajouté automatiquement à tous les appels vers le script Google
   const f0=window.fetch.bind(window);
