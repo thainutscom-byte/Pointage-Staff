@@ -18,41 +18,35 @@
   a.lien:active{transform:scale(.98)}
   a.lien:focus-visible{outline:3px solid var(--c);outline-offset:2px}
   a.lien b{display:block;font-size:1.15rem;margin-bottom:4px}
-  a.lien span{display:block;font-size:.85rem;color:var(--muted);line-height:1.4}
+  a.lien span{display:block;font-size:.8rem;color:var(--muted);line-height:1.35}
+  .grille{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grille a.lien{margin:0;padding:13px 11px;border-left-width:6px}
+  .grille a.lien b{font-size:1rem}
+  @media (max-width:340px){ .grille{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>👑 Espace patron</h1>
-
-  <a class="lien" href="patron-direct.html" style="--c:#7c3aed">
-    <b>📊 Aujourd'hui en direct</b>
-    <span>Qui est là, qui n'est pas arrivée, massages et chiffre d'affaires du jour</span>
-  </a>
-
-  <a class="lien" href="patron-massages.html" style="--c:var(--green)">
-    <b>✏️ Massages · Arrivée · Horaires</b>
-    <span>Corriger les massages, valider l'heure d'arrivée, changer l'horaire, voir ce qu'il y a à payer, places disponibles</span>
-  </a>
-
-  <a class="lien" href="patron-penalites.html" style="--c:var(--red)">
-    <b>⚠️ Pénalités · SMS · Démission</b>
-    <span>Valider une pénalité, envoyer les SMS d'infraction, bloquer ou réintégrer une employée</span>
-  </a>
-
-  <a class="lien" href="patron-parrainage.html" style="--c:#db2777">
-    <b>🤝 Parrainage</b>
-    <span>Liste des employées : envois par appli, liens ouverts, amies réservées, 2 mois atteints, commissions à payer</span>
-  </a>
-
-  <a class="lien" href="patron-reservations.html" style="--c:var(--blue)">
-    <b>📝 Réservations reçues</b>
-    <span>Nouvelles demandes avec téléphone, places disponibles, contacts des employées</span>
-  </a>
+  <div class="grille">
+    <a class="lien" href="patron-autorisations.html" style="--c:#f59e0b"><b>🔔 Demandes d'autorisation</b><span>Autoriser / refuser les demandes des filles</span></a>
+    <a class="lien" href="patron-direct.html" style="--c:#7c3aed"><b>📊 Aujourd'hui en direct</b><span>Qui est là, retards, massages du jour</span></a>
+    <a class="lien" href="patron-feuille.html" style="--c:#7c3aed"><b>📋 Feuille du jour</b><span>Massages validés par fille + totaux</span></a>
+    <a class="lien" href="patron-cahier.html" style="--c:#7c3aed"><b>📸 Contrôle avec le cahier</b><span>Photo du cahier et correction des erreurs</span></a>
+    <a class="lien" href="patron-massages.html" style="--c:var(--green)"><b>✏️ Corriger les massages</b><span>Une employée, une date</span></a>
+    <a class="lien" href="patron-arrivee.html" style="--c:var(--green)"><b>⏰ Heure d'arrivée</b><span>Valider la vraie heure d'arrivée</span></a>
+    <a class="lien" href="patron-horaire.html" style="--c:var(--green)"><b>🕐 Changer l'horaire</b><span>Horaire du contrat en cours</span></a>
+    <a class="lien" href="patron-places.html" style="--c:var(--green)"><b>🗓️ Places disponibles</b><span>Places libres et qui les occupe</span></a>
+    <a class="lien" href="patron-penalites.html" style="--c:var(--red)"><b>⚠️ Pénalités · SMS</b><span>Infractions téléphone + SMS</span></a>
+    <a class="lien" href="patron-demission.html" style="--c:var(--red)"><b>🚪 Démission</b><span>Bloquer ou réintégrer une employée</span></a>
+    <a class="lien" href="patron-parrainage.html" style="--c:#db2777"><b>🤝 Parrainage</b><span>🎯 Objectifs, relances, commissions</span></a>
+    <a class="lien" href="patron-reservations.html" style="--c:var(--blue)"><b>📝 Réservations</b><span>Nouvelles candidates</span></a>
+  </div>
 </div>
 <div style="max-width:460px;margin:0 auto;padding:0 14px 30px;text-align:center">
+  <div style="height:14px"></div>
   <button onclick="autGpsSalon()" style="border:2px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 14px;font-weight:700;font-size:.95rem;width:100%">📍 Enregistrer la position du salon (à faire au salon, 1 fois)</button>
 </div>
-<script src="autorisation.js?v=7"></script>
+<script src="autorisation.js?v=8"></script>
 </body>
 </html>

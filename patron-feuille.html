@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#7c3aed">
-<title>📊 Aujourd'hui en direct</title>
+<title>📋 Feuille du jour</title>
 <style>
   :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--orange:#ea580c;--violet:#7c3aed;--border:#e5e7eb;}
   *{box-sizing:border-box}
@@ -53,19 +53,16 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>📊 Aujourd'hui en direct</h1>
-  <div class="sub" id="date"></div>
-  <div class="kpis">
-    <div class="k"><div class="l">👩 Présentes</div><div class="v" id="kPres">–</div></div>
-    <div class="k"><div class="l">⏰ Pas de pointage reçu</div><div class="v" id="kAbs">–</div></div>
-    <div class="k"><div class="l">💆 Massages du jour</div><div class="v" id="kMas">–</div></div>
-    <div class="k"><div class="l">💰 Chiffre du jour</div><div class="v" id="kCA">–</div></div>
+  <h1>📋 Feuille du jour</h1>
+  <div class="card" id="feuille">
+    <h2><span>Massages validés par les filles</span></h2>
+    <div class="fjtop"><input type="date" id="fjDate" onchange="feuille()"><button onclick="feuille()" style="border:none;border-radius:10px;padding:9px 12px;font-weight:800;background:var(--violet);color:#fff">🔄</button></div>
+    <div id="fjCorps" style="color:var(--text)">Chargement…</div>
   </div>
-  <div id="liste"><div class="card">Chargement…</div></div>
   <div id="maj"></div>
   <a class="back" href="patron.html">← Espace patron</a>
 </div>
-<script src="autorisation.js?v=8" data-retards="1"></script>
+<script src="autorisation.js?v=8"></script>
 <script>
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
@@ -233,8 +230,8 @@ async function chToutCorriger(){
   for(const i of L){ b.textContent='⏳ '+CH.lignes[i].nom+'…'; if(!(await chCorriger(i,true))) ko++; }
   b.disabled=false; chMaj(); if(ko) alert('⚠️ '+ko+' correction(s) non envoyée(s) — réessayez');
 }
-charger(); setInterval(charger, 60000);
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden) charger(); });
+(()=>{ const b=new Date(Date.now()-6*3600e3); $('fjDate').value=isoJ(b); feuille(); })();
+setInterval(()=>{ if(!document.hidden) feuille(); }, 5*60000);
 </script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#dc2626">
-<title>⚠️ Pénalités · SMS</title>
+<title>🚪 Démission</title>
 <style>
   :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--redbg:#fee2e2;--green:#16a34a;--border:#e5e7eb;}
   *{box-sizing:border-box}
@@ -49,22 +49,14 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>⚠️ Pénalités · SMS</h1>
+  <h1>🚪 Démission</h1>
   <div id="main">
-<div class="card">
-      <h2>1️⃣ Employée <span style="font-weight:normal;color:var(--green);font-size:.8rem">● en service aujourd'hui</span></h2>
-      <div id="liste">Chargement…</div>
-    </div>
     <div class="card">
-      <h2>2️⃣ Pénalité</h2>
-      <div class="pen" id="pen"></div>
-    </div>
-    <button class="big" id="ok" disabled onclick="valider()">✔ Valider</button>
-    <div id="msg"></div>
-    <div id="smsBox"></div>
-    <div class="card" style="margin-top:14px">
-      <h2>📱 SMS des infractions récentes</h2>
-      <div id="infListe" class="small" style="text-align:left">Chargement…</div>
+      <h2>🚪 Démission — bloquer une employée</h2>
+      <select id="demEmp" onchange="demDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
+      <div id="demInfo" class="small" style="text-align:left;margin:8px 0"></div>
+      <button class="big" id="demOk" disabled onclick="demValider()">🚫 Bloquer (démission)</button>
+      <div id="demMsg" class="small" style="margin-top:6px"></div>
     </div>
     <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
     <div class="small" style="margin-top:14px"><a href="#" onclick="actualiser();return false">🔄 Actualiser</a></div>

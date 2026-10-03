@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#7c3aed">
-<title>📊 Aujourd'hui en direct</title>
+<title>📸 Contrôle du cahier</title>
 <style>
   :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--orange:#ea580c;--violet:#7c3aed;--border:#e5e7eb;}
   *{box-sizing:border-box}
@@ -53,19 +53,26 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>📊 Aujourd'hui en direct</h1>
-  <div class="sub" id="date"></div>
-  <div class="kpis">
-    <div class="k"><div class="l">👩 Présentes</div><div class="v" id="kPres">–</div></div>
-    <div class="k"><div class="l">⏰ Pas de pointage reçu</div><div class="v" id="kAbs">–</div></div>
-    <div class="k"><div class="l">💆 Massages du jour</div><div class="v" id="kMas">–</div></div>
-    <div class="k"><div class="l">💰 Chiffre du jour</div><div class="v" id="kCA">–</div></div>
+  <h1>📸 Contrôle avec le cahier</h1>
+  <div class="card" id="cahier">
+        <div class="sub" style="text-align:left;margin:0 0 8px">1. Photo de la feuille papier · 2. Tapez les chiffres du cahier · 3. Les erreurs des filles sont en <b style="color:var(--red)">rouge</b> → ✔ Corriger</div>
+    <div class="fjtop"><input type="date" id="chDate" onchange="chCharger()"><button onclick="chCharger()" style="border:none;border-radius:10px;padding:9px 12px;font-weight:800;background:var(--violet);color:#fff">🔄</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <label class="chbtn">📸 Prendre une photo<input type="file" accept="image/*" capture="environment" id="chFile" onchange="chPhoto(this)" style="display:none"></label>
+      <label class="chbtn" style="background:#fff;color:var(--violet);border:2px solid var(--violet)">🖼️ Choisir une photo<input type="file" accept="image/*" id="chFile2" onchange="chPhoto(this)" style="display:none"></label>
+    </div>
+    <div id="chPhotoMsg" class="sub" style="text-align:left;margin:4px 0"></div>
+    <div id="chPhotoBox" style="display:none;position:sticky;top:0;z-index:5;background:var(--card);padding:4px 0 8px">
+      <img id="chImg" alt="cahier" onclick="chZoom()" style="width:100%;max-height:38vh;object-fit:contain;border-radius:10px;border:2px solid var(--border);background:#000">
+      <div class="sub" style="margin:2px 0 0">👆 toucher la photo pour l'agrandir</div>
+    </div>
+    <div id="chCorps">Chargement…</div>
   </div>
-  <div id="liste"><div class="card">Chargement…</div></div>
+  <div id="chZoom" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:100001;background:#000;overflow:auto"><img id="chZoomImg" alt="" style="width:200%;max-width:none"><div style="position:fixed;top:10px;right:10px;background:#fff;border-radius:999px;padding:8px 14px;font-weight:800">✕</div></div>
   <div id="maj"></div>
   <a class="back" href="patron.html">← Espace patron</a>
 </div>
-<script src="autorisation.js?v=8" data-retards="1"></script>
+<script src="autorisation.js?v=8"></script>
 <script>
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
@@ -233,8 +240,7 @@ async function chToutCorriger(){
   for(const i of L){ b.textContent='⏳ '+CH.lignes[i].nom+'…'; if(!(await chCorriger(i,true))) ko++; }
   b.disabled=false; chMaj(); if(ko) alert('⚠️ '+ko+' correction(s) non envoyée(s) — réessayez');
 }
-charger(); setInterval(charger, 60000);
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden) charger(); });
+(()=>{ const b=new Date(Date.now()-6*3600e3); $('chDate').value=isoJ(b); $('chDate').max=isoJ(new Date()); chCharger(); })();
 </script>
 </body>
 </html>

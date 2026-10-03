@@ -2,6 +2,8 @@
 // Les demandes des téléphones des employées apparaissent en haut de la page : ✅ Autoriser / ❌ Refuser.
 // Ce téléphone patron doit être activé UNE fois avec le code d'activation (Google Sheets → onglet « 🔐 Autorisations », case B1).
 (function(){
+  // réglages de la page : data-aut="rapide" (page Autorisations : vérifie toutes les 4 s) · data-retards="1" (alertes de retard)
+  const CFG=(document.currentScript && document.currentScript.dataset) || {};
   const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
   const K='patron_aut_tok';
   const tok=()=>{ try{ return localStorage.getItem(K)||''; }catch(e){ return ''; } };
@@ -171,7 +173,7 @@
         alert(j.ok?'✅ Position du salon enregistrée (précision '+Math.round(p.coords.accuracy)+' m)':'❌ Pas enregistré'); }catch(e){ alert('⚠️ Pas de connexion'); }
     }, err=>alert('❌ Position impossible : autorisez la localisation pour ce site'), {enableHighAccuracy:true, timeout:20000, maximumAge:0});
   };
-  verifier(); setInterval(verifier, 4000);
-  retards(); setInterval(retards, 120000);
+  verifier(); setInterval(verifier, CFG.aut==='rapide' ? 4000 : 15000);
+  if(CFG.retards==='1'){ retards(); setInterval(retards, 120000); }
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) verifier(); });
 })();
