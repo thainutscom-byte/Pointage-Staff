@@ -80,17 +80,19 @@ async function places(){
   try{
     const q=n=>fetch(API+'?plan=1&emp=__patron__&tel=0&s='+isoJ(0)+'&n='+n+'&sh='+encodeURIComponent(SH.map(x=>x[0]).join(','))+'&_='+Date.now()).then(readTxt).then(JSON.parse);
     const [a,b]=await Promise.all([q(1),q(10)]);
-    const col=l=>l<=0?'var(--red)':'var(--green)';   // vert = il reste au moins 1 place · rouge = complet
-    let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
+        let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Filles aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
     const ca=capJour(isoJ(0)), cb=capPeriode(isoJ(0),10);
-    SH.forEach(([k,l])=>{ const la=ca-((a[k]||{}).max||0), lb=cb-((b[k]||{}).max||0);
-      h+='<tr class="plR" data-sh="'+k+'" style="border-top:1px solid var(--border);cursor:pointer" onclick="plDetail(this)"><td style="padding:8px 0">'+l+' <span style="color:var(--muted);font-size:.8rem">▸ qui ?</span></td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/'+ca+'</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/'+cb+'</td></tr>'; });
-    P.innerHTML='<div id="plAlerte"></div>'+h+'</table><div class="small" style="margin-top:6px">= places libres · 🟢 il reste de la place · 🔴 complet · « 10 jours » = le jour le plus chargé · 👆 touchez un horaire pour voir qui occupe les places</div>';
+    // nombre de FILLES sur l'horaire (le jour le plus chargé) / places : 3/4 = 3 filles · 4/4 = complet
+    const cell=(n,cap)=>'<td style="text-align:center;font-weight:800;color:'+(n>=cap?'var(--red)':'var(--green)')+'">'+n+'/'+cap+(n>cap?' ⚠️':n>=cap?'<div style="font-size:.7rem">complet</div>':'')+'</td>';
+    PLN={};
+    SH.forEach(([k,l])=>{ const na=(a[k]||{}).max||0, nb=(b[k]||{}).max||0; PLN[k]=na;
+      h+='<tr class="plR" data-sh="'+k+'" style="border-top:1px solid var(--border);cursor:pointer" onclick="plDetail(this)"><td style="padding:8px 0">'+l+' <span style="color:var(--muted);font-size:.8rem">▸ qui ?</span></td>'+cell(na,ca)+cell(nb,cb)+'</tr>'; });
+    P.innerHTML='<div id="plAlerte"></div>'+h+'</table><div class="small" style="margin-top:6px">3/4 = 3 filles sur 4 places · 🟢 il reste de la place · 🔴 complet · « 10 jours » = le jour le plus chargé · 👆 touchez un horaire pour voir qui occupe les places</div>';
     plCharger();
   }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
 }
 // ===== 🗓️ QUI OCCUPE LES PLACES (contrats comptés dans le planning) =====
-let PLD=null, PLDerr='';
+let PLD=null, PLDerr='', PLN={};
 const dm=s=>String(s||'').split('-').reverse().slice(0,2).join('/');
 const escH=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function plCharger(){
@@ -120,6 +122,8 @@ function plDetail(tr, refaire){
   }
   else if(!PLD) h+='Chargement… (réessayez dans un instant)';
   else if(!L.length) h+='<span style="color:var(--muted)">Personne sur cet horaire.</span>';
+  if(PLD){ const nAuj=L.filter(c=>c.auj).length, nT=PLN[tr.dataset.sh];
+    h+='<div style="font-size:.85rem;font-weight:700;margin:2px 0 4px;color:'+(nT!==undefined && nT!==nAuj?'var(--red)':'#166534')+'">'+(nT!==undefined && nT!==nAuj ? '⚠️ Le tableau dit '+nT+' et la liste montre '+nAuj+' fille(s) aujourd\'hui — touchez 🔄 Actualiser' : '✔ '+nAuj+' fille'+(nAuj>1?'s':'')+' aujourd\'hui sur cet horaire')+'</div>'; }
   L.forEach(c=>{ const ko=c.compte && !c.dansEmp;
     h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 6px;border-radius:8px;margin-top:3px;background:'+(ko?'#fee2e2':c.compte?'#f3f4f6':'#fafafa')+';'+(c.compte?'':'color:#6b7280')+'">'
       +'<span><b>'+escH(c.nom)+'</b> <span style="color:var(--muted)">'+escH(c.tel)+'</span><br>'+dm(c.deb)+' → '+dm(c.fin)+(c.auj?' · <b>aujourd\'hui</b>':'')+(c.impose?' · 👑':'')
