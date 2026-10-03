@@ -192,6 +192,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       <button class="icon-btn demobtn" id="btnDemo" type="button">🧪 ฝึก</button>
       <span class="sync" id="sync"></span>
       <span class="clock" id="clock">--:--</span>
+      <span id="hhBadge" hidden style="background:#fb923c;color:#111;font-weight:800;border-radius:10px;padding:6px 10px">🍹 แฮปปี้ฮาวร์</span>
       <button class="icon-btn cashbtn" id="btnCash" type="button">💰 แคชเชียร์</button>
       <button class="icon-btn bossbtn" id="btnBoss" type="button">👑 หัวหน้า</button>
     </div>
@@ -355,14 +356,18 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   const TH={l1:'1 เลดี้',l2:'2 เลดี้',hh:'แฮปปี้ฮาวร์',l3:'3 เลดี้',out:'🚗 นวดนอกร้าน',bf:'🍸 บาร์ไฟน์'};
   // 🕓 Happy Hour de 16:00 à 20:00 : 2 filles = Happy Hour · le reste du temps : 2 lady
   const HH_DEB=16, HH_FIN=20;
-  const hhNow=()=>{ const h=new Date().getHours(); return h>=HH_DEB && h<HH_FIN; };
+  // 🍹 Happy Hour forcé par le patron (👑) : vaut aussi en dehors de 16:00–20:00, s'arrête tout seul à 08:00 le lendemain
+  let HHF=(()=>{ try{ return JSON.parse(localStorage.getItem('cahier_hhf')||'null')||{on:false,jusqua:0}; }catch(e){ return {on:false,jusqua:0}; } })();
+  const hhForce=()=>!!(HHF && HHF.on && Date.now()<+HHF.jusqua);
+  const hhNow=()=>{ if(hhForce()) return true; const h=new Date().getHours(); return h>=HH_DEB && h<HH_FIN; };
   const type2=()=>hhNow()?'hh':'l2';
   const dehors=r=>{ const t=typ(r.type); return !!(t && t[4]); };
   const baht=v=>v==null?'— ฿':v.toLocaleString('en-US')+' ฿';
   // 💰 tarif selon l'heure de DÉBUT : 1 lady 600 · 2 filles 800 (Happy Hour 16:00–20:00 : 600)
   //    3 lady = 2 filles + 1 lady · Massage outside (2 h) = 1600 (1 fille) / 3000 (2 filles) · Barfine = 3000 par fille
   const hhA=t=>{ const h=new Date(t).getHours(); return h>=HH_DEB && h<HH_FIN; };
-  const prix=r=>{ const t=typ(r.type); if(!t) return 0; const deux=hhA(r.start)?600:800;
+  const hhR=r=>typeof r.hh==='boolean' ? r.hh : hhA(r.start);   // Happy Hour décidé au DÉBUT du massage (horaire ou forcé par le patron)
+  const prix=r=>{ const t=typ(r.type); if(!t) return 0; const deux=hhR(r)?600:800;
     if(r.type==='l3') return deux+600;
     if(r.type==='out') return (r.names||[]).length>=2?3000:1600;   // 2 h : 1 fille 1600 · 2 filles 3000
     if(r.type==='bf') return 3000*Math.max(1,(r.names||[]).length);
@@ -480,6 +485,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       const t=await lireTxt(await fetch(SHEET_URL+'?cahtab=1&d='+JOUR+'&_='+Date.now())); if(t[0]!=='{') return;
       const j=JSON.parse(t); if(!j.ok) return;
       lsS('cahier_staff_'+JOUR,j.staff||[]);
+      if(j.hh && !DEMO){ HHF=j.hh; lsS('cahier_hhf',HHF); majHH(); }
       if(!DEMO){ STAFF=(j.staff||[]).map(x=>x.n); HASH={}; SHIFT={}; (j.staff||[]).forEach(x=>{ HASH[x.n]=x.h; SHIFT[x.n]=x.s||''; }); FINS=j.fins||[]; lsS('cahier_fins_'+JOUR,FINS);
         VENUES=new Set((j.staff||[]).filter(x=>x.v).map(x=>x.n.toLowerCase())); lsS('cahier_venues_'+JOUR,[...VENUES]); }
       const cible=DEMO?VRAI:S;
@@ -499,7 +505,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       if(r) h+='<div class="room busy"><div class="rn">ห้อง '+k+'<span class="st">ไม่ว่าง</span></div>'
         +'<div class="who">'+r.names.map(esc).join(' + ')+'</div>'
         +'<div class="since">▶ '+hm(r.start)+' · '+mins(r.start)+' นาที</div>'
-        +(r.type==='l1'&&r.names.length===1?'<button class="add2" type="button" data-add="'+r.n+'">👭 + เลดี้ · '+(hhA(r.start)?TH.hh:TH.l2)+'</button>'
+        +(r.type==='l1'&&r.names.length===1?'<button class="add2" type="button" data-add="'+r.n+'">👭 + เลดี้ · '+(hhR(r)?TH.hh:TH.l2)+'</button>'
           :(r.type==='l2'||r.type==='hh')&&r.names.length===2?'<button class="add2" type="button" data-add="'+r.n+'">👤 + เลดี้ · '+TH.l3+'</button>':'')
         +'<button class="fin" type="button" data-fin="'+r.n+'">⏹ เสร็จ</button></div>';
       else h+='<div class="room free"><div class="rn">ห้อง '+k+'<span class="st">ว่าง</span></div>'
@@ -552,7 +558,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   }
   function libType(r,fr){ const t=typ(r.type); if(!t) return '';
     const N=fr?{l1:'1 lady',l2:'2 lady',hh:'Happy Hour'}:TH;
-    if(r.type==='l3') return (hhA(r.start)?N.hh:N.l2)+' '+(r.names.slice(0,2).join('+'))+' + '+N.l1+' '+(r.names[2]||'');
+    if(r.type==='l3') return (hhR(r)?N.hh:N.l2)+' '+(r.names.slice(0,2).join('+'))+' + '+N.l1+' '+(r.names[2]||'');
     return fr?t[1]:TH[r.type]; }
   function massTxt(r){ const t=typ(r.type); if(!t) return '—';
     return '<b>'+esc(libType(r))+'</b> · OP'+(r.qty||1); }
@@ -613,7 +619,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     const T=typ(F.type); if(T[4]) F.room=null;
     if(!T[4] && roomOf(F.room)){ toast('⛔ ห้อง '+F.room+' มีคนอยู่แล้ว'); drawForm(); return; }
     const n=S.rows.reduce((m,r)=>Math.max(m,r.n),0)+1;
-    S.rows.push({n,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),names:F.names.slice(),start:Date.now(),end:null,room:F.room,type:F.type,qty:F.qty,pay:null,ref:F.ref});
+    S.rows.push({n,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),hh:hhNow(),names:F.names.slice(),start:Date.now(),end:null,room:F.room,type:F.type,qty:F.qty,pay:null,ref:F.ref});
     save(); closeForm(); draw(); toast('▶️ #'+n+' · '+F.names.join(' + ')+' · '+(T[4]?'นอกร้าน':'ห้อง '+F.room)+' · '+TH[F.type]+' · OP'+F.qty+' · เริ่ม '+hm(Date.now()));
   };
   document.addEventListener('click',e=>{
@@ -627,7 +633,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     // 💰 paiement validé par la caissière (son code) — seulement après la fin du massage
     // 👭 le client change d'avis : 2e fille ajoutée → 2 lady (ou Happy Hour de 16:00 à 20:00)
     if(b.dataset.add){ const n=+b.dataset.add, r=S.rows.find(x=>x.n===n); if(!r || r.end || r.names.length>2) return;
-      const bn=busyNames(), nt=r.names.length===2?'l3':(hhA(r.start)?'hh':'l2');
+      const bn=busyNames(), nt=r.names.length===2?'l3':(hhR(r)?'hh':'l2');
       $('pickT').textContent='👭 ห้อง '+r.room+' · '+r.names.join(' + ')+' + ?';
       $('pickS').textContent='เปลี่ยนเป็น '+TH[nt];
       $('pickC').innerHTML=noms().map(x=>chip(esc(x), bn.has(x)?'กำลังนวด':finie(x)?'🏁 จบงานแล้ว':'', false, bn.has(x)||finie(x), 'data-pick="'+esc(x)+'"', '#2dd4bf')).join('');
@@ -768,6 +774,14 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     }
   });
   // ===== 👑 BOSS : résumé complet du jour + réglages (code patron) =====
+  // 🍹 badge visible par tout le monde quand le patron a forcé le Happy Hour
+  function majHH(){ const b=$('hhBadge'); if(b) b.hidden=!hhForce(); }
+  setInterval(majHH,30000);
+  document.addEventListener('click',async e=>{ const b=e.target.closest('#hhBtn'); if(!b) return;
+    const on=!hhForce(); b.disabled=true;
+    if(DEMO){ HHF=on?{on:true,jusqua:Date.now()+12*3600e3}:{on:false,jusqua:0}; }
+    else try{ const t=await lireTxt(await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'cahier',op:'hh',on})})); const j=JSON.parse(t); if(j.hh){ HHF=j.hh; lsS('cahier_hhf',HHF); } }catch(x){ toast('📶 ไม่มีอินเทอร์เน็ต'); }
+    majHH(); drawBoss(); if(!$('form').hidden) drawForm(); toast(hhForce()?'🍹 แฮปปี้ฮาวร์ เปิดแล้ว':'🍹 แฮปปี้ฮาวร์ ปิดแล้ว'); });
   function drawBoss(){
     if($('bossPanel').hidden) return;
     const c=caisse(), L=[['l1','1L'],['l2','2L'],['hh','HH'],['l3','3L'],['out','🚗'],['bf','🍸']];
@@ -785,6 +799,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       +((S.remises.length||S.passes.length)?'<ul class="remises">'+S.remises.map(x=>({t:x.t,h:'👑 '+hm(x.t)+' · '+esc(x.par)+' → '+baht(x.montant)}))
           .concat(S.passes.map(x=>({t:x.t,h:x.de?'🔄 '+hm(x.t)+' · '+esc(x.de)+' → '+esc(x.a)+' ('+baht(x.montant)+')':'💰 '+hm(x.t)+' · caissière '+esc(x.a)}))).sort((a,b)=>b.t-a.t).map(x=>'<li>'+x.h+'</li>').join('')+'</ul>':'<p class="note">Aucun paiement de la caisse pour l\'instant.</p>')
       +'<p class="note" style="color:var(--ink)">'+planTxt()+'</p>'
+      +'<button type="button" id="hhBtn" class="paid" style="background:'+(hhForce()?'#dc2626':'#fb923c')+';color:#111">'+(hhForce()?'🍹 Happy Hour forcé : ACTIF jusqu\'au '+(d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'))(new Date(+HHF.jusqua))+' à 08:00 → DÉSACTIVER':'🍹 ACTIVER Happy Hour maintenant (s\'arrête seul à 08:00 du matin)')+'</button>'
       +'<p class="note">🔑 Code Boss = date du jour JJMMAA (aujourd\'hui '+codeJour()+')</p>'
       +'</div>';
   }
@@ -836,7 +851,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   $('btnRefresh').onclick=async()=>{ $('btnRefresh').disabled=true; try{ await envoyer(); await chargerJour(); toast('🔄 อัปเดตแล้ว '+hm(Date.now())); }finally{ $('btnRefresh').disabled=false; } };
   setInterval(()=>{ const j=jourIso(); if(j!==JOUR && !DEMO){ JOUR=j; S=charger(); STAFF=[]; HASH={}; FINS=[]; ['cashPanel','bossPanel','setPanel','form'].forEach(id=>$(id).hidden=true); draw(); chargerJour(); toast('📅 วันใหม่ '+jourFr(JOUR)); } },60000);
   function tick(){ $('clock').textContent=hm(Date.now()); }
-  tick(); draw(); etatSync();
+  tick(); draw(); etatSync(); majHH();
   setInterval(()=>{ tick(); drawRooms(); }, 20000);
 })();
 </script>

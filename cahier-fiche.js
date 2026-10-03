@@ -21,7 +21,7 @@
   const egal = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
   function sonType(r, moi) {
     if (r.type !== 'l3') return r.type;
-    const i = r.names.findIndex(n => egal(n, moi)); return i >= 2 ? 'l1' : (hhA(r.start) ? 'hh' : 'l2');
+    const i = r.names.findIndex(n => egal(n, moi)); return i >= 2 ? 'l1' : ((typeof r.hh === 'boolean' ? r.hh : hhA(r.start)) ? 'hh' : 'l2');
   }
 
   // journée d'aujourd'hui dans la fiche (même jour de travail que la tablette : change à 06:00)
