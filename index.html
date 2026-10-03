@@ -769,11 +769,11 @@ function buildDays(){
       <h3 onclick="toggleDay(this)" style="cursor:pointer;">วันที่ ${i}<span class="dayDate" style="font-weight:600;font-size:.85rem;"></span> <span class="dayArrow"></span></h3>
       <div class="daySummary small" style="display:none;"></div>
       <div class="dayBody">
-        <div class="small" style="font-weight:700;color:var(--text);margin:0 0 4px;">จำนวนนวด</div>
+        <div class="small" style="font-weight:700;color:var(--text);margin:0 0 4px;">จำนวนนวด <span style="font-weight:600;color:var(--muted);">· จากสมุดลงงาน (อัตโนมัติ)</span></div>
         <div class="grid4 yellow massRow" style="grid-template-columns:1fr 1fr 1fr;">
-          <div class="m1"><label>1 เลดี้<br>600 ฿</label><input type="number" min="0" inputmode="numeric" class="solo" oninput="calc()"></div>
-          <div class="m2"><label>2 เลดี้<br>800 ฿</label><input type="number" min="0" inputmode="numeric" class="duo8" oninput="calc()"></div>
-          <div class="m3"><label>Happy Hour<br>1 เลดี้ 600 ฿</label><input type="number" min="0" inputmode="numeric" class="duo" oninput="calc()"></div>
+          <div class="m1"><label>1 เลดี้<br>600 ฿</label><input type="number" min="0" inputmode="numeric" class="solo" oninput="calc()" readonly></div>
+          <div class="m2"><label>2 เลดี้<br>800 ฿</label><input type="number" min="0" inputmode="numeric" class="duo8" oninput="calc()" readonly></div>
+          <div class="m3"><label>Happy Hour<br>1 เลดี้ 600 ฿</label><input type="number" min="0" inputmode="numeric" class="duo" oninput="calc()" readonly></div>
         </div>
         <div class="grid4" style="margin-top:8px;">
           <button class="mini" style="margin-top:0;" onclick="startWork(this)">▶️ เริ่มงาน</button>
@@ -804,7 +804,8 @@ function buildDays(){
           <label class="chk"><input type="checkbox" class="c-l60" onchange="calc()"> สาย +60 นาที</label>
         </div>
         <div class="field" style="margin-top:8px;"><label>ค่าปรับ (฿)</label><input type="number" min="0" class="pen" value="0" oninput="calc()"></div>
-        <button class="mini" onclick="lockDay(this)">✔️ ยืนยันวันนี้</button>
+        <button class="mini" onclick="lockDay(this)">✅ ถูกต้อง · ยืนยันวันนี้</button>
+        <button class="mini modifBtn" style="background:#fff;color:#dc2626;border:2px solid #dc2626;" onclick="demandeModif(this)">✏️ ไม่ถูกต้อง · ขอแก้ไข</button>
         <div class="lockedTag" style="display:none;">🔒 ล็อกวันนี้ถาวรแล้ว</div>
       </div>
     </div>`);
@@ -2381,6 +2382,26 @@ function inscAppliquer(d){
   try{ saveState(); }catch(e){}
   setTimeout(()=>{ const sel=shiftSel(); if(sel){ sel.dataset.prev=''; sel.value=d.sh; ev(sel); } try{ saveState(); }catch(e){} window.scrollTo(0,0); }, 300);
 }
+// ===== 🔒 MASSAGES REMPLIS PAR LE CAHIER : plus de saisie à la main · la fille VALIDE (✅) ou DEMANDE une modification (✏️ → accord du patron) =====
+function dayIso(day){ const dd=dayDate(+day.dataset.d); return dd?isoD(dd):''; }
+function massLibre(day){ try{ return localStorage.getItem('cah_libre_'+dayIso(day))==='1'; }catch(e){ return false; } }
+function massLecture(){
+  document.querySelectorAll('.day').forEach(day=>{
+    const libre=!!window.__BOSS || massLibre(day);
+    ['.solo','.duo8','.duo'].forEach(sel=>{ const i=day.querySelector(sel); if(!i || i.disabled) return; i.readOnly=!libre; i.style.background=libre?'#fef9c3':'#f3f4f6'; });
+    const m=day.querySelector('.modifBtn'); if(m) m.style.display=(day.dataset.locked==='1'||libre)?'none':'';
+  });
+}
+async function demandeModif(btn){
+  const day=btn.closest('.day'); if(!day || day.dataset.locked==='1') return;
+  if(!(await demanderPatron('cahier'))) return;
+  try{ localStorage.setItem('cah_libre_'+dayIso(day),'1'); }catch(e){}
+  massLecture(); const i=day.querySelector('.solo'); if(i) i.focus();
+  appScan('✏️ correction des massages autorisée par le patron ('+dayIso(day)+')');
+  alert('✅ หัวหน้าอนุมัติแล้ว — แก้จำนวนนวดได้ (ช่องสีเหลือง) แล้วกด ✅ ยืนยันวันนี้');
+}
+setInterval(massLecture,3000); setTimeout(massLecture,800);
+
 // ===== 🏠 EN HAUT DE L'APP : ▶️ เริ่มงาน / ⏹ เลิกงาน du jour · mes massages du jour (vérification) · ⚠️ erreur → autorisation du patron =====
 function tbJour(){ const iso=isoD(workToday()); return [...document.querySelectorAll('.day')].find(d=>{ const dd=dayDate(+d.dataset.d); return dd && isoD(dd)===iso; })||null; }
 function tbStart(){ const d=tbJour(); if(!d){ alert('📅 วันนี้ไม่อยู่ในสัญญาของคุณ'); return; } const b=d.querySelector('button[onclick^="startWork"]'); if(b && !b.disabled) startWork(b); setTimeout(tbMaj,800); }
@@ -2400,7 +2421,7 @@ function tbMaj(){
   document.getElementById('tbDate').textContent='('+fmtDate(workToday()).slice(0,5)+')';
 }
 async function tbErreur(){
-  const d=tbJour(); if(!d) return;
+  const d=tbJour(); if(!d) return; const mb=d.querySelector('.modifBtn'); if(mb) return demandeModif(mb);
   if(!(await demanderPatron('cahier'))) return;
   const iso=isoD(workToday()); try{ localStorage.setItem('cah_libre_'+iso,'1'); }catch(e){}
   ['.solo','.duo8','.duo'].forEach(sel=>{ const i=d.querySelector(sel); if(i){ i.readOnly=false; i.style.background='#fef9c3'; } });
