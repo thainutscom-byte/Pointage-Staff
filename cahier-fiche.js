@@ -16,12 +16,12 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const DEHORS = { out: 1, bf: 1 };
   const TH = { l1: '1 เลดี้', l2: '2 เลดี้', hh: 'แฮปปี้ฮาวร์', l3: '3 เลดี้', out: '🚗 นวดนอกร้าน', bf: '🍸 บาร์ไฟน์' };   // thaï seulement
-  // ce que compte UNE fille : 3 lady = les 2 premières en duo (2 lady, ou Happy Hour si début entre 16:00 et 20:00), la 3e en 1 lady
+  // ce que compte UNE fille : 3 lady = 1 massage (1 เลดี้) pour CHAQUE fille
   const hhA = t => { const h = new Date(t).getHours(); return h >= 16 && h < 20; };
   const egal = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
   function sonType(r, moi) {
     if (r.type !== 'l3') return r.type;
-    const i = r.names.findIndex(n => egal(n, moi)); return i >= 2 ? 'l1' : ((typeof r.hh === 'boolean' ? r.hh : hhA(r.start)) ? 'hh' : 'l2');
+    return 'l1';   // 👭👤 3 lady : 1 massage ENTIER pour chacune des 3 filles (1 เลดี้ chacune) — demande du patron 04/10
   }
 
   // journée d'aujourd'hui dans la fiche (même jour de travail que la tablette : change à 06:00)

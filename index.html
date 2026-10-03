@@ -374,7 +374,17 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
 </div>
 <div class="wrap">
   <h1>📋 แบบฟอร์มลงเวลาประจำวัน</h1>
-  <a href="cahier.html" style="display:block;text-align:center;text-decoration:none;background:#0f766e;color:#fff;font-weight:900;font-size:1.1rem;padding:14px;border-radius:14px;margin:0 0 12px;">🗒️ สมุดลงงาน</a>
+  <!-- 📌 toujours visible en haut : le cahier + ▶️ เริ่มงาน / ⏹️ เลิกงาน -->
+  <div id="topFix" style="position:sticky;top:0;z-index:40;background:var(--bg);padding:8px 50px 10px 0;margin:0 0 4px;">
+  <div id="tbSticky" style="position:sticky;top:0;z-index:60;background:var(--bg);padding:8px 52px 8px 0;margin:0 0 12px;">
+  <a href="cahier.html" style="display:block;text-align:center;text-decoration:none;background:#0f766e;color:#fff;font-weight:900;font-size:1.1rem;padding:14px;border-radius:14px;margin:0;">🗒️ สมุดลงงาน</a>
+  <div id="tbBar" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 0;">
+      <button type="button" id="tbStartBtn" onclick="tbStart()" style="border:none;border-radius:12px;padding:12px 6px;font-size:1.05rem;font-weight:900;background:#16a34a;color:#fff;">▶️ เริ่มงาน</button>
+      <button type="button" id="tbFinBtn" onclick="tbFin()" style="border:none;border-radius:12px;padding:12px 6px;font-size:1.05rem;font-weight:900;background:#6b7280;color:#fff;">⏹️ เลิกงาน</button>
+    </div>
+  </div>
+  
+  </div>
   <div id="todayBox" class="card" style="padding:12px;margin-bottom:12px;">
 
     <div style="margin-top:10px;font-weight:800;">📋 นวดของฉันวันนี้ <span id="tbDate" class="small" style="font-weight:600;"></span></div>
@@ -554,10 +564,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
   <div id="days"></div>
 
   <div class="card summary">
-    <div id="tbBar" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-      <button type="button" id="tbStartBtn" onclick="tbStart()" style="border:none;border-radius:12px;padding:12px 6px;font-size:1.05rem;font-weight:900;background:#16a34a;color:#fff;">▶️ เริ่มงาน</button>
-      <button type="button" id="tbFinBtn" onclick="tbFin()" style="border:none;border-radius:12px;padding:12px 6px;font-size:1.05rem;font-weight:900;background:#6b7280;color:#fff;">⏹️ เลิกงาน</button>
-    </div>
+    
     <div id="remBar" style="display:none;background:#ffedd5;color:#c2410c;border:2px solid #fb923c;border-radius:12px;padding:10px;margin-bottom:8px;text-align:center;font-weight:800;cursor:pointer;" onclick="goValidate()">⏰ ยังไม่ได้ยืนยันวันนี้ — กด ✔️ ยืนยันวันนี้</div>
     <div id="status" class="status ok" style="cursor:pointer;" onclick="toggleSummary()">🟢 สถานะปกติ <span id="toggleArrow">▼</span></div>
         <div class="btnrow" style="margin:0 0 6px;">
