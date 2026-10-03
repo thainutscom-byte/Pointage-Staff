@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>สมุดวันนี้</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* 🗒️ CAHIER DU JOUR pour les employées : chambres libres / occupées + massages du jour · SANS argent · thaï seulement */
+:root{--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--free:#16a34a;--free-bg:#dcfce7;--busy:#dc2626;--busy-bg:#fee2e2;--out:#2563eb;--out-bg:#dbeafe;--mine:#ccfbf1}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',system-ui,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 40px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+h1{font-size:1.35rem;margin:0}
+.clock{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.2rem}
+.rooms{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+#dehors{grid-template-columns:1fr}
+.room{border-radius:16px;padding:14px;border:2px solid;min-width:0}
+.room.free{background:var(--free-bg);border-color:var(--free)}
+.room.busy{background:var(--busy-bg);border-color:var(--busy)}
+.room.out{background:var(--out-bg);border-color:var(--out)}
+.rn{font-weight:700;font-size:1.15rem;display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.st{font-size:.9rem}
+.free .st{color:var(--free)} .busy .st{color:var(--busy)} .out .st{color:var(--out)}
+.who{font-weight:700;margin-top:6px;overflow-wrap:anywhere}
+.since{color:var(--muted);font-size:.9rem;margin-top:2px;font-variant-numeric:tabular-nums}
+.card{background:var(--card);border-radius:16px;padding:12px;box-shadow:0 1px 3px rgba(15,23,42,.08)}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:420px}
+th{text-align:left;color:var(--muted);font-weight:600;padding:8px 6px;border-bottom:2px solid var(--line)}
+td{padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+tr.cours td{background:var(--busy-bg)} tr.ann td{color:#94a3b8;text-decoration:line-through}
+.note{color:var(--muted);text-align:center;padding:14px}
+.back{display:block;text-align:center;margin-top:16px;color:var(--muted);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>🗒️ สมุดวันนี้</h1><span class="clock" id="clock">--:--</span></header>
+  <div class="rooms" id="rooms"></div>
+  <div class="rooms" id="dehors"></div>
+  <div class="card"><div class="tbl"><table>
+    <thead><tr><th>#</th><th>ชื่อ</th><th>เริ่ม</th><th>เสร็จ</th><th>ห้อง</th><th>นวด</th><th>ลูกค้า</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="7" class="note">⏳ กำลังโหลด…</td></tr></tbody>
+  </table></div></div>
+  <div class="note" id="maj"></div>
+  <a class="back" href="./">← กลับไปที่แอป</a>
+</div>
+<script>
+(function(){
+  const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+  const NB_CHAMBRES=3;
+  const TH={l1:'1 เลดี้',l2:'2 เลดี้',hh:'แฮปปี้ฮาวร์',l3:'3 เลดี้',out:'🚗 นวดนอกร้าน',bf:'🍸 บาร์ไฟน์'}, DEHORS={out:1,bf:1};
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const hm=t=>{ const d=new Date(t); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+  const mins=t=>Math.max(0,Math.round((Date.now()-t)/60000));
+  const jour=()=>{ const d=new Date(Date.now()-6*3600e3); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+  const moi=(()=>{ try{ const o=JSON.parse(localStorage.getItem('pointage_ident')||'null'); return String((o&&o.name)||'').trim().toLowerCase(); }catch(e){ return ''; } })();   // mon nom (même téléphone que l'app) → surligné
+  let ROWS=[];
+  function draw(){
+    const live=ROWS.filter(r=>!r.annule && !r.end);
+    let h=''; for(let k=1;k<=NB_CHAMBRES;k++){ const r=live.find(x=>!DEHORS[x.type] && +x.room===k);
+      h+= r ? '<div class="room busy"><div class="rn">ห้อง '+k+'<span class="st">🔴 ไม่ว่าง</span></div><div class="who">'+r.names.map(esc).join(' + ')+'</div><div class="since">▶ '+hm(r.start)+' · '+mins(r.start)+' นาที</div></div>'
+            : '<div class="room free"><div class="rn">ห้อง '+k+'<span class="st">🟢 ว่าง</span></div><div class="since">—</div></div>'; }
+    $('rooms').innerHTML=h;
+    $('dehors').innerHTML=live.filter(r=>DEHORS[r.type]).map(r=>'<div class="room out"><div class="rn">'+TH[r.type]+'<span class="st">นอกร้าน</span></div><div class="who">'+r.names.map(esc).join(' + ')+'</div><div class="since">▶ '+hm(r.start)+' · '+Math.floor(mins(r.start)/60)+' ชม. '+(mins(r.start)%60)+' นาที</div></div>').join('');
+    const L=ROWS.slice().sort((a,b)=>b.n-a.n);
+    $('rows').innerHTML=L.length ? L.map(r=>{ const mien=moi && r.names.some(n=>String(n).trim().toLowerCase()===moi);
+      return '<tr class="'+(r.annule?'ann':!r.end?'cours':'')+'"'+(mien&&!r.annule?' style="font-weight:700"':'')+'><td>'+r.n+'</td><td'+(mien?' style="background:var(--mine)"':'')+'>'+r.names.map(esc).join(' + ')+'</td><td>'+hm(r.start)+'</td><td>'+(r.annule?'❌':r.end?hm(r.end):(DEHORS[r.type]?'🚗':'🔴'))+'</td><td>'+(DEHORS[r.type]?'นอกร้าน':(r.room||''))+'</td><td>'+(TH[r.type]||esc(r.label||''))+'</td><td>'+(r.ref==='new'?'🆕':'🔁')+'</td></tr>'; }).join('')
+      : '<tr><td colspan="7" class="note">ยังไม่มีการนวดวันนี้</td></tr>';
+  }
+  async function charger(){
+    try{ const r=await fetch(API+'?cahierjour=1&d='+jour()+'&_='+Date.now()); const t=(await r.text()).trim();
+      if(t[0]!=='{'){ $('maj').textContent='⚠️ สมุดยังไม่เชื่อม · แจ้งหัวหน้า'; return; }
+      const j=JSON.parse(t); if(!j.ok) return; ROWS=j.rows||[]; draw(); $('maj').textContent='🔄 '+hm(Date.now());
+    }catch(e){ $('maj').textContent='📶 ไม่มีอินเทอร์เน็ต'; }
+  }
+  function tick(){ $('clock').textContent=hm(Date.now()); }
+  tick(); draw(); charger();
+  setInterval(()=>{ tick(); draw(); },20000); setInterval(charger,60000);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) charger(); });
+})();
+</script>
+</body>
+</html>

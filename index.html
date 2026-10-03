@@ -152,6 +152,36 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     </div>
   </div>
 </div>
+<div id="inscGate" style="display:none;position:fixed;inset:0;z-index:99997;background:var(--bg);overflow:auto;">
+  <div style="max-width:420px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top,0px)) 16px 40px;">
+    <div style="text-align:center;font-size:2.4rem;">🆕</div>
+    <h2 style="text-align:center;margin:4px 0 14px;font-size:1.3rem;">ลงทะเบียนพนักงานใหม่</h2>
+    <div class="card">
+      <label style="font-weight:700;">ชื่อเล่น (ภาษาอังกฤษ A-Z)</label>
+      <input id="iNom" placeholder="เช่น Noi" autocomplete="off" autocapitalize="words" style="width:100%;font-size:1.1rem;padding:10px;border-radius:12px;border:2px solid var(--border);">
+      <div id="iNomMsg" class="small" style="font-weight:700;color:var(--red);min-height:1.2em;"></div>
+      <label style="font-weight:700;display:block;margin-top:8px;">📱 เบอร์โทรศัพท์</label>
+      <input id="iTel" type="tel" inputmode="numeric" placeholder="08X XXX XXXX" style="width:100%;font-size:1.1rem;padding:10px;border-radius:12px;border:2px solid var(--border);">
+      <label style="font-weight:700;display:block;margin-top:10px;">💬 LINE ID</label>
+      <div style="display:flex;gap:8px;">
+        <input id="iLine" placeholder="เช่น noi.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="flex:1;min-width:0;font-size:1.1rem;padding:10px;border-radius:12px;border:2px solid var(--border);">
+        <button type="button" id="iLineOk" onclick="inscLine()" style="border:none;border-radius:12px;padding:0 16px;font-weight:800;font-size:1rem;background:#06c755;color:#fff;">✅ ยืนยัน</button>
+      </div>
+      <div id="iLineMsg" class="small" style="font-weight:700;min-height:1.2em;margin-top:4px;"></div>
+    </div>
+    <div class="card">
+      <label style="font-weight:700;">ประเภทสัญญา</label>
+      <select id="iCtr" onchange="inscPlan()" style="width:100%;font-size:1.05rem;padding:10px;border-radius:12px;"><option value="10">ฟรีแลนซ์ (10 วัน)</option><option value="30">รายเดือน (30 วัน)</option></select>
+      <label style="font-weight:700;display:block;margin-top:10px;">📅 วันที่เริ่มงาน</label>
+      <input id="iDeb" type="date" onchange="inscPlan()" style="width:100%;font-size:1.05rem;padding:10px;border-radius:12px;border:2px solid var(--border);">
+      <label style="font-weight:700;display:block;margin-top:12px;">🕐 ช่วงเวลาทำงาน</label>
+      <div id="iSh" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;"></div>
+    </div>
+    <div id="iMsg" style="text-align:center;font-weight:800;color:var(--red);min-height:1.4em;margin:6px 0;"></div>
+    <button type="button" id="iGo" onclick="inscValider()" style="width:100%;background:var(--green);color:#fff;border:none;padding:16px;border-radius:14px;font-size:1.15rem;font-weight:900;">✅ ต่อไป</button>
+    <button type="button" onclick="inscFermer(false)" style="width:100%;margin-top:10px;background:#e5e7eb;color:#111827;border:none;padding:12px;border-radius:12px;font-size:1rem;font-weight:700;">← กลับ</button>
+  </div>
+</div>
 <div id="essaiGate" style="display:none;position:fixed;inset:0;z-index:99995;background:var(--bg);overflow:auto;">
   <div style="max-width:420px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top,0px)) 16px 40px;">
     <div class="card" style="text-align:center;border:3px solid #d97706;">
@@ -316,6 +346,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
 </div>
 <div class="wrap">
   <h1>📋 แบบฟอร์มลงเวลาประจำวัน</h1>
+  <a href="cahier-jour.html" style="display:block;text-align:center;text-decoration:none;background:#0f766e;color:#fff;font-weight:900;font-size:1.1rem;padding:14px;border-radius:14px;margin:0 0 12px;">🗒️ สมุดวันนี้ · ดูห้องว่าง</a>
 
   <div class="card">
     <div id="nextCycleBox" style="display:none;background:var(--yellow);border:2px solid #f59e0b;border-radius:12px;padding:12px;margin-bottom:12px;color:var(--text);">
@@ -328,7 +359,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     </div>
     <div class="field"><label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label><input id="name" placeholder="เช่น Noi, Ploy, Mint" autocapitalize="words" autocomplete="off" oninput="checkNameEn()"><div id="nameWarn" class="small" style="display:none;color:var(--red);font-weight:700;margin-top:4px;">⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z) เท่านั้น</div></div>
     <div class="field"><label>เบอร์โทรศัพท์</label><input id="phone" placeholder="0X XXX XXXX"></div>
-    <div class="field"><label>💬 LINE ID <span style="font-weight:400;font-size:.8rem;">(หัวหน้าใช้ติดต่อคุณทาง LINE)</span></label><input id="lineId" placeholder="เช่น noi.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" onchange="lineIdSave()"><div id="lineIdMsg" class="small" style="margin-top:4px;"></div></div>
+    <div class="field"><label>💬 LINE ID <span style="font-weight:400;font-size:.8rem;">(หัวหน้าใช้ติดต่อคุณทาง LINE)</span></label><div style="display:flex;gap:8px;"><input id="lineId" placeholder="เช่น noi.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" onchange="lineIdSave()" style="flex:1;min-width:0;"><button type="button" onclick="lineIdSave(true)" style="border:none;border-radius:10px;padding:0 14px;font-weight:800;background:#06c755;color:#fff;">✅ ยืนยัน</button></div><div id="lineIdMsg" class="small" style="margin-top:4px;"></div></div>
     <div class="field">
       <label>QR Code ธนาคาร (พร้อมเพย์)</label>
       <div><label class="fileBtn"><input type="file" accept="image/*" id="qrFile" style="display:none" onchange="handleQrUpload(event); fileName(this)">📷 เลือกรูป QR Code</label><span class="fileName small">ยังไม่ได้เลือกไฟล์</span></div>
@@ -2257,14 +2288,65 @@ async function actualiser(){
 setInterval(()=>{ const b=document.getElementById('btnRefresh'); if(b) b.style.display = window.__BOSS ? 'none' : ''; }, 1000);
 
 // 🆕 nouvelle employée (QR code) : surnom + téléphone d'abord, pour que le patron sache qui demande
-async function nouvelleIdentite(){
-  let n=(prompt('🆕 ชื่อเล่น (ภาษาอังกฤษ A-Z)', document.getElementById('name').value||'')||'').trim(); if(!n) return false;
-  if(!/^[A-Za-z][A-Za-z .'-]*$/.test(n)){ alert('⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z)'); return false; }
-  let t=(prompt('📱 เบอร์โทรศัพท์ (10 หลัก)', document.getElementById('phone').value||'')||'').replace(/\D/g,''); if(!t) return false;
-  if(!/^0[689]\d{8}$/.test(t)){ alert('⚠️ เบอร์โทรไม่ถูกต้อง (06/08/09 + 8 หลัก)'); return false; }
-  document.getElementById('name').value=n.replace(/\b\w/g,c=>c.toUpperCase()); document.getElementById('phone').value=t; try{ saveState(); }catch(e){}
-  const l=(prompt('💬 LINE ID ของคุณ (ถ้ามี)', '')||'').trim(); if(l){ document.getElementById('lineId').value=l; setTimeout(()=>lineIdSave(true), 500); }
-  return true;
+// ===== 🆕 INSCRIPTION (nouvelle employée) : nom (jamais 2 fois le même) · téléphone · LINE (✅) · contrat · date · ช่วงเวลา → puis l'app =====
+let inscSh='', inscLineOk=false, inscRes=null;
+function nouvelleIdentite(){
+  return new Promise(res=>{ inscRes=res; const $i=id=>document.getElementById(id);
+    $i('iNom').value=$i('name').value||''; $i('iTel').value=$i('phone').value||''; $i('iLine').value=$i('lineId').value||'';
+    $i('iCtr').value=$i('contract').value||'10'; if(!$i('iDeb').value) $i('iDeb').value=isoD(workToday()); $i('iDeb').min=isoD(workToday());
+    ['iNomMsg','iLineMsg','iMsg'].forEach(k=>$i(k).textContent=''); inscSh=''; inscLineOk=false;
+    $i('inscGate').style.display='block'; document.body.style.overflow='hidden'; inscPlan(); });
+}
+function inscFermer(d){ document.getElementById('inscGate').style.display='none'; const r=inscRes; inscRes=null; if(r) r(d); }
+function inscLine(){
+  const el=document.getElementById('iLine'), m=document.getElementById('iLineMsg'), v=(el.value||'').trim().replace(/^@/,'').toLowerCase(); el.value=v;
+  if(!/^[a-z0-9._-]{3,20}$/.test(v)){ inscLineOk=false; m.style.color='var(--red)'; m.textContent='⚠️ LINE ID ไม่ถูกต้อง (a-z 0-9 . - _)'; return false; }
+  inscLineOk=true; m.style.color='var(--green)'; m.textContent='✅ LINE ID: '+v; return true;
+}
+document.addEventListener('input', e=>{ if(e.target && e.target.id==='iLine'){ inscLineOk=false; document.getElementById('iLineMsg').textContent=''; } });
+function inscOpts(n){ return [...document.getElementById(n===30?'shiftGlobalMonthly':'shiftGlobal').options].filter(o=>o.value).map(o=>[o.value, o.dataset.base||o.value]); }
+async function inscPlan(){
+  const n=+document.getElementById('iCtr').value, deb=document.getElementById('iDeb').value, B=document.getElementById('iSh');
+  const L=inscOpts(n); if(!L.some(x=>x[0]===inscSh)) inscSh='';
+  const dessiner=res=>{ B.innerHTML=''; const cap=deb?capPeriode(deb,n):5;
+    L.forEach(([v,lab])=>{ const x=(res||{})[v]||{}, libre=Math.max(0,cap-(+x.max||0)), plein=(x.v && String(x.v).startsWith('plein')) || (res && libre<=0), bad=!!x.v || plein;
+      const b=document.createElement('button'); b.type='button';
+      b.style.cssText='border-radius:12px;padding:12px 6px;font-weight:800;font-size:1rem;line-height:1.35;border:3px solid '+(inscSh===v?'#16a34a':'var(--border)')+';background:'+(inscSh===v?'#dcfce7':'#fff')+';color:#111827;'+(bad?'opacity:.45;':'');
+      b.innerHTML=lab+'<br><span style="font-size:.8rem;font-weight:700;color:'+(bad?'var(--red)':'var(--green)')+'">'+(!res?'':plein?'🔴 เต็ม':x.v?'⛔ เลือกไม่ได้':'✅ ว่าง '+libre+'/'+cap)+'</span>';
+      b.disabled=bad; b.onclick=()=>{ inscSh=v; dessiner(res); document.getElementById('iMsg').textContent=''; };
+      B.appendChild(b); }); };
+  dessiner(null);
+  if(!deb) return;
+  try{ const nom=(document.getElementById('iNom').value||'').trim()||'__resa__', tel=(document.getElementById('iTel').value||'').replace(/\D/g,'')||'0';
+    const t=await readTxt(await fetch(SHEET_URL+'?plan=1&emp='+encodeURIComponent(nom)+'&tel='+tel+'&s='+deb+'&n='+n+'&sh='+encodeURIComponent(L.map(x=>x[0]).join(','))+'&_='+Date.now()));
+    if(t[0]==='{') dessiner(JSON.parse(t)); }catch(e){}
+}
+async function inscValider(){
+  const $i=id=>document.getElementById(id), M=$i('iMsg'), go=$i('iGo');
+  const n=($i('iNom').value||'').trim().replace(/\s+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()), t=($i('iTel').value||'').replace(/\D/g,'');
+  $i('iNomMsg').textContent='';
+  if(!/^[A-Za-z][A-Za-z .'-]*$/.test(n)){ $i('iNomMsg').textContent='⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z)'; $i('iNom').focus(); return; }
+  if(!/^0[689]\d{8}$/.test(t)){ M.textContent='⚠️ เบอร์โทรไม่ถูกต้อง (06/08/09 + 8 หลัก)'; $i('iTel').focus(); return; }
+  if(($i('iLine').value||'').trim() && !inscLineOk && !inscLine()) { M.textContent='⚠️ LINE ID ไม่ถูกต้อง'; return; }
+  if(!$i('iDeb').value){ M.textContent='⚠️ เลือกวันที่เริ่มงาน'; return; }
+  if(!inscSh){ M.textContent='⚠️ เลือกช่วงเวลาทำงาน'; return; }
+  // 👯 jamais 2 filles avec le même nom (le cahier de la tablette se fait par nom)
+  go.disabled=true; go.textContent='⏳ …';
+  try{ const r=await readTxt(await fetch(SHEET_URL+'?nomlibre='+encodeURIComponent(n)+'&tel='+t+'&_='+Date.now()));
+    if(r[0]==='{' && JSON.parse(r).libre===false){ $i('iNomMsg').textContent='⚠️ ชื่อ "'+n+'" มีคนใช้แล้ว — เพิ่มตัวอักษร เช่น "'+n+' B"'; $i('iNom').focus(); return; } }
+  catch(e){} finally{ go.disabled=false; go.textContent='✅ ต่อไป'; }
+  $i('iNom').value=n;
+  inscFermer({n, t, l:inscLineOk?($i('iLine').value||'').trim():'', ctr:$i('iCtr').value, deb:$i('iDeb').value, sh:inscSh});
+}
+// après l'accord du patron : la fiche est remplie (nom, téléphone, LINE, contrat, date, ช่วงเวลา) puis l'app s'affiche
+function inscAppliquer(d){
+  const $i=id=>document.getElementById(id), ev=(el,t)=>el.dispatchEvent(new Event(t||'change'));
+  $i('name').value=d.n; $i('phone').value=d.t; ev($i('name'),'input');
+  if($i('contract').value!==d.ctr){ $i('contract').value=d.ctr; ev($i('contract')); }
+  $i('startDate').value=d.deb; ev($i('startDate'));
+  if(d.l){ $i('lineId').value=d.l; setTimeout(()=>lineIdSave(true), 400); }
+  try{ saveState(); }catch(e){}
+  setTimeout(()=>{ const sel=shiftSel(); if(sel){ sel.dataset.prev=''; sel.value=d.sh; ev(sel); } try{ saveState(); }catch(e){} window.scrollTo(0,0); }, 300);
 }
 // ===== 👑 AUTORISATION À DISTANCE : l'action patron envoie une demande → le patron autorise sur SA page patron =====
 //   (si le serveur n'a pas encore le fichier « Autorisation », l'ancien code du jour reste possible)
@@ -2550,7 +2632,7 @@ function reglesFermer(){ if(rgOblig) return; document.getElementById('reglesGate
 
 // 👋 ACCUEIL (fiche vide) : nouvelle employée → code du patron ; déjà inscrite → 4 derniers chiffres du téléphone → fiche récupérée
 let wMode='';
-function wChoix(m){ if(m==='new'){ nouvelleIdentite().then(okId=>okId && demanderPatron('nouvelle')).then(ok=>{ if(ok){ appScan('🆕 nouvelle employée → autorisée par le patron'); wFermer(); document.getElementById('name').focus(); } }); return; } wMode=m; document.getElementById('wStep1').style.display='none'; document.getElementById('wStep2').style.display='block';
+function wChoix(m){ if(m==='new'){ nouvelleIdentite().then(d=>d ? demanderPatron('nouvelle').then(ok=>ok && d) : false).then(d=>{ if(d){ appScan('🆕 nouvelle employée → autorisée par le patron : '+d.n+' · '+d.sh); wFermer(); inscAppliquer(d); } }); return; } wMode=m; document.getElementById('wStep1').style.display='none'; document.getElementById('wStep2').style.display='block';
   document.getElementById('wLabel').textContent = m==='new' ? '🔐 กรอกรหัสจากหัวหน้า' : m==='essai' ? '🧪 กรอกรหัสทดลองงาน (จากหัวหน้า)' : '📱 กรอกเลข 4 ตัวท้ายของเบอร์โทรศัพท์';
   document.getElementById('wInput').value=''; document.getElementById('wMsg').textContent=''; document.getElementById('wNoms').innerHTML=''; document.getElementById('wInput').focus(); }
 function wRetour(){ document.getElementById('wStep1').style.display='block'; document.getElementById('wStep2').style.display='none'; }

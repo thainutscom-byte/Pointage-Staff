@@ -298,8 +298,17 @@ function draw(){
     S.appendChild(b);
   });
 }
+// 👯 jamais 2 filles avec le même surnom (le cahier de la tablette se fait par nom) → demander un autre nom (ex. « Noi B »)
+async function nomLibre(){
+  const n=$('name').value.trim(), t=$('phone').value.replace(/\D/g,'');
+  try{ const r=await readTxt(await fetch(API+'?nomlibre='+encodeURIComponent(n)+'&tel='+t+'&_='+Date.now()));
+    if(r[0]==='{' && JSON.parse(r).libre===false){ $('nameWarn').textContent='⚠️ ชื่อ "'+n+'" มีคนใช้แล้ว — เพิ่มตัวอักษร เช่น "'+n+' B"'; $('nameWarn').style.display='block';
+      $('name').focus(); window.scrollTo({top:$('name').getBoundingClientRect().top+scrollY-120, behavior:'smooth'}); return false; } }catch(e){}
+  $('nameWarn').textContent='⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z)'; return true;
+}
 async function reserver(){
   if($('go').disabled) return;
+  if(!(await nomLibre())) return;
   if(MODE==='essai') return reserverEssai();
   const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
   const p={type:'cycle', booking:true, age:ageVal(), naissance:dnIso(), th:ctl()+parTh(), parrain:parValide(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), sh:choix,
