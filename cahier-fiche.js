@@ -15,6 +15,7 @@
   const hm = t => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const DEHORS = { out: 1, bf: 1 };
+  const TH = { l1: '1 เลดี้', l2: '2 เลดี้', hh: 'แฮปปี้ฮาวร์', l3: '3 เลดี้', out: '🚗 นวดนอกร้าน', bf: '🍸 บาร์ไฟน์' };   // thaï seulement
   // ce que compte UNE fille : 3 lady = les 2 premières en duo (2 lady, ou Happy Hour si début entre 16:00 et 20:00), la 3e en 1 lady
   const hhA = t => { const h = new Date(t).getHours(); return h >= 16 && h < 20; };
   const egal = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
@@ -49,16 +50,16 @@
       const etat = r.annule ? '❌' : r.end ? hm(r.end) : (DEHORS[r.type] ? '🚗 นอกร้าน' : '🔴 กำลังนวด');
       return '<tr style="' + (r.annule ? 'color:#9ca3af;text-decoration:line-through;' : mien ? 'background:#ccfbf1;font-weight:700;' : !r.end ? 'background:#fee2e2;' : '') + '">'
         + '<td>' + r.n + '</td><td>' + r.names.map(esc).join(' + ') + '</td><td>' + hm(r.start) + '</td><td>' + etat + '</td>'
-        + '<td>' + (DEHORS[r.type] ? 'นอกร้าน' : (r.room || '')) + '</td><td>' + esc(r.label) + '</td><td>' + (r.ref === 'new' ? '🆕' : '🔁') + '</td></tr>';
+        + '<td>' + (DEHORS[r.type] ? 'นอกร้าน' : (r.room || '')) + '</td><td>' + esc(TH[r.type] || r.label) + '</td><td>' + (r.ref === 'new' ? '🆕' : '🔁') + '</td></tr>';
     }).join('');
     c.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;">'
-      + '<b style="font-size:1.1rem;">🗒️ สมุดวันนี้ · Cahier du jour</b><span class="small">🔄 ' + hm(Date.now()) + '</span></div>'
-      + '<div style="margin:8px 0;padding:8px 10px;border-radius:10px;background:#f0fdfa;font-weight:700;">👤 ของฉัน: 1 เลดี้ <b>' + nb('l1') + '</b> · 2 เลดี้ <b>' + nb('l2') + '</b> · Happy Hour <b>' + nb('hh') + '</b>'
+      + '<b style="font-size:1.1rem;">🗒️ สมุดวันนี้</b><span class="small">🔄 ' + hm(Date.now()) + '</span></div>'
+      + '<div style="margin:8px 0;padding:8px 10px;border-radius:10px;background:#f0fdfa;font-weight:700;">👤 ของฉัน: 1 เลดี้ <b>' + nb('l1') + '</b> · 2 เลดี้ <b>' + nb('l2') + '</b> · แฮปปี้ฮาวร์ <b>' + nb('hh') + '</b>'
       + (nb('out') + nb('bf') ? ' · นอกร้าน <b>' + (nb('out') + nb('bf')) + '</b>' : '') + '</div>'
       + (rows.length ? '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:.85rem;min-width:420px;">'
-        + '<thead><tr style="text-align:left;color:#6b7280;"><th>N°</th><th>ชื่อ</th><th>เริ่ม</th><th>เสร็จ</th><th>ห้อง</th><th>นวด</th><th>ลูกค้า</th></tr></thead>'
+        + '<thead><tr style="text-align:left;color:#6b7280;"><th>#</th><th>ชื่อ</th><th>เริ่ม</th><th>เสร็จ</th><th>ห้อง</th><th>นวด</th><th>ลูกค้า</th></tr></thead>'
         + '<tbody>' + lignes + '</tbody></table></div>'
-        : '<div class="small">ยังไม่มีการนวดในสมุดวันนี้ · aucun massage pour l\'instant</div>');
+        : '<div class="small">ยังไม่มีการนวดในสมุดวันนี้</div>');
     c.querySelectorAll('td,th').forEach(x => { x.style.padding = '6px 6px'; x.style.borderBottom = '1px solid #e5e7eb'; x.style.whiteSpace = 'nowrap'; });
     c.hidden = false; c.dataset.ok = '1';
   }
@@ -67,7 +68,7 @@
   function erreur(msg) {
     const c = carte(); if (!c) return;
     if (c.dataset.ok === '1' && !c.hidden) { const s = c.querySelector('.cahErr') || c.appendChild(Object.assign(document.createElement('div'), { className: 'cahErr small' })); s.textContent = msg; s.style.color = '#b91c1c'; return; }
-    c.innerHTML = '<b style="font-size:1.1rem;">🗒️ สมุดวันนี้ · Cahier du jour</b><div class="small" style="color:#b91c1c;font-weight:700;margin-top:6px;">' + esc(msg) + '</div>';
+    c.innerHTML = '<b style="font-size:1.1rem;">🗒️ สมุดวันนี้</b><div class="small" style="color:#b91c1c;font-weight:700;margin-top:6px;">' + esc(msg) + '</div>';
     c.hidden = false;
   }
   // ---------- la fiche se remplit avec le cahier ----------
@@ -87,7 +88,7 @@
     let note = day.querySelector('.cahNote');
     if (!note) { note = document.createElement('div'); note.className = 'cahNote small'; note.style.cssText = 'color:#0f766e;font-weight:700;margin:4px 0;';
       const s = day.querySelector('.solo'); const box = s && s.closest('.grid4'); if (box) box.parentNode.insertBefore(note, box.nextSibling); }
-    note.textContent = '🔒 🗒️ จากสมุดลงงาน ' + hm(Date.now()) + ' · แก้เองไม่ได้ · rempli par le cahier (non modifiable)';
+    note.textContent = '🔒 🗒️ จากสมุดลงงาน ' + hm(Date.now()) + ' · แก้เองไม่ได้';
   }
 
   let dernier = 0, enCours = false;
@@ -99,10 +100,10 @@
     enCours = true; dernier = Date.now();
     try {
       const t = await readTxt(await fetch(SHEET_URL + '?cahierjour=1&d=' + isoJ(workToday()) + '&_=' + Date.now()));
-      if (t[0] !== '{') { erreur('⚠️ สมุดยังไม่เชื่อม · le serveur ne connaît pas le cahier (script Cahier / Nouvelle version ?) — « ' + t.slice(0, 40) + ' »'); return; }
+      if (t[0] !== '{') { erreur('⚠️ สมุดยังไม่เชื่อม · แจ้งหัวหน้า (' + t.slice(0, 30) + ')'); return; }
       const j = JSON.parse(t); if (!j.ok) { erreur('⚠️ ' + t.slice(0, 60)); return; }
       afficher(j.rows || []); remplir(j.rows || []);
-    } catch (e) { erreur('📶 ไม่มีอินเทอร์เน็ต · pas de connexion (' + String(e && e.message || e).slice(0, 40) + ')'); dernier = 0; } finally { enCours = false; }
+    } catch (e) { erreur('📶 ไม่มีอินเทอร์เน็ต'); dernier = 0; } finally { enCours = false; }
   }
   // 🏁 « ⏹ เลิกงาน » → la tablette du salon affiche « journée terminée »
   if (typeof finishWork === 'function' && !finishWork.__cah) {
