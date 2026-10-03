@@ -327,7 +327,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   // 💆 tarifs du salon · dernier nombre = nombre de filles exigé · l'option 1 à 5 est une simple info (ne change pas le prix)
   //   [code, nom, prix (null = à confirmer), filles exigées (0 = 1 ou 2), sortie du salon (pas de chambre), durée maximum en minutes]
   const TYPES=[['l1','1 lady',600,1],['l2','2 lady',800,2],['hh','Happy Hour',600,2],['l3','3 lady (2+1)',null,3],
-               ['out','🚗 Massage outside',null,0,true,120],['bf','🍸 Barfine',null,0,true,0]];
+               ['out','🚗 Massage outside',null,0,true,120],['bf','🍸 Barfine',3000,0,true,0]];
   const typ=c=>TYPES.find(x=>x[0]===c);
   // 🕓 Happy Hour de 16:00 à 20:00 : 2 filles = Happy Hour · le reste du temps : 2 lady
   const HH_DEB=16, HH_FIN=20;
@@ -336,11 +336,12 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   const dehors=r=>{ const t=typ(r.type); return !!(t && t[4]); };
   const baht=v=>v==null?'— ฿':v.toLocaleString('en-US')+' ฿';
   // 💰 tarif selon l'heure de DÉBUT : 1 lady 600 · 2 filles 800 (Happy Hour 16:00–20:00 : 600)
-  //    3 lady = 2 filles + 1 lady · Massage outside (2 h) = tarif double · Barfine : pas encore de tarif
+  //    3 lady = 2 filles + 1 lady · Massage outside (2 h) = 1600 (1 fille) / 3000 (2 filles) · Barfine = 3000 par fille
   const hhA=t=>{ const h=new Date(t).getHours(); return h>=HH_DEB && h<HH_FIN; };
   const prix=r=>{ const t=typ(r.type); if(!t) return 0; const deux=hhA(r.start)?600:800;
     if(r.type==='l3') return deux+600;
-    if(r.type==='out') return 2*((r.names||[]).length>=2?deux:600);
+    if(r.type==='out') return (r.names||[]).length>=2?3000:1600;   // 2 h : 1 fille 1600 · 2 filles 3000
+    if(r.type==='bf') return 3000*Math.max(1,(r.names||[]).length);
     return t[2]; };
   const PAY=[['cash','💵 เงินสด','Espèces'],['qr','📱 โอน / QR','Virement']];
   const REF=[['old','🔁 ลูกค้าเก่า','BEFORE (déjà venu)'],['new','🆕 ลูกค้าใหม่','NEW CLIENT']];
