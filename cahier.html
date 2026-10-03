@@ -46,7 +46,9 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 /* 🛏️ les chambres toujours sur UNE seule ligne (3 colonnes) · la case « ยังไม่จ่าย » en dessous sur toute la largeur */
 #rooms{grid-template-columns:repeat(var(--nr,3),minmax(0,1fr));gap:8px}
 #rooms .room.unpaid{grid-column:1/-1;min-height:0}
-#cQty{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px} #cQty .chip{min-width:0;width:100%;padding-left:4px;padding-right:4px}
+#cType{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px} #cType .chip{min-width:0;width:100%;padding-left:4px;padding-right:4px;white-space:nowrap;font-size:.95rem}
+#cQty{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px} #cQty .chip{min-width:0;width:100%;padding-left:2px;padding-right:2px;white-space:nowrap;font-size:.9rem}
+#cNames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px} #cNames .chip{min-width:0;width:100%;padding-left:4px;padding-right:4px} #cNames .chip[data-occupee]{opacity:.35;filter:grayscale(1)} #cNames .note{grid-column:1/-1}
 #cRooms{display:grid;grid-template-columns:repeat(var(--nr,3),minmax(0,1fr));gap:8px} #cRooms .chip{min-width:0;width:100%}
 @media (max-width:560px){
   #rooms .room:not(.unpaid){padding:9px 8px;min-height:112px}
@@ -334,7 +336,11 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   const DEMO_STAFF=['Noi','Ploy','Mint','Fon','Joy','Bee','Nok','Aom'];
   const DEMO_TEL={Noi:'0812345678',Ploy:'0623456789',Mint:'0934567890',Fon:'0845678901',Joy:'0656789012',Bee:'0967890123',Nok:'0878901234',Aom:'0689012345'};
   // 👩 vraies filles en contrat aujourd'hui (onglet Employés) + empreinte de leur code (4 premiers chiffres du téléphone)
-  let STAFF=[], HASH={}, FINS=[], VENUES=new Set();
+  let STAFF=[], HASH={}, FINS=[], VENUES=new Set(), SHIFT={};
+  // 🕐 noms classés et colorés par horaire (contrat en cours) · même ordre que les horaires du salon
+  const HOR=[['10h-16h','10–16','#fbbf24'],['13h-19h','13–19','#4ade80'],['16h-22h','16–22','#60a5fa'],['19h-01h','19–01','#a78bfa'],['21h-03h','21–03','#f472b6'],['09:00-17:00','09–17','#fb923c'],['17:00-01:00','17–01','#22d3ee']];
+  const DEMO_SHIFT={Noi:'13h-19h',Ploy:'13h-19h',Mint:'16h-22h',Fon:'16h-22h',Joy:'19h-01h',Bee:'10h-16h',Nok:'10h-16h',Aom:'21h-03h'};
+  const horDe=n=>{ const k=(DEMO?DEMO_SHIFT:SHIFT)[n]; return HOR.find(h=>h[0]===k)||null; };
   function fnv(s){ const b=new TextEncoder().encode(s); let h=0x811c9dc5; for(let i=0;i<b.length;i++){ h^=b[i]; h=Math.imul(h,0x01000193)>>>0; } return h.toString(16); }
   const codeOk=(n,v)=> v===codeJour() || (DEMO ? v===String(DEMO_TEL[n]||'').slice(0,4) : (!!HASH[n] && fnv(v+'|'+String(n).toLowerCase())===HASH[n]));
   // 👑 code Boss = date du jour JJ/MM/AA (6 chiffres) → 03/10/2026 = 031026
@@ -396,7 +402,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   const save=()=>{ if(DEMO) return; S.rows.forEach(r=>{ const k=cle(r), j=sansU(r); if(SNAP[k]!==j){ r.u=Date.now(); SNAP[k]=j; } }); lsS('cahier_'+JOUR,S); enfiler(); };
   snapAll();
   FINS=lsG('cahier_fins_'+JOUR,[]); VENUES=new Set(lsG('cahier_venues_'+JOUR,[]));
-  { const st=lsG('cahier_staff_'+JOUR,null); if(st){ STAFF=st.map(x=>x.n); st.forEach(x=>HASH[x.n]=x.h); } }
+  { const st=lsG('cahier_staff_'+JOUR,null); if(st){ STAFF=st.map(x=>x.n); st.forEach(x=>{ HASH[x.n]=x.h; SHIFT[x.n]=x.s||''; }); } }
 
   const annule=r=>!!(r.annul && r.annul.etat==='ok');
   const actifs=()=>S.rows.filter(r=>!annule(r));
@@ -473,7 +479,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       const t=await lireTxt(await fetch(SHEET_URL+'?cahtab=1&d='+JOUR+'&_='+Date.now())); if(t[0]!=='{') return;
       const j=JSON.parse(t); if(!j.ok) return;
       lsS('cahier_staff_'+JOUR,j.staff||[]);
-      if(!DEMO){ STAFF=(j.staff||[]).map(x=>x.n); HASH={}; (j.staff||[]).forEach(x=>HASH[x.n]=x.h); FINS=j.fins||[]; lsS('cahier_fins_'+JOUR,FINS);
+      if(!DEMO){ STAFF=(j.staff||[]).map(x=>x.n); HASH={}; SHIFT={}; (j.staff||[]).forEach(x=>{ HASH[x.n]=x.h; SHIFT[x.n]=x.s||''; }); FINS=j.fins||[]; lsS('cahier_fins_'+JOUR,FINS);
         VENUES=new Set((j.staff||[]).filter(x=>x.v).map(x=>x.n.toLowerCase())); lsS('cahier_venues_'+JOUR,[...VENUES]); }
       const cible=DEMO?VRAI:S;
       if(cible) fusionner(cible, j.rows||[], j.events||[]);
@@ -556,7 +562,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   function chip(label,sub,on,dis,attr,col){ return '<button class="chip'+(on?' on':'')+'" type="button" '+(col?'style="--c:'+col+'" ':'')+attr+(dis?' disabled':'')+'>'+label+(sub?'<small>'+sub+'</small>':'')+'</button>'; }
   function drawForm(){
     const bn=busyNames();
-    $('cNames').innerHTML=(STAFF.length?'':'<p class="note">⚠️ ยังไม่มีรายชื่อพนักงานวันนี้ — ตรวจอินเทอร์เน็ต</p>')+noms().map(s=>chip(esc(s), bn.has(s)?'กำลังนวด':finie(s)?'🏁 จบงานแล้ว':(S.extra||[]).includes(s)?'➕ วันนี้':'', F.names.includes(s), bn.has(s)||finie(s), 'data-name="'+esc(s)+'"', ESSAI.includes(s)?'#fde047':'#2dd4bf')).join('')
+    $('cNames').innerHTML=(STAFF.length?'':'<p class="note">⚠️ ยังไม่มีรายชื่อพนักงานวันนี้ — ตรวจอินเทอร์เน็ต</p>')+noms().map((s,i)=>({s,i,h:horDe(s)})).sort((a,b)=>(a.h?HOR.indexOf(a.h):99)-(b.h?HOR.indexOf(b.h):99) || (ESSAI.includes(a.s)-ESSAI.includes(b.s)) || a.s.localeCompare(b.s)).map(({s,h})=>chip(esc(s), bn.has(s)?'กำลังนวด':finie(s)?'🏁 จบงานแล้ว':S.caissiere===s?'💰 แคชเชียร์':h?'🕐 '+h[1]:(S.extra||[]).includes(s)?'➕ วันนี้':'', F.names.includes(s), false, 'data-name="'+esc(s)+'"'+(bn.has(s)?' data-occupee="1"':''), ESSAI.includes(s)?'#e5e7eb':h?h[2]:'#94a3b8')).join('')
       +chip('➕ ชื่ออื่น','รหัสหัวหน้า',false,false,'data-addname="1"','#64748b');
     let rh=''; for(let k=1;k<=S.rooms;k++){ const r=roomOf(k); rh+=chip('ห้อง '+k, r?'🔴 '+r.names.map(esc).join('+'):'🟢 ว่าง', F.room===k, !!r, 'data-room="'+k+'"', '#34d399'); }
     $('cRooms').innerHTML=rh; $('cRooms').style.setProperty('--nr', S.rooms);
@@ -568,7 +574,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     const auto=F.special?null:F.type;
     const formule=auto ? chip(TH[auto], auto==='l3'?(hh?TH.hh:TH.l2)+' + '+TH.l1:auto==='hh'?'2 ชื่อ · 16:00–20:00':nb+' ชื่อ', true, false, 'data-auto="1"', COUL[auto])
                        : chip(F.special?'—':'👆 เลือกชื่อก่อน', F.special?'':'1 ชื่อ = 1 เลดี้ · 2 ชื่อ = '+(hh?TH.hh:TH.l2)+' · 3 ชื่อ = 3 เลดี้', false, true, 'data-auto="1"', '#94a3b8');
-    $('cType').innerHTML=formule+['out','bf'].map(k=>chip(TH[k], k==='out'?'สูงสุด 2 ชม. · ไม่ใช้ห้อง':'ไม่ใช้ห้อง', F.special===k, false, 'data-special="'+k+'"', COUL[k])).join('');
+    $('cType').innerHTML=formule+['out','bf'].map(k=>chip(k==='out'?'🚗 นอกร้าน':TH[k], k==='out'?'สูงสุด 2 ชม.':'ไม่ใช้ห้อง', F.special===k, false, 'data-special="'+k+'"', COUL[k])).join('');
     $('cQty').innerHTML=[1,2,3,4,5].map(q=>chip('OP'+q, '', F.qty===q, false, 'data-qty="'+q+'"', '#38bdf8')).join('');
     $('total').textContent='';
     $('cRef').innerHTML=REF.map(p=>chip(p[1],'',F.ref===p[0],false,'data-ref="'+p[0]+'"', p[0]==='new'?'#fbbf24':'#c084fc')).join('');
@@ -591,6 +597,8 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       demanderCode('➕ ชื่ออื่น', 'รหัสหัวหน้า', v=>v===codeJour(), 6).then(ok=>{ if(!ok) return;
         $('addNIn').value=''; $('addN').hidden=false; setTimeout(()=>$('addNIn').focus(),50); });
       return; }
+    if(b.dataset.occupee){ const s=b.dataset.name, r=live().find(x=>x.names.includes(s));
+      toast('⛔ '+s+' กำลังนวด'+(r?(dehors(r)?' (นอกร้าน)':' (ห้อง '+r.room+')'):'')+' — กด ⏹ เสร็จ ก่อน'); return; }
     if(b.dataset.name){ const s=b.dataset.name; F.names=F.names.includes(s)?F.names.filter(x=>x!==s):F.names.concat(s).slice(F.special?-2:-3); }
     if(b.dataset.room){ F.room=+b.dataset.room; }
     if(b.dataset.special){ F.special=F.special===b.dataset.special?null:b.dataset.special; }
