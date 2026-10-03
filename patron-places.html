@@ -120,10 +120,10 @@ function plDetail(tr, refaire){
   else if(!PLD) h+='Chargement… (réessayez dans un instant)';
   else if(!L.length) h+='<span style="color:var(--muted)">Personne sur cet horaire.</span>';
   L.forEach(c=>{ const ko=c.compte && !c.dansEmp;
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 6px;border-radius:8px;margin-top:3px;background:'+(ko?'#fee2e2':c.compte?'#f3f4f6':'#fafafa')+';'+(c.compte?'':'opacity:.6')+'">'
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 6px;border-radius:8px;margin-top:3px;background:'+(ko?'#fee2e2':c.compte?'#f3f4f6':'#fafafa')+';'+(c.compte?'':'color:#6b7280')+'">'
       +'<span><b>'+escH(c.nom)+'</b> <span style="color:var(--muted)">'+escH(c.tel)+'</span><br>'+dm(c.deb)+' → '+dm(c.fin)+(c.auj?' · <b>aujourd\'hui</b>':'')+(c.impose?' · 👑':'')
       +(ko?' · <b style="color:var(--red)">⚠️ pas dans Employés</b>'+(c.memeTel?'<br><b style="color:#9a3412">📞 même numéro que la fiche « '+escH(c.memeTel)+' » → doublon (nom écrit autrement)</b>':''):'')+(c.bloque?' · 🚫 bloquée (pas comptée)':'')+(c.test?' · 🧪 test (pas comptée)':'')+'</span>'
-      +'<span style="display:flex;flex-direction:column;gap:4px">'+(ko && !c.memeTel?'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plRecreer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#16a34a;color:#fff;font-weight:800;font-size:.75rem;white-space:nowrap">➕ Recréer sa fiche</button>':'')
+      +'<span style="display:flex;flex-direction:column;gap:4px">'+(c.bloque?'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plDebloquer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#2563eb;color:#fff;font-weight:800;font-size:.75rem;white-space:nowrap;opacity:1">🔓 Débloquer</button>':'')+(ko && !c.memeTel?'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plRecreer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#16a34a;color:#fff;font-weight:800;font-size:.75rem;white-space:nowrap">➕ Recréer sa fiche</button>':'')
       +'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plRetirer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#fff;border:1px solid var(--red);color:var(--red);font-weight:800;font-size:.75rem;white-space:nowrap">🗑️ Retirer</button></span></div>'; });
   const mens=/mensuel/.test((SH.find(x=>x[0]===tr.dataset.sh)||['',''])[1]);
   h+='<div style="margin-top:8px;padding:8px;border:2px dashed #16a34a;border-radius:10px;background:#f0fdf4">'
@@ -131,7 +131,7 @@ function plDetail(tr, refaire){
     +'<select class="plEmp" onchange="this.parentElement.querySelector(\'.plAutre\').style.display=this.value===\'autre\'?\'flex\':\'none\'" style="width:100%;font-size:1rem;padding:9px;border-radius:10px;border:2px solid var(--border);background:#fff;margin-bottom:6px"><option value="">⏳ chargement des employées…</option></select>'
     +'<div class="plAutre" style="display:none;gap:6px;margin-bottom:6px"><input class="plNom" placeholder="Surnom (ex. Namsom)" style="flex:1;min-width:0;font-size:1rem;letter-spacing:0;text-align:left;padding:8px;border-radius:10px;border:2px solid var(--border)"><input class="plTel" type="tel" inputmode="numeric" placeholder="06…" maxlength="10" style="flex:1;min-width:0;font-size:1rem;letter-spacing:0;text-align:left;padding:8px;border-radius:10px;border:2px solid var(--border)"></div>'
     +'<div style="display:flex;gap:6px;align-items:center"><span style="font-size:.85rem;white-space:nowrap">Début :</span><input type="date" class="plDeb" value="'+isoJ(0)+'" style="flex:1;font-size:1rem;letter-spacing:0;padding:8px;border-radius:10px;border:2px solid var(--border)"></div>'
-    +'<div class="small" style="text-align:left;margin:4px 0 6px">Contrat '+(mens?'mensuel (30 jours)':'freelance (10 jours)')+' · marqué 👑 (imposé par vous)</div>'
+    +'<div class="small" style="text-align:left;margin:4px 0 6px">Contrat '+(mens?'mensuel (30 jours)':'freelance (10 jours)')+'</div>'
     +'<button data-sh="'+tr.dataset.sh+'" onclick="plAjout(this)" style="width:100%;border:none;border-radius:10px;padding:12px;font-weight:800;font-size:1rem;background:#16a34a;color:#fff">✔ Valider</button></div>';
   d.innerHTML=h+'</td>'; tr.after(d);
   plEmpsRemplir(d.querySelector('.plEmp'));
@@ -159,6 +159,15 @@ async function plAjout(btn, forcer){
     if(!j.ok) throw j.err||'x';
     alert('✅ '+j.nom+' est sur '+lab+' du '+dm(j.deb)+' au '+dm(j.fin)); places();
   }catch(x){ alert(x==='tok'?'🔐 Activez ce téléphone patron':'❌ Pas fait — réessayez'); btn.disabled=false; btn.textContent=t0; }
+}
+async function plDebloquer(btn){
+  const sh=btn.dataset.sh, c=((PLD||{})[sh]||[])[+btn.dataset.i]; if(!c) return;
+  if(!confirm('Débloquer '+c.nom+' ?\nSon statut passe de « Bloqué » à « Actif » et elle compte de nouveau dans les places.')) return;
+  btn.disabled=true; btn.textContent='⏳';
+  try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'debloquerfiche',cle:c.cle})})));
+    if(j.err==='pas_bloquee'){ alert('ℹ️ '+c.nom+' n\'est plus bloquée — rechargez la page'); places(); return; }
+    if(!j.ok) throw j.err||'x'; alert('✅ '+c.nom+' est débloquée'+(j.raison?'\n(raison du blocage : '+j.raison+')':'')); places(); }
+  catch(e){ alert(e==='tok'?'🔐 Activez ce téléphone patron':'❌ Pas fait — réessayez'); btn.disabled=false; btn.textContent='🔓 Débloquer'; }
 }
 async function plRecreer(btn){
   const sh=btn.dataset.sh, c=((PLD||{})[sh]||[])[+btn.dataset.i]; if(!c) return;
