@@ -80,12 +80,12 @@ async function places(){
   try{
     const q=n=>fetch(API+'?plan=1&emp=__patron__&tel=0&s='+isoJ(0)+'&n='+n+'&sh='+encodeURIComponent(SH.map(x=>x[0]).join(','))+'&_='+Date.now()).then(readTxt).then(JSON.parse);
     const [a,b]=await Promise.all([q(1),q(10)]);
-    const col=l=>l<=0?'var(--red)':l===1?'#ea580c':'var(--green)';
+    const col=l=>l<=0?'var(--red)':'var(--green)';   // vert = il reste au moins 1 place · rouge = complet
     let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
     const ca=capJour(isoJ(0)), cb=capPeriode(isoJ(0),10);
     SH.forEach(([k,l])=>{ const la=ca-((a[k]||{}).max||0), lb=cb-((b[k]||{}).max||0);
       h+='<tr class="plR" data-sh="'+k+'" style="border-top:1px solid var(--border);cursor:pointer" onclick="plDetail(this)"><td style="padding:8px 0">'+l+' <span style="color:var(--muted);font-size:.8rem">▸ qui ?</span></td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/'+ca+'</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/'+cb+'</td></tr>'; });
-    P.innerHTML='<div id="plAlerte"></div>'+h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé · 👆 touchez un horaire pour voir qui occupe les places</div>';
+    P.innerHTML='<div id="plAlerte"></div>'+h+'</table><div class="small" style="margin-top:6px">= places libres · 🟢 il reste de la place · 🔴 complet · « 10 jours » = le jour le plus chargé · 👆 touchez un horaire pour voir qui occupe les places</div>';
     plCharger();
   }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
 }
@@ -140,7 +140,8 @@ function plDetail(tr, refaire){
 let PLE=null;
 async function plEmpsRemplir(S){
   try{ if(!PLE){ const j=JSON.parse(await readTxt(await fetch(API+'?boss=1&pin=x&d='+isoJ(0)+'&_='+Date.now()))); PLE=(j.emps||[]).filter(e=>!e.bloque && !/^boss$/i.test(String(e.nom).trim())).sort((a,b)=>String(a.nom).localeCompare(String(b.nom))); }
-    S.innerHTML='<option value="">— choisir l\'employée —</option>'+PLE.map((e,i)=>'<option value="'+i+'">'+escH(e.nom)+' · '+escH(e.tel)+'</option>').join('')+'<option value="autre">✍️ Autre : taper le nom et le numéro</option>';
+    const occ={}; Object.keys(PLD||{}).forEach(sh=>(PLD[sh]||[]).forEach(c=>{ if(c.fin>=isoJ(0)) occ[String(c.tel).replace(/\D/g,'').slice(-9)]=(SH.find(x=>x[0]===sh)||['',sh])[1].replace(' น.','').replace(' (mensuel)','')+' jusqu\'au '+dm(c.fin); }));
+    S.innerHTML='<option value="">— choisir l\'employée —</option>'+PLE.map((e,i)=>{ const o=occ[String(e.tel).replace(/\D/g,'').slice(-9)]; return '<option value="'+i+'"'+(o?' disabled':'')+'>'+escH(e.nom)+' · '+escH(e.tel)+(o?' — déjà '+escH(o):'')+'</option>'; }).join('')+'<option value="autre">✍️ Autre : taper le nom et le numéro</option>';
   }catch(e){ S.innerHTML='<option value="">⚠️ liste non chargée — touchez à nouveau l\'horaire</option>'; }
 }
 async function plAjout(btn, forcer){
