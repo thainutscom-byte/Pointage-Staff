@@ -420,7 +420,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   // filles du jour + rechargement du cahier si la tablette l'a perdu
   async function chargerJour(){
     try{
-      const t=await lireTxt(await fetch(SHEET_URL+'?cahier=1&d='+JOUR+'&_='+Date.now())); if(t[0]!=='{') return;
+      const t=await lireTxt(await fetch(SHEET_URL+'?cahtab=1&d='+JOUR+'&_='+Date.now())); if(t[0]!=='{') return;
       const j=JSON.parse(t); if(!j.ok) return;
       lsS('cahier_staff_'+JOUR,j.staff||[]);
       if(!DEMO){ STAFF=(j.staff||[]).map(x=>x.n); HASH={}; (j.staff||[]).forEach(x=>HASH[x.n]=x.h); FINS=j.fins||[]; lsS('cahier_fins_'+JOUR,FINS);
