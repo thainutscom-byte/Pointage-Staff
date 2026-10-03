@@ -449,6 +449,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
         <button type="button" id="parT_ami" onclick="parTypeSet('ami')" style="border:2px solid #db2777;border-radius:12px;padding:11px 4px;font-weight:800;font-size:.92rem;background:#db2777;color:#fff;line-height:1.3;">👭 ชวนเพื่อน<br><span style="font-size:.75rem;font-weight:600;">ส่งหาเพื่อนสนิท</span></button>
         <button type="button" id="parT_rec" onclick="parTypeSet('rec')" style="border:2px solid #db2777;border-radius:12px;padding:11px 4px;font-weight:800;font-size:.92rem;background:#fff;color:#db2777;line-height:1.3;">📢 หาพนักงาน<br><span style="font-size:.75rem;font-weight:600;">โพสต์ในกลุ่ม / เฟซบุ๊ก</span></button>
       </div>
+      <div class="small" style="background:#fff;border:2px dashed #dc2626;border-radius:10px;padding:8px;margin-bottom:8px;line-height:1.5;font-weight:700;color:#991b1b;">⛔ 👭 ชวนเพื่อน: ส่งหาเพื่อน<b>ทีละคน</b>ในแชทส่วนตัว · ห้ามส่งในกลุ่ม · ห้ามส่งให้หัวหน้า<br>✅ นับเมื่อเพื่อนเปิดลิงก์ · 1 ลิงก์ = นับได้ 1 คน</div>
       <details style="margin-bottom:8px;"><summary class="small" style="font-weight:700;color:#db2777;cursor:pointer;">👀 ดูข้อความ</summary><div id="parApercu" class="small" style="white-space:pre-wrap;background:#fff;border-radius:10px;padding:10px;margin-top:6px;line-height:1.5;word-break:break-word;"></div></details>
       <div style="font-weight:800;margin-bottom:6px;">2️⃣ ส่งทาง</div>
       <button type="button" onclick="parPartager('line')" style="width:100%;border:none;border-radius:12px;padding:13px;font-size:1.02rem;font-weight:800;background:#06c755;color:#fff;">💬 LINE</button>
@@ -2137,9 +2138,12 @@ function parGet(){ try{ return JSON.parse(localStorage.getItem('pointage_parrain
 function parSet(o){ try{ localStorage.setItem('pointage_parrain_'+parCode(), JSON.stringify(o)); }catch(e){} }
 function parLog(txt){ try{ fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'scan',page:'app',thai:true,src:'app',res:txt})}).catch(()=>{}); }catch(e){} }
 function parNote(quoi){ const o=parGet(); o.n=(o.n||0)+1; o.last=Date.now(); if(parType==='ami'){ o.ami=(o.ami||[]).concat(Date.now()).slice(-200); } parSet(o);
-  parLog('📤 parrainage '+quoi+' — ref '+parCode()+' — '+(document.getElementById('name').value||'').trim()+' '+(document.getElementById('phone').value||'').replace(/\D/g,'')+' (n°'+o.n+')'); parAff(); }
+  parLog('📤 parrainage '+quoi+' — ref '+parCode()+' — '+(document.getElementById('name').value||'').trim()+' '+(document.getElementById('phone').value||'').replace(/\D/g,'')+' (n°'+o.n+') — s '+parSid+' — k '+(parType==='rec'?'r':'a')); parAff(); }
 const PAR_CANAUX={line:'LINE', messenger:'Messenger', instagram:'Instagram', tiktok:'TikTok', sms:'SMS', autre:'autre', copie:'copie'};
-function parLienC(c){ return parLien().replace('&openExternalBrowser=1','&v='+c+'&openExternalBrowser=1'); }
+// 🔑 chaque envoi a son propre lien (s=…) : 1 envoi ne peut compter qu'1 fois (groupe LINE = 1 seule amie au maximum)
+let parSid='';
+function parNouvSid(){ parSid=Math.random().toString(36).slice(2,8); return parSid; }
+function parLienC(c){ return parLien().replace('&openExternalBrowser=1','&v='+c+'&k='+(parType==='rec'?'r':'a')+'&s='+(parSid||parNouvSid())+'&openExternalBrowser=1'); }
 function parMsgC(c){ return parMsg().replace(parLien(), parLienC(c)); }
 async function parCopierTxt(t){ try{ await navigator.clipboard.writeText(t); return true; }catch(e){ try{ const a=document.createElement('textarea'); a.value=t; document.body.appendChild(a); a.select(); const ok=document.execCommand('copy'); a.remove(); return ok; }catch(x){ return false; } } }
 function parAide(t){ const a=document.getElementById('parAide'); if(a){ a.textContent=t; a.style.display='block'; } }
@@ -2147,6 +2151,8 @@ function parOuvrir(u){ try{ location.href=u; }catch(e){} }
 async function parPartager(c){
   c=c||'line';
   if(!parCode()){ alert('⚠️ กรุณาใส่ชื่อเล่น (ภาษาอังกฤษ) และเบอร์โทรก่อน'); return; }
+  if(parType==='ami' && !confirm('👭 ส่งหาเพื่อน 1 คน ในแชทส่วนตัว\n\n⛔ ห้ามส่งในกลุ่ม LINE\n⛔ ห้ามส่งให้หัวหน้า / LINE ร้าน\n\n✅ นับเมื่อเพื่อนเปิดลิงก์เท่านั้น')) return;
+  parNouvSid();
   const msg=parMsgC(c), enc=encodeURIComponent(msg), ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
   parNote((PAR_CANAUX[c]||c)+(parType==='rec'?' · annonce recrutement':' · message amie'));
   if(c==='line'){ const u='https://line.me/R/share?text='+enc; try{ const w=window.open(u,'_blank'); if(!w) location.href=u; }catch(e){ location.href=u; } return; }
@@ -2165,6 +2171,7 @@ async function parPartager(c){
 }
 async function parCopier(){
   if(!parCode()){ alert('⚠️ กรุณาใส่ชื่อเล่น (ภาษาอังกฤษ) และเบอร์โทรก่อน'); return; }
+  parNouvSid();
   const ok=await parCopierTxt(parMsgC('copie')); parAide(ok?'✅ คัดลอกข้อความ + ลิงก์ของคุณแล้ว — วางในแชทของเพื่อนได้เลย':'⚠️ คัดลอกไม่ได้');
   if(!ok) prompt('คัดลอกข้อความนี้', parMsgC('copie'));
   parNote('copie'+(parType==='rec'?' · annonce recrutement':' · message amie'));
@@ -2176,16 +2183,19 @@ function parObj(){
   const sd=new Date(sv+'T00:00:00'), fin=cycleEndDate(), t=workToday(); if(!fin || t<sd || t>fin) return null;
   const k=Math.floor(Math.round((t-sd)/86400000)/10), d0=addDays(sd,k*10); let d1=addDays(d0,9); if(d1>fin) d1=new Date(fin);
   const a=d0.getTime(), b=addDays(d1,1).getTime();
-  const n=(parGet().ami||[]).filter(ts=>{ const j=ts-DAY_SWITCH_H*3600000; return j>=a && j<b; }).length;
-  return {n, but:PAR_OBJ, jour:Math.round((t-d0)/86400000)+1, duree:Math.round((d1-d0)/86400000)+1, fin:d1};
+  const dans=ts=>{ const j=ts-DAY_SWITCH_H*3600000; return j>=a && j<b; };
+  const env=(parGet().ami||[]).filter(dans).length;                                   // 📤 envoyés (info seulement)
+  const n=((parServeur && parServeur.ouvA)||[]).filter(dans).length;                  // ✅ ouverts par une amie (compte pour l'objectif)
+  return {n, env, but:PAR_OBJ, jour:Math.round((t-d0)/86400000)+1, duree:Math.round((d1-d0)/86400000)+1, fin:d1};
 }
 function parObjAff(){
   const el=document.getElementById('parObj'); if(!el) return; const O=parObj();
   if(!O){ el.style.display='none'; return; } el.style.display='block';
   const ok=O.n>=O.but, pc=Math.min(100,Math.round(O.n/O.but*100));
-  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;"><b style="font-size:1.15rem;">🎯 '+Math.min(O.n,99)+'/'+O.but+' ส่งแล้ว รอบนี้</b><span class="small">วันที่ '+O.jour+'/'+O.duree+'</span></div>'
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;"><b style="font-size:1.15rem;">🎯 '+Math.min(O.n,99)+'/'+O.but+' เพื่อนเปิดลิงก์แล้ว</b><span class="small">วันที่ '+O.jour+'/'+O.duree+'</span></div>'
     +'<div style="height:12px;background:#fbcfe8;border-radius:999px;overflow:hidden;margin:6px 0;"><div style="height:100%;width:'+pc+'%;background:'+(ok?'#16a34a':'#db2777')+';"></div></div>'
-    +'<div class="small" style="font-weight:700;color:'+(ok?'#16a34a':'#9d174d')+';">'+(ok?'✅ ครบแล้ว ขอบคุณมาก! 🥰':'หัวหน้าขอให้ส่ง 👭 ชวนเพื่อน '+O.but+' คน ต่อรอบ · เหลืออีก '+(O.but-O.n)+' คน ภายในวันที่ '+fmtDate(O.fin))+'</div>';
+    +'<div class="small" style="font-weight:700;color:'+(ok?'#16a34a':'#9d174d')+';">'+(ok?'✅ ครบแล้ว ขอบคุณมาก! 🥰':'หัวหน้าขอให้ชวนเพื่อน '+O.but+' คน ต่อรอบ · เหลืออีก '+(O.but-O.n)+' คน ภายในวันที่ '+fmtDate(O.fin))+'</div>'
+    +'<div class="small" style="margin-top:4px;">📤 ส่งแล้ว '+O.env+' ครั้ง · นับเมื่อ<b>เพื่อนเปิดลิงก์</b>เท่านั้น (อัปเดตทุก 10 นาที)<br>⛔ ส่งในกลุ่ม = นับได้แค่ 1 · ส่งให้หัวหน้า = ไม่นับ</div>';
   el.style.borderColor=ok?'#16a34a':'#db2777'; el.style.background=ok?'#f0fdf4':'#fff';
 }
 let parServeur=null, parServeurT=0;
@@ -2218,8 +2228,8 @@ function parRappel(){
       if(O.jour<3) return;
       const jj=isoD(workToday()); if(o.rappelObj===jj) return;
       o.rappelObj=jj; parSet(o);
-      document.getElementById('parGateTxt').innerHTML='<div style="font-size:1.6rem;font-weight:900;color:#db2777;">🎯 '+O.n+'/'+O.but+' ส่งแล้ว รอบนี้</div>'
-        +'หัวหน้าขอให้ทุกคนส่งข้อความ <b>👭 ชวนเพื่อน</b><br><b>'+O.but+' คน ต่อรอบ 10 วัน</b><br>เหลืออีก <b style="color:#dc2626;">'+(O.but-O.n)+' คน</b> ภายในวันที่ <b>'+fmtDate(O.fin)+'</b>'
+      document.getElementById('parGateTxt').innerHTML='<div style="font-size:1.6rem;font-weight:900;color:#db2777;">🎯 '+O.n+'/'+O.but+' เพื่อนเปิดลิงก์แล้ว</div>'
+        +'หัวหน้าขอให้ทุกคนส่งข้อความ <b>👭 ชวนเพื่อน</b> ทีละคน (ไม่ใช่ในกลุ่ม)<br><b>'+O.but+' คน ต่อรอบ 10 วัน</b><br>เหลืออีก <b style="color:#dc2626;">'+(O.but-O.n)+' คน</b> ภายในวันที่ <b>'+fmtDate(O.fin)+'</b>'
         +(O.jour>=8?'<br><span style="color:#dc2626;font-weight:800;">⚠️ ใกล้หมดรอบแล้ว!</span>':'');
       parTypeSet('ami'); document.getElementById('parGate').style.display='flex'; return;
     }
@@ -2866,5 +2876,6 @@ function checkAccess(){
   inp.addEventListener('input',()=>{ document.getElementById('accessMsg').textContent=''; if(inp.value.length===4) checkAccess(); });
 })();
 </script>
+<script src="demandes.js?v=1"></script>
 </body>
 </html>

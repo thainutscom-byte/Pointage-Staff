@@ -339,7 +339,12 @@ const PAR=(()=>{ try{
   if(o && Date.now()-o.at>30*86400000) o=null;
   if(!o && /^[a-z]{1,12}\d{4}$/.test(q)){ o={ref:q, at:Date.now()}; localStorage.setItem('booking_ref', JSON.stringify(o)); }
   let dev=localStorage.getItem('booking_dev'); if(!dev){ dev=Math.random().toString(36).slice(2,8); localStorage.setItem('booking_dev', dev); }
-  if(/^[a-z]{1,12}\d{4}$/.test(q) && !localStorage.getItem('booking_ref_vu_'+q)){ localStorage.setItem('booking_ref_vu_'+q,'1'); window.__parVu='👀 lien parrain ouvert — ref '+q+' — appareil '+dev+' — via '+((new URLSearchParams(location.search).get('v')||'?').replace(/[^a-z]/g,'').slice(0,12))+(o && o.ref!==q?' (déjà parrainée par '+o.ref+')':''); }
+  // 👀 ouverture comptée 1 fois par téléphone et par marraine · jamais depuis le navigateur interne de LINE (il rouvre Safari / Chrome)
+  //    s = identifiant de l'envoi · k = a (👭 amie) / r (📢 annonce) · ⛔ = téléphone du patron ou d'une employée (ne compte pas)
+  const P=new URLSearchParams(location.search), sid=(P.get('s')||'').replace(/[^a-z0-9]/g,'').slice(0,8), kk=(P.get('k')||'').replace(/[^a-z]/g,'').slice(0,1);
+  let fl=''; try{ if(localStorage.getItem('patron_aut_tok')) fl=' — ⛔ patron';
+    else for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i)||''; if(k.indexOf('pointage_fiche')===0){ fl=' — ⛔ employée'; break; } } }catch(e){}
+  if(/^[a-z]{1,12}\d{4}$/.test(q) && !/\bLine\//i.test(navigator.userAgent) && !localStorage.getItem('booking_ref_vu_'+q)){ localStorage.setItem('booking_ref_vu_'+q,'1'); window.__parVu='👀 lien parrain ouvert — ref '+q+' — appareil '+dev+' — via '+((P.get('v')||'?').replace(/[^a-z]/g,'').slice(0,12))+(sid?' — s '+sid:'')+(kk?' — k '+kk:'')+fl+(o && o.ref!==q?' (déjà parrainée par '+o.ref+')':''); }
   return o ? o.ref : '';
 }catch(e){ return ''; } })();
 function parNom(r){ const n=String(r||'').replace(/\d+$/,''); return n ? n[0].toUpperCase()+n.slice(1) : ''; }
