@@ -226,9 +226,10 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     <div class="rooms" id="dehors"></div>
   </section>
 
-  <button class="new" id="btnNew" type="button">➕ เริ่มนวด</button>
+  <button class="new" id="btnNew" type="button" hidden>➕ เริ่มนวด</button>   <!-- (retiré : on commence en touchant la chambre) -->
 
   <div class="panel" id="form" hidden>
+    <div id="fRoom" style="font-weight:800;font-size:1.3rem;margin-bottom:6px"></div>
     <div class="step">
       <h2>1 · <b>ลูกค้า</b></h2>
       <div class="chips" id="cRef"></div>
@@ -245,7 +246,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       <h2>4 · <b>OP</b> 1–5 <span id="total" style="color:var(--accent);font-weight:700"></span></h2>
       <div class="chips" id="cQty"></div>
     </div>
-    <div class="step" id="stRoom">
+    <div class="step" id="stRoom" hidden>   <!-- (retiré : la chambre est choisie AVANT, en touchant la carte de la chambre) -->
       <h2>5 · <b>ห้อง</b> — ห้องที่มีคนอยู่กดไม่ได้</h2>
       <div class="chips" id="cRooms"></div>
     </div>
@@ -580,13 +581,14 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     $('cRef').innerHTML=REF.map(p=>chip(p[1],'',F.ref===p[0],false,'data-ref="'+p[0]+'"', p[0]==='new'?'#fbbf24':'#c084fc')).join('');
     const T=typ(F.type);
     // นอกร้าน / บาร์ไฟน์ : pas de chambre → chambres grisées
-    if(T && T[4]){ F.room=null; $('cRooms').querySelectorAll('button').forEach(b=>b.disabled=true); }
+    if(T && T[4]){ F.room=null; $('cRooms').querySelectorAll('button').forEach(b=>b.disabled=true); } else if(!F.room && F.room0 && !roomOf(F.room0)) F.room=F.room0;
     const manque=!F.ref?'1 · เลือกลูกค้าใหม่ / เก่า':!F.names.length?'2 · เลือกชื่อ':(F.special && F.names.length>2)?'2 · '+TH[F.special]+' = เลือก 1–2 ชื่อ':!T?'3 · เลือกประเภท'
       :false?'':(T[3]===2 && F.names.length!==2)?'4 · '+TH[F.type]+' = ต้องเลือก 2 ชื่อ':(T[3]===3 && F.names.length!==3)?'4 · '+TH.l3+' = ต้องเลือก 3 ชื่อ':(T[3]===1 && F.names.length!==1)?'4 · '+TH.l1+' = เลือก 1 ชื่อ':(T[3]===0 && F.names.length>2)?'4 · เลือก 1–2 ชื่อ'
-      :(!T[4] && !F.room)?'5 · เลือกห้อง':'';
+      :(!T[4] && !F.room)?'แตะห้องที่ว่างก่อน':'';
+    $('fRoom').textContent=T&&T[4]?TH[F.special]+' · นอกร้าน':F.room?'🛏️ ห้อง '+F.room:'';
     $('start').disabled=!!manque; $('hint').textContent=manque?'👉 '+manque:'';
   }
-  function openForm(room){ F={names:[],room:room||null,type:null,special:null,qty:1,pay:null,ref:null}; $('form').hidden=false; drawForm(); $('form').scrollIntoView({behavior:'smooth',block:'start'}); }
+  function openForm(room){ F={names:[],room:room||null,room0:room||null,type:null,special:null,qty:1,pay:null,ref:null}; $('form').hidden=false; drawForm(); $('form').scrollIntoView({behavior:'smooth',block:'start'}); }
   function closeForm(){ $('form').hidden=true; }
 
   $('btnNew').onclick=()=>openForm(null);
