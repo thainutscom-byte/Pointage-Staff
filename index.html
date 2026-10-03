@@ -250,11 +250,13 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
   </div>
 </div>
 <button type="button" id="btnRefresh" onclick="actualiser()" aria-label="รีเฟรช" style="position:fixed;top:calc(6px + env(safe-area-inset-top,0px));right:6px;z-index:99999;border:none;border-radius:50%;width:42px;height:42px;padding:0;font-size:1.3rem;line-height:42px;background:rgba(37,99,235,.92);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25);">🔄</button>
-<div id="autGate" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(17,24,39,.88);color:#fff;align-items:center;justify-content:center;padding:20px;">
+<div id="autGate" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(17,24,39,.97);color:#fff;align-items:center;justify-content:center;padding:20px;">
   <div style="max-width:360px;width:100%;text-align:center;">
     <div style="font-size:3rem;">👑</div>
     <div style="font-size:1.2rem;font-weight:800;margin:8px 0;">ส่งคำขอถึงหัวหน้าแล้ว</div>
     <div id="autTxt" style="line-height:1.6;color:#d1d5db;"></div>
+    <a id="autLine" href="#" style="display:block;margin:16px 0 4px;background:#06c755;color:#fff;text-decoration:none;font-weight:900;font-size:1.15rem;padding:16px;border-radius:14px;">💬 ส่งคำขอให้หัวหน้าทาง LINE</a>
+    <div style="font-size:.85rem;color:#d1d5db;">กดปุ่มนี้ → LINE จะเปิด → กด <b>ส่ง</b> · หัวหน้าจะอนุมัติเร็วขึ้น</div>
     <div style="font-size:2rem;margin:14px 0;" id="autAnim">⏳</div>
     <button type="button" onclick="window.__autAnnule=true" style="border:none;border-radius:12px;padding:12px 22px;font-weight:800;background:#e5e7eb;color:#111827;">ยกเลิก</button>
   </div>
@@ -2257,6 +2259,7 @@ async function nouvelleIdentite(){
 // ===== 👑 AUTORISATION À DISTANCE : l'action patron envoie une demande → le patron autorise sur SA page patron =====
 //   (si le serveur n'a pas encore le fichier « Autorisation », l'ancien code du jour reste possible)
 const AUT_TXT={boss:'👑 เปิดโหมดหัวหน้า', freeze:'🔑 แก้ไขวันที่ / ช่วงเวลา', debloquer:'🔓 ปลดล็อกโทรศัพท์', rouvrir:'🔓 เปิดวันทำงานอีกครั้ง', paye:'💰 ยืนยันการชำระเงิน', nouvelle:'🆕 พนักงานใหม่ ขอเข้าใช้แอป', gps:'📍 เริ่มงานโดยไม่ผ่าน GPS'};
+const LINE_PATRON='@048gmlsc';   // compte LINE du salon qui reçoit les demandes
 async function demanderPatron(act){
   let support=false;
   try{ const c=new AbortController(); const tm=setTimeout(()=>c.abort(),12000);
@@ -2270,6 +2273,9 @@ async function demanderPatron(act){
   try{ const t=await readTxt(await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'autdem', id, act, nom, tel})})); if(t.indexOf('"ok":1')<0) throw 0; }
   catch(e){ alert('⚠️ ส่งคำขอไม่ได้ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'); return false; }
   const G=document.getElementById('autGate'); window.__autAnnule=false;
+  // 💬 message tout prêt pour le compte LINE du patron (@048gmlsc) : la fille n'a qu'à appuyer sur « ส่ง »
+  { const m='👑 คำขอ / Demande : '+(AUT_TXT[act]||act)+'\n👤 '+nom+(tel?' · '+tel:'')+'\n🕐 '+fmtHM(new Date())+'\n✅ อนุมัติ / Autoriser :\nhttps://thainutscom-byte.github.io/Pointage-Staff/patron-autorisations.html';
+    const a=document.getElementById('autLine'); if(a) a.href='https://line.me/R/oaMessage/'+encodeURIComponent(LINE_PATRON)+'/?'+encodeURIComponent(m); }
   document.getElementById('autTxt').innerHTML='<b>'+(AUT_TXT[act]||act)+'</b><br>รอหัวหน้ากด ✅ อนุมัติ ในหน้าหัวหน้า<br><span style="font-size:.85rem">(ภายใน 10 นาที)</span>';
   G.style.display='flex';
   const fin=Date.now()+10*60000; let k=0;
