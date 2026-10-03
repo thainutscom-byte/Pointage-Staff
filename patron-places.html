@@ -106,9 +106,10 @@ async function plCharger(){
     document.querySelectorAll('.plR').forEach(r=>{ if(r.nextElementSibling && r.nextElementSibling.classList.contains('plD')) plDetail(r, true); });
   }catch(e){}
 }
+const plListe=sh=>((PLD||{})[sh]||[]).filter(c=>c.compte);   // les bloquées et les comptes test ne s'affichent pas
 function plDetail(tr, refaire){
   const nx=tr.nextElementSibling; if(nx && nx.classList.contains('plD')){ nx.remove(); if(!refaire) return; }
-  const L=(PLD||{})[tr.dataset.sh]||[], d=document.createElement('tr'); d.className='plD';
+  const L=plListe(tr.dataset.sh), d=document.createElement('tr'); d.className='plD';
   let h='<td colspan="3" style="padding:4px 0 10px;font-size:.85rem">';
   if(!PLD && PLDerr){
     h+='<div style="background:#fef2f2;border:1px solid var(--red);border-radius:8px;padding:8px;color:var(--red);font-weight:700">'
@@ -161,7 +162,7 @@ async function plAjout(btn, forcer){
   }catch(x){ alert(x==='tok'?'🔐 Activez ce téléphone patron':'❌ Pas fait — réessayez'); btn.disabled=false; btn.textContent=t0; }
 }
 async function plDebloquer(btn){
-  const sh=btn.dataset.sh, c=((PLD||{})[sh]||[])[+btn.dataset.i]; if(!c) return;
+  const sh=btn.dataset.sh, c=plListe(sh)[+btn.dataset.i]; if(!c) return;
   if(!confirm('Débloquer '+c.nom+' ?\nSon statut passe de « Bloqué » à « Actif » et elle compte de nouveau dans les places.')) return;
   btn.disabled=true; btn.textContent='⏳';
   try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'debloquerfiche',cle:c.cle})})));
@@ -170,14 +171,14 @@ async function plDebloquer(btn){
   catch(e){ alert(e==='tok'?'🔐 Activez ce téléphone patron':'❌ Pas fait — réessayez'); btn.disabled=false; btn.textContent='🔓 Débloquer'; }
 }
 async function plRecreer(btn){
-  const sh=btn.dataset.sh, c=((PLD||{})[sh]||[])[+btn.dataset.i]; if(!c) return;
+  const sh=btn.dataset.sh, c=plListe(sh)[+btn.dataset.i]; if(!c) return;
   if(!confirm('Recréer la fiche de '+c.nom+' ('+c.tel+') dans « Employés » ?\nSon contrat '+sh+' du '+dm(c.deb)+' au '+dm(c.fin)+' est gardé.')) return;
   try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'ficherecreer',row:c.row,cle:c.cle})})));
     if(!j.ok) throw j.err||'x'; alert('✅ Fiche de '+j.nom+' recréée dans « Employés »'); places(); }
   catch(e){ alert(e==='tok'?'🔐 Activez ce téléphone patron':e==='change'?'⚠️ Le planning a changé — rechargez la page':'❌ Pas fait — réessayez'); }
 }
 async function plRetirer(btn){
-  const sh=btn.dataset.sh, c=((PLD||{})[sh]||[])[+btn.dataset.i]; if(!c) return; const row=c.row, cle=c.cle, deb=c.deb, nom=c.nom;
+  const sh=btn.dataset.sh, c=plListe(sh)[+btn.dataset.i]; if(!c) return; const row=c.row, cle=c.cle, deb=c.deb, nom=c.nom;
   if(!confirm('Retirer du planning le contrat de '+nom+' ('+sh+', début '+dm(deb)+') ?\n\nÀ faire seulement pour un doublon ou une fille qui ne travaille plus.\n⚠️ Si son téléphone est encore actif, il peut le renvoyer : dans ce cas mettez son numéro dans l\'onglet « 🚫 Interdites ».')) return;
   try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'cycleretire',row,cle,deb})})));
     if(!j.ok) throw j.err||'x'; places(); }
