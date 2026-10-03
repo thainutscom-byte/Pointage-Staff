@@ -137,7 +137,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div style="font-size:3rem;">👋</div>
     <h2 style="margin:8px 0 18px;font-size:1.35rem;">ยินดีต้อนรับ</h2>
     <div id="wStep1">
-      <button onclick="wChoix('new')" style="width:100%;background:var(--green);color:#fff;border:none;padding:18px;border-radius:14px;font-size:1.15rem;font-weight:800;margin-bottom:12px;">🆕 พนักงานใหม่<br><span style="font-weight:400;font-size:.85rem;">ใช้แอปครั้งแรก</span></button>
+      <button onclick="wChoix('new')" style="width:100%;background:var(--green);color:#fff;border:none;padding:18px;border-radius:14px;font-size:1.15rem;font-weight:800;margin-bottom:12px;">🆕 สมัครงาน · พนักงานใหม่<br><span style="font-weight:400;font-size:.85rem;">จองวันเริ่มงาน + ช่วงเวลา</span></button>
       <button onclick="wChoix('old')" style="width:100%;background:var(--blue);color:#fff;border:none;padding:18px;border-radius:14px;font-size:1.15rem;font-weight:800;margin-bottom:12px;">✅ เคยใช้แอปแล้ว<br><span style="font-weight:400;font-size:.85rem;">กู้คืนข้อมูลของฉัน</span></button>
       <button onclick="wChoix('essai')" style="width:100%;background:#d97706;color:#fff;border:none;padding:18px;border-radius:14px;font-size:1.15rem;font-weight:800;">🧪 ทดลองงาน 1 วัน<br><span style="font-weight:400;font-size:.85rem;">Miss Essai · 12:00 – 20:00</span></button>
     </div>
@@ -2638,7 +2638,8 @@ function reglesFermer(){ if(rgOblig) return; document.getElementById('reglesGate
 
 // 👋 ACCUEIL (fiche vide) : nouvelle employée → code du patron ; déjà inscrite → 4 derniers chiffres du téléphone → fiche récupérée
 let wMode='';
-function wChoix(m){ if(m==='new'){ nouvelleIdentite().then(d=>d ? demanderPatron('nouvelle').then(ok=>ok && d) : false).then(d=>{ if(d){ appScan('🆕 nouvelle employée → autorisée par le patron : '+d.n+' · '+d.sh); wFermer(); inscAppliquer(d); } }); return; } wMode=m; document.getElementById('wStep1').style.display='none'; document.getElementById('wStep2').style.display='block';
+function wChoix(m){ if(m==='new'){ appScan('🆕 nouvelle → page de recrutement (booking)'); location.href='booking.html?app=1'+(location.search.match(/[?&]ref=[^&]+/)||[''])[0].replace(/^\?/,'&'); return; }
+  if(m==='new_ancien'){ nouvelleIdentite().then(d=>d ? demanderPatron('nouvelle').then(ok=>ok && d) : false).then(d=>{ if(d){ appScan('🆕 nouvelle employée → autorisée par le patron : '+d.n+' · '+d.sh); wFermer(); inscAppliquer(d); } }); return; } wMode=m; document.getElementById('wStep1').style.display='none'; document.getElementById('wStep2').style.display='block';
   document.getElementById('wLabel').textContent = m==='new' ? '🔐 กรอกรหัสจากหัวหน้า' : m==='essai' ? '🧪 กรอกรหัสทดลองงาน (จากหัวหน้า)' : '📱 กรอกเลข 4 ตัวท้ายของเบอร์โทรศัพท์';
   document.getElementById('wInput').value=''; document.getElementById('wMsg').textContent=''; document.getElementById('wNoms').innerHTML=''; document.getElementById('wInput').focus(); }
 function wRetour(){ document.getElementById('wStep1').style.display='block'; document.getElementById('wStep2').style.display='none'; }
@@ -2671,7 +2672,8 @@ document.getElementById('wInput').addEventListener('input',e=>{ if(e.target.valu
 
 // 📝 réservation faite sur booking.html : on remplit la fiche automatiquement (seulement si la fiche est vide)
 try{ const bk=JSON.parse(localStorage.getItem('pointage_booking')||'null');
-  if(bk && !document.getElementById('name').value.trim() && !document.getElementById('startDate').value){
+  const n0=document.getElementById('name').value.trim();
+  if(bk && (!n0 || n0.toLowerCase()===String(bk.name||'').toLowerCase()) && !document.getElementById('startDate').value){   // (le lien ?u= a déjà pu mettre le nom)
     document.getElementById('name').value=bk.name; document.getElementById('phone').value=bk.phone;
     document.getElementById('contract').value=bk.contractN==='30'?'30':'10';
     document.getElementById('startDate').value=bk.cycleStart; buildDays();

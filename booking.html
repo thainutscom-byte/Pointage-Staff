@@ -237,7 +237,10 @@ const APP='https://thainutscom-byte.github.io/Pointage-Staff/';
 function appLien(u, jour){
   const B=$('appBox'); if(!B) return; B.style.display='block';
   $('appJour').textContent=dm(jour);
-  const a=$('appBtn'); a.href=u;
+  const a=$('appBtn'); a.href=u; a.textContent='📲 เข้าแอปลงเวลาเลย';
+  // ➡️ UN SEUL QR CODE : après l'inscription, on passe tout seul dans l'app (la fiche se remplit avec la réservation)
+  let k=20; const c=document.createElement('div'); c.style.cssText='margin-top:8px;font-weight:800;color:#2563eb'; a.after(c);
+  const tic=()=>{ c.textContent='⏳ เข้าแอปอัตโนมัติใน '+k+' วินาที'; if(k--<=0){ clearInterval(ti); location.href=u; } }; const ti=setInterval(tic,1000); tic();
   $('appCopie').onclick=async e=>{ e.preventDefault(); let ok=false; try{ await navigator.clipboard.writeText(u); ok=true; }catch(x){} if(!ok) prompt('คัดลอกลิงก์นี้', u); else $('appCopie').textContent='✅ คัดลอกแล้ว — เก็บไว้ใน LINE / โน้ต'; };
 }
 async function reserverEssai(){
