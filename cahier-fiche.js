@@ -5,6 +5,7 @@
 //   • après « ▶️ เริ่มงาน » : le cahier du jour s'affiche sur son téléphone, SANS argent (ni paiement, ni montant, ni caisse)
 //   • mise à jour toutes les 2 minutes quand l'app est ouverte
 //   • « ⏹ เลิกงาน » → la tablette affiche « 🏁 journée terminée »
+//   • dès que le cahier du jour existe, ses cases 1 lady / 2 lady / Happy Hour sont bloquées (seul le cahier les remplit)
 // ============================================================
 (function () {
   'use strict';
@@ -14,6 +15,13 @@
   const hm = t => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const DEHORS = { out: 1, bf: 1 };
+  // ce que compte UNE fille : 3 lady = les 2 premières en duo (2 lady, ou Happy Hour si début entre 16:00 et 20:00), la 3e en 1 lady
+  const hhA = t => { const h = new Date(t).getHours(); return h >= 16 && h < 20; };
+  const egal = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+  function sonType(r, moi) {
+    if (r.type !== 'l3') return r.type;
+    const i = r.names.findIndex(n => egal(n, moi)); return i >= 2 ? 'l1' : (hhA(r.start) ? 'hh' : 'l2');
+  }
 
   // journée d'aujourd'hui dans la fiche (même jour de travail que la tablette : change à 06:00)
   function jourFiche() {
@@ -35,7 +43,7 @@
     const c = carte(); if (!c) return;
     const moi = nomMoi();
     const mesRows = rows.filter(r => !r.annule && r.names.some(n => String(n).trim().toLowerCase() === moi));
-    const nb = t => mesRows.filter(r => r.type === t).length;
+    const nb = t => mesRows.filter(r => sonType(r, moi) === t).length;
     const lignes = rows.slice().sort((a, b) => b.n - a.n).map(r => {
       const mien = r.names.some(n => String(n).trim().toLowerCase() === moi);
       const etat = r.annule ? '❌' : r.end ? hm(r.end) : (DEHORS[r.type] ? '🚗 นอกร้าน' : '🔴 กำลังนวด');
@@ -60,15 +68,19 @@
     const day = jourFiche(); if (!day || day.dataset.locked === '1' || !rows.length) return;
     const moi = nomMoi(); if (!moi) return;
     const mes = rows.filter(r => !r.annule && r.names.some(n => String(n).trim().toLowerCase() === moi));
-    const vals = { '.solo': mes.filter(r => r.type === 'l1').length, '.duo8': mes.filter(r => r.type === 'l2').length, '.duo': mes.filter(r => r.type === 'hh').length };
+    const vals = { '.solo': mes.filter(r => sonType(r, moi) === 'l1').length, '.duo8': mes.filter(r => sonType(r, moi) === 'l2').length, '.duo': mes.filter(r => sonType(r, moi) === 'hh').length };
     let chg = false;
     Object.keys(vals).forEach(sel => { const i = day.querySelector(sel); if (!i) return;
       const v = String(vals[sel] || ''); if (i.value !== v && !(i.value === '0' && v === '')) { i.value = v; chg = true; } });
     if (chg) { try { calc(); saveState(); } catch (e) {} }
+    // 🔒 cases bloquées : seul le cahier de la tablette les remplit (le patron peut toujours corriger en 👑 mode patron)
+    Object.keys(vals).forEach(sel => { const i = day.querySelector(sel); if (!i) return;
+      if (window.__BOSS) { i.readOnly = false; i.style.background = ''; return; }
+      i.readOnly = true; i.style.background = '#e5e7eb'; i.title = 'สมุดลงงาน'; });
     let note = day.querySelector('.cahNote');
     if (!note) { note = document.createElement('div'); note.className = 'cahNote small'; note.style.cssText = 'color:#0f766e;font-weight:700;margin:4px 0;';
       const s = day.querySelector('.solo'); const box = s && s.closest('.grid4'); if (box) box.parentNode.insertBefore(note, box.nextSibling); }
-    note.textContent = '🗒️ จากสมุดลงงาน ' + hm(Date.now()) + ' · rempli par le cahier de la tablette';
+    note.textContent = '🔒 🗒️ จากสมุดลงงาน ' + hm(Date.now()) + ' · แก้เองไม่ได้ · rempli par le cahier (non modifiable)';
   }
 
   let dernier = 0, enCours = false;
