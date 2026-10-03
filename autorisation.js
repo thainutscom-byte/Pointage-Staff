@@ -173,6 +173,17 @@
         alert(j.ok?'✅ Position du salon enregistrée (précision '+Math.round(p.coords.accuracy)+' m)':'❌ Pas enregistré'); }catch(e){ alert('⚠️ Pas de connexion'); }
     }, err=>alert('❌ Position impossible : autorisez la localisation pour ce site'), {enableHighAccuracy:true, timeout:20000, maximumAge:0});
   };
+  // 📍 2e lieu autorisé (ex. l'ordinateur / un autre bâtiment) : en plus du salon, même rayon
+  window.autGps2=function(suppr){
+    if(!tok()){ alert('🔐 Activez d\'abord cet appareil comme patron (🔐 Activer)'); return; }
+    if(suppr){ if(!confirm('🗑️ Supprimer le 2e lieu autorisé ?')) return;
+      fetch(API,{method:'POST',body:JSON.stringify({type:'autgps',lieu:2,suppr:1,tok:tok()})}).then(r=>txt(r)).then(t=>alert(/"ok":1/.test(t)?'✅ 2e lieu supprimé':'❌ Pas supprimé')).catch(()=>alert('⚠️ Pas de connexion')); return; }
+    if(!confirm('📍 La position de CET appareil devient un 2e lieu autorisé (en plus du salon, rayon 200 m) ?')) return;
+    navigator.geolocation.getCurrentPosition(async p=>{
+      try{ const j=JSON.parse(await txt(await fetch(API,{method:'POST',body:JSON.stringify({type:'autgps',lieu:2,lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy})})));
+        alert(j.ok?'✅ 2e lieu enregistré (précision '+Math.round(p.coords.accuracy)+' m)'+(p.coords.accuracy>200?'\n⚠️ Précision faible (ordinateur sans GPS) : la position peut être décalée.':''):'❌ Pas enregistré'); }catch(e){ alert('⚠️ Pas de connexion'); }
+    }, err=>alert('❌ Position impossible : autorisez la localisation pour ce site'), {enableHighAccuracy:true, timeout:20000, maximumAge:0});
+  };
   verifier(); setInterval(verifier, CFG.aut==='rapide' ? 4000 : 15000);
   if(CFG.retards==='1'){ retards(); setInterval(retards, 120000); }
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) verifier(); });

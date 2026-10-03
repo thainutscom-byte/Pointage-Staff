@@ -2310,6 +2310,9 @@ async function gpsSalon(){
   try{ const t=await readTxt(await fetch(SHEET_URL+'?gps=1&_='+Date.now())); const v=t[0]==='{'?JSON.parse(t):{};
        try{ localStorage.setItem('pointage_gps_salon', JSON.stringify({t:Date.now(), v})); }catch(e){} return v; }catch(e){ return {}; }
 }
+function gpsProche(S,pos){ const L=[S].concat(S && S.p2 && S.p2.lat ? [S.p2] : []);
+  return Math.min.apply(null, L.map(p=>Math.round(gpsDist(p.lat,p.lng,pos.coords.latitude,pos.coords.longitude)))); }
+async function gpsFrais(){ try{ localStorage.removeItem('pointage_gps_salon'); }catch(e){} return await gpsSalon(); }   // relit le serveur (nouveau lieu ajouté par le patron)
 function gpsDist(a,b,c,d){ const R=6371000, r=x=>x*Math.PI/180, x=r(c-a), y=r(d-b); const h=Math.sin(x/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(y/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
 async function gpsAuSalon(){
   if(window.__BOSS || window.__essai || isBossName()) return true;
@@ -2321,7 +2324,8 @@ async function gpsAuSalon(){
     alert('📍 กรุณาเปิดตำแหน่ง (Location) ให้แอปนี้\nตั้งค่า → ความเป็นส่วนตัว → บริการหาตำแหน่ง → เปิด\n\nหรือขอให้หัวหน้าอนุมัติ');
     const ok=await demanderPatron('gps'); appScan('📍 GPS refusé/indisponible → '+(ok?'autorisé par le patron':'refusé')+' — '+nom); return ok;
   }
-  const d=Math.round(gpsDist(S.lat,S.lng,pos.coords.latitude,pos.coords.longitude)), acc=Math.round(pos.coords.accuracy||0), R=S.r||200;
+  let S2=S, d=gpsProche(S,pos); const acc=Math.round(pos.coords.accuracy||0), R=S.r||200;
+  if(d-Math.min(acc,150) > R){ S2=await gpsFrais(); if(S2 && S2.lat) d=gpsProche(S2,pos); }
   if(d-Math.min(acc,150) <= R){ appScan('📍 เริ่มงาน au salon ('+d+' m, précision '+acc+' m) — '+nom); return true; }
   appScan('📍⛔ เริ่มงาน HORS du salon ('+d+' m, précision '+acc+' m) — '+nom);
   if(!confirm('⛔ คุณอยู่ห่างจากร้าน '+(d>=1000?(d/1000).toFixed(1)+' กม.':d+' ม.')+'\nเริ่มงานได้เฉพาะที่ร้านเท่านั้น\n\nขอให้หัวหน้าอนุมัติไหม?')) return false;
@@ -2364,7 +2368,8 @@ async function gpsGateCheck(force){
       if(okDepuis < 60*60000){ gpsGMontrer(false); return; }                        // GPS muet à l'intérieur : tolérance 1 h après la dernière position OK
       gpsGMontrer(true, '⚠️ ไม่สามารถหาตำแหน่งได้<br><span style="font-size:.95rem;color:#e2e8f0;">กรุณาเปิด Location แล้วกด 🔄</span>'); return;
     }
-    const d=Math.round(gpsDist(S.lat,S.lng,pos.coords.latitude,pos.coords.longitude)), acc=Math.round(pos.coords.accuracy||0), R=S.r||200;
+    let d=gpsProche(S,pos); const acc=Math.round(pos.coords.accuracy||0), R=S.r||200;
+    if(d-Math.min(acc,150) > R){ const S2=await gpsFrais(); if(S2 && S2.lat) d=gpsProche(S2,pos); }
     if(d-Math.min(acc,150) <= R){ gpsGEcrire(GPS_OK_KEY, Date.now()); gpsGMontrer(false); return; }
     if(acc>300 && okDepuis < 60*60000){ gpsGMontrer(false); return; }               // position trop imprécise : on ne bloque pas une fille déjà vue au salon
     gpsGMontrer(true, '⛔ คุณอยู่ห่างจากร้าน '+(d>=1000?(d/1000).toFixed(1)+' กม.':d+' ม.')+'<br><span style="font-size:.95rem;color:#e2e8f0;">กรุณามาที่ร้านแล้วกด 🔄</span>');

@@ -49,8 +49,9 @@
   <button id="majTout" onclick="majTout()" style="border:none;background:#2563eb;color:#fff;border-radius:12px;padding:14px;font-weight:800;font-size:1.05rem;width:100%;margin-bottom:6px">🔄 Tout actualiser sur Google</button>
   <div id="majRes" style="display:none;background:#fff;border-radius:12px;padding:12px;text-align:left;font-size:.9rem;line-height:1.5;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.06)"></div>
   <button onclick="autGpsSalon()" style="border:2px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 14px;font-weight:700;font-size:.95rem;width:100%">📍 Enregistrer la position du salon (à faire au salon, 1 fois)</button>
+  <div style="display:flex;gap:8px;margin-top:8px"><button onclick="autGps2()" style="flex:1;border:2px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 10px;font-weight:700;font-size:.92rem">📍➕ 2e lieu autorisé : ICI (ordinateur…)</button><button onclick="autGps2(1)" style="border:2px solid #fecaca;background:#fff;color:#b91c1c;border-radius:12px;padding:12px 12px;font-weight:700">🗑️</button></div>
 </div>
-<script src="autorisation.js?v=8"></script>
+<script src="autorisation.js?v=9"></script>
 <script>
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
