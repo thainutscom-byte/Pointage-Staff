@@ -60,9 +60,16 @@
         + '<tbody>' + lignes + '</tbody></table></div>'
         : '<div class="small">ยังไม่มีการนวดในสมุดวันนี้ · aucun massage pour l\'instant</div>');
     c.querySelectorAll('td,th').forEach(x => { x.style.padding = '6px 6px'; x.style.borderBottom = '1px solid #e5e7eb'; x.style.whiteSpace = 'nowrap'; });
-    c.hidden = false;
+    c.hidden = false; c.dataset.ok = '1';
   }
 
+  // 🩺 en cas de problème, la carte s'affiche quand même avec la raison (pour savoir quoi réparer)
+  function erreur(msg) {
+    const c = carte(); if (!c) return;
+    if (c.dataset.ok === '1' && !c.hidden) { const s = c.querySelector('.cahErr') || c.appendChild(Object.assign(document.createElement('div'), { className: 'cahErr small' })); s.textContent = msg; s.style.color = '#b91c1c'; return; }
+    c.innerHTML = '<b style="font-size:1.1rem;">🗒️ สมุดวันนี้ · Cahier du jour</b><div class="small" style="color:#b91c1c;font-weight:700;margin-top:6px;">' + esc(msg) + '</div>';
+    c.hidden = false;
+  }
   // ---------- la fiche se remplit avec le cahier ----------
   function remplir(rows) {
     const day = jourFiche(); if (!day || day.dataset.locked === '1' || !rows.length) return;
@@ -92,10 +99,10 @@
     enCours = true; dernier = Date.now();
     try {
       const t = await readTxt(await fetch(SHEET_URL + '?cahierjour=1&d=' + isoJ(workToday()) + '&_=' + Date.now()));
-      if (t[0] !== '{') return;
-      const j = JSON.parse(t); if (!j.ok) return;
+      if (t[0] !== '{') { erreur('⚠️ สมุดยังไม่เชื่อม · le serveur ne connaît pas le cahier (script Cahier / Nouvelle version ?) — « ' + t.slice(0, 40) + ' »'); return; }
+      const j = JSON.parse(t); if (!j.ok) { erreur('⚠️ ' + t.slice(0, 60)); return; }
       afficher(j.rows || []); remplir(j.rows || []);
-    } catch (e) {} finally { enCours = false; }
+    } catch (e) { erreur('📶 ไม่มีอินเทอร์เน็ต · pas de connexion (' + String(e && e.message || e).slice(0, 40) + ')'); dernier = 0; } finally { enCours = false; }
   }
   // 🏁 « ⏹ เลิกงาน » → la tablette du salon affiche « journée terminée »
   if (typeof finishWork === 'function' && !finishWork.__cah) {
