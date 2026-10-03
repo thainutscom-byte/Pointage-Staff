@@ -424,15 +424,18 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       const j=JSON.parse(t); if(!j.ok) return;
       lsS('cahier_staff_'+JOUR,j.staff||[]);
       if(!DEMO){ STAFF=(j.staff||[]).map(x=>x.n); HASH={}; (j.staff||[]).forEach(x=>HASH[x.n]=x.h); FINS=j.fins||[]; lsS('cahier_fins_'+JOUR,FINS);
-        VENUES=new Set((j.staff||[]).filter(x=>x.v).map(x=>x.n.toLowerCase())); lsS('cahier_venues_'+JOUR,[...VENUES]); planCaisse(); }
+        VENUES=new Set((j.staff||[]).filter(x=>x.v).map(x=>x.n.toLowerCase())); lsS('cahier_venues_'+JOUR,[...VENUES]); }
       const cible=DEMO?VRAI:S;
       if(cible && !cible.rows.length && !cible.passes.length && ((j.rows||[]).length || (j.events||[]).length)){
         const sent=lsG('cahier_envoye',{});
         cible.rows=(j.rows||[]).sort((a,b)=>a.n-b.n); cible.rows.forEach(r=>sent[JOUR+'|'+r.n]=JSON.stringify(r));
         (j.events||[]).sort((a,b)=>a.t-b.t).forEach(e=>{ const k=e.k; delete e.k; (k==='r'?cible.remises:cible.passes).push(e); sent[JOUR+(k==='r'?'|r':'|p')+e.t]='1'; });
         const last=cible.passes[cible.passes.length-1]; cible.caissiere=last?last.a:null;
+        cible.plan={}; cible.passes.forEach(x=>{ const d=new Date(x.t), mn=d.getHours()*60+d.getMinutes();      // planning des caissières retrouvé
+          const c=CRENEAUX.find(z=>mn>=z.deb*60-15 && mn<z.fin*60); if(c) cible.plan[c.k]=x.a; });
         lsS('cahier_envoye',sent); lsS('cahier_'+JOUR,cible); toast('☁️ โหลดสมุดวันนี้จาก Google แล้ว · cahier rechargé');
       }
+      if(!DEMO) planCaisse();                                   // tirage des caissières APRÈS le rechargement éventuel
       draw(); if(!$('form').hidden) drawForm();
     }catch(e){}
   }
@@ -655,7 +658,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     }
     if(chg){ save(); draw(); }
   }
-  setInterval(planCaisse,30000); setTimeout(planCaisse,2500);
+  setInterval(()=>{ if(lsG('cahier_staff_'+JOUR,null)) planCaisse(); },30000);   // (1er tirage : après le chargement depuis Google)
   function planTxt(){ const p=S.plan||{}; return CRENEAUX.map(c=>'🎲 '+c.lab+' : <b>'+esc(p[c.k]||'⏳')+'</b>').join(' · '); }
   function drawCash(){
     $('btnCash').textContent='💰 แคชเชียร์'+(S.caissiere?' · '+S.caissiere:'');
