@@ -8,6 +8,7 @@
 //   🍸 Bar fine : date de début + nombre de jours → demande au patron (✅ / ❌ dans l'onglet « 📨 Demandes »)
 //                 Acceptée : ces jours partent « Bar fine » dans Massages (0 massage) et comptent comme congé (pas d'abandon de poste)
 //   🚪 ลาออก    : dernier jour + raison → demande au patron (il confirme avec la page patron « 🚪 Démission »)
+//   🤝 ชวนเพื่อน : le message « 👭 ชวนเพื่อน » part directement par LINE (1 même amie ne compte jamais 2 fois)
 //  Chaque demande part dans Google (fichier Apps Script « Demandes ») + un message LINE tout prêt pour le patron.
 // ============================================================
 (function () {
@@ -325,7 +326,8 @@
       + '<button type="button" onclick="demOuvrir(\'maladie\')" style="' + b + 'width:100%;background:#dc2626;margin-bottom:8px;">🤒 ลาป่วย (ใบรับรองแพทย์)</button>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
       + '<button type="button" onclick="demOuvrir(\'barfine\')" style="' + b + 'background:#db2777;">🍸 Bar fine</button>'
-      + '<button type="button" onclick="demOuvrir(\'demission\')" style="' + b + 'background:#475569;">🚪 ลาออก</button></div>';
+      + '<button type="button" onclick="demOuvrir(\'demission\')" style="' + b + 'background:#475569;">🚪 ลาออก</button></div>'
+      + '<button type="button" onclick="parTypeSet(\'ami\');parPartager(\'line\')" style="' + b + 'width:100%;margin-top:8px;background:#06c755;">🤝 ชวนเพื่อน รับ 2,000 ฿</button>';
   }
   function installer() {
     [['plageGate', 'a[href*="line.me/R/ti/g/"]'], ['gpsGate', null]].forEach(([id, avant]) => {
