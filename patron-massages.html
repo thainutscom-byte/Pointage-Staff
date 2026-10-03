@@ -173,8 +173,10 @@ async function corDraw(){
   }
   if(k==='__tous__'){ tousDessiner(d); return; }
   const m=JOURS[d][cleE(k)], p=d.split('-'), nom=k.split(' — ')[0];
-  if(!m){ $('corInfo').textContent='❌ '+nom+' n\'a pas de journée envoyée le '+p[2]+'/'+p[1]+' — rien à corriger.'; return; }
-  orig=m; $('corInfo').textContent=nom+' · journée du '+p[2]+'/'+p[1]+'/'+p[0];
+  orig=m||{l1:0,l2:0,hh:0};
+  $('corInfo').textContent=nom+' · journée du '+p[2]+'/'+p[1]+'/'+p[0]+(m?'':' · ⚠️ pas encore envoyée par la fille : elle sera créée');
+  ['l1','l2','hh'].forEach(x=>{ $(x).value=orig[x]||0; $('o_'+x).textContent=orig[x]||0; });
+  $('corTab').style.display=''; corAff(); if(!m) return;
   ['l1','l2','hh'].forEach(x=>{ $(x).value=m[x]||0; $('o_'+x).textContent=m[x]||0; });
   $('corTab').style.display=''; corAff();
 }
@@ -183,11 +185,13 @@ let TOUS=[];
 const k9=c=>{ const q=String(c).split('|'); return q[0]+'|'+String(q[1]||'').replace(/\D/g,'').slice(-9); };
 function tousDessiner(d){
   const J={}; Object.keys(JOURS[d]||{}).forEach(c=>J[k9(c)]=JOURS[d][c]);
-  TOUS=emps.filter(e=>!/^boss$/i.test(String(e.nom).trim())).map(e=>({label:e.label, nom:e.nom, m:J[k9(cleE(e.label))]})).filter(x=>x.m).sort((a,b)=>a.nom.localeCompare(b.nom))
-    .map(x=>({label:x.label, nom:x.nom, app:{l1:+x.m.l1||0, l2:+x.m.l2||0, hh:+x.m.hh||0}}));
+  // 👥 TOUTES les employées (même celles qui n'ont pas encore envoyé leur journée : la ligne est créée à l'enregistrement)
+  TOUS=emps.filter(e=>!/^boss$/i.test(String(e.nom).trim())).map(e=>({label:e.label, nom:e.nom, m:J[k9(cleE(e.label))], bloque:e.bloque})).filter(x=>x.m || !x.bloque)
+    .sort((a,b)=>(!!b.m-!!a.m) || a.nom.localeCompare(b.nom))
+    .map(x=>({label:x.label, nom:x.nom+(x.m?'':' ·'), app:{l1:+(x.m||{}).l1||0, l2:+(x.m||{}).l2||0, hh:+(x.m||{}).hh||0}}));
   const p=d.split('-');
-  if(!TOUS.length){ $('corInfo').textContent='❌ Aucune journée envoyée le '+p[2]+'/'+p[1]+' — rien à corriger.'; return; }
-  $('corInfo').textContent=TOUS.length+' employée'+(TOUS.length>1?'s':'')+' · journée du '+p[2]+'/'+p[1]+'/'+p[0]+' · changez les chiffres faux puis ✔';
+  if(!TOUS.length){ $('corInfo').textContent='❌ Aucune employée.'; return; }
+  $('corInfo').textContent=TOUS.length+' employée'+(TOUS.length>1?'s':'')+' · journée du '+p[2]+'/'+p[1]+'/'+p[0]+' · changez les chiffres faux puis ✔ · « · » = pas encore de journée envoyée';
   let h='<table class="tous"><tr><th>Employée</th><th>1 lady<br>600</th><th>2 lady<br>800</th><th>Happy H.<br>600</th><th></th></tr>';
   TOUS.forEach((x,i)=>{ h+='<tr id="tR'+i+'"><td class="n">'+x.nom.replace(/[<>&]/g,'')+'</td>';
     ['l1','l2','hh'].forEach(k=>{ h+='<td><input type="number" min="0" step="'+(k==='hh'?'0.5':'1')+'" inputmode="decimal" id="t_'+i+'_'+k+'" value="'+x.app[k]+'" oninput="tousMaj()"><span class="av" id="ta_'+i+'_'+k+'"></span></td>'; });
