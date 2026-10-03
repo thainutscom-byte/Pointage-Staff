@@ -2368,9 +2368,9 @@ async function demanderPatron(act){
   // 💬 message tout prêt pour le compte LINE du patron (@048gmlsc) : la fille n'a qu'à appuyer sur « ส่ง »
   { const m='👑 คำขอ / Demande : '+(AUT_TXT[act]||act)+'\n👤 '+nom+(tel?' · '+tel:'')+'\n🕐 '+fmtHM(new Date())+'\n✅ อนุมัติ / Autoriser :\nhttps://thainutscom-byte.github.io/Pointage-Staff/patron-autorisations.html';
     const a=document.getElementById('autLine'); if(a) a.href='https://line.me/R/oaMessage/'+encodeURIComponent(LINE_PATRON)+'/?'+encodeURIComponent(m); }
-  document.getElementById('autTxt').innerHTML='<b>'+(AUT_TXT[act]||act)+'</b><br>รอหัวหน้ากด ✅ อนุมัติ ในหน้าหัวหน้า<br><span style="font-size:.85rem">(ภายใน 10 นาที)</span>';
+  document.getElementById('autTxt').innerHTML='<b>'+(AUT_TXT[act]||act)+'</b><br>รอหัวหน้ากด ✅ อนุมัติ ในหน้าหัวหน้า<br><span style="font-size:.85rem">(ภายใน 30 นาที)</span>';
   G.style.display='flex';
-  const fin=Date.now()+10*60000; let k=0;
+  const fin=Date.now()+30*60000; let k=0;   // ⏳ 30 minutes pour que le patron réponde
   try{
     while(Date.now()<fin){
       if(window.__autAnnule) return false;
