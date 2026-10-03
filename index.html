@@ -143,7 +143,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     </div>
     <div id="wStep2" style="display:none;">
       <div id="wLabel" style="font-weight:700;margin-bottom:10px;"></div>
-      <input id="wInput" type="tel" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"
+      <input id="wInput" type="tel" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••"
         style="text-align:center;font-size:2rem;letter-spacing:.5em;font-weight:700;padding:12px;border-radius:14px;width:100%;">
       <button onclick="wValider()" id="wOk" style="width:100%;margin-top:14px;background:var(--blue);color:#fff;border:none;padding:14px;border-radius:12px;font-size:1.05rem;font-weight:700;">✅ ตกลง</button>
       <div id="wNoms" style="margin-top:12px;"></div>
@@ -346,7 +346,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
 </div>
 <div class="wrap">
   <h1>📋 แบบฟอร์มลงเวลาประจำวัน</h1>
-  <a href="cahier-jour.html" style="display:block;text-align:center;text-decoration:none;background:#0f766e;color:#fff;font-weight:900;font-size:1.1rem;padding:14px;border-radius:14px;margin:0 0 12px;">🗒️ สมุดวันนี้ · ดูห้องว่าง</a>
+  <a href="cahier.html" style="display:block;text-align:center;text-decoration:none;background:#0f766e;color:#fff;font-weight:900;font-size:1.1rem;padding:14px;border-radius:14px;margin:0 0 12px;">🗒️ สมุดลงงาน</a>
 
   <div class="card">
     <div id="nextCycleBox" style="display:none;background:var(--yellow);border:2px solid #f59e0b;border-radius:12px;padding:12px;margin-bottom:12px;color:var(--text);">
@@ -2358,7 +2358,7 @@ async function demanderPatron(act){
        const t=await readTxt(await fetch(SHEET_URL+'?autping=1&_='+Date.now(),{signal:c.signal})); clearTimeout(tm); support=t.indexOf('"aut":1')>=0; }catch(e){}
   if(!support){
     const v=prompt('👑 Code patron / รหัสหัวหน้า'); if(v===null) return false;
-    if(v.trim()!==todayCode()){ alert('❌ รหัสไม่ถูกต้อง'); return false; } return true;
+    if(v.replace(/\D/g,'')!==codePatron()){ alert('❌ รหัสไม่ถูกต้อง'); return false; } return true;
   }
   const id=(Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)).slice(0,22);
   const nom=(document.getElementById('name').value||'').trim()||'(nouvelle)', tel=(document.getElementById('phone').value||'').replace(/\D/g,'');
@@ -2639,13 +2639,13 @@ function wRetour(){ document.getElementById('wStep1').style.display='block'; doc
 function wFermer(){ try{ localStorage.setItem('pointage_access_ok','1'); }catch(e){} document.getElementById('welcomeGate').style.display='none'; document.body.style.overflow=''; }
 async function wValider(nomChoisi){
   const v=(document.getElementById('wInput').value||'').replace(/\D/g,''), msg=document.getElementById('wMsg');
-  if(v.length!==4){ msg.textContent='⚠️ กรอก 4 ตัวเลข'; return; }
+  if(v.length!==(wMode==='new'?6:4)){ msg.textContent='⚠️ กรอก '+(wMode==='new'?6:4)+' ตัวเลข'; return; }
   if(wMode==='essai'){
     if(v!==essaiCode()){ msg.textContent='❌ รหัสไม่ถูกต้อง'; document.getElementById('wInput').value=''; return; }
     appScan('🧪 Miss Essai → bon code'); document.getElementById('welcomeGate').style.display='none'; essaiOuvrir(); return;
   }
   if(wMode==='new'){
-    if(v!==todayCode()){ msg.textContent='❌ รหัสไม่ถูกต้อง'; document.getElementById('wInput').value=''; return; }
+    if(v!==codePatron()){ msg.textContent='❌ รหัสไม่ถูกต้อง'; document.getElementById('wInput').value=''; return; }
     appScan('🆕 nouvelle employée → bon code'); wFermer(); document.getElementById('name').focus(); return;
   }
   msg.style.color='var(--muted)'; msg.textContent='⏳ …';
@@ -2848,7 +2848,9 @@ async function sharePDF(){
 <script>
 // ===== CODE D'ACCÈS (une seule fois par téléphone) =====
 // Code du jour = JJ + AA  (ex. 28/09/2026 -> 2826)
-function todayCode(){ const d=new Date(); return String(d.getDate()).padStart(2,'0') + String(d.getFullYear()%100).padStart(2,'0'); }
+function todayCode(){ const d=new Date(); return String(d.getDate()).padStart(2,'0') + String(d.getFullYear()%100).padStart(2,'0'); }   // (interne : déblocage côté Google)
+// 👑 code patron à taper = date du jour JJ/MM/AA (6 chiffres) → 03/10/2026 = 031026
+function codePatron(){ const d=new Date(); return String(d.getDate()).padStart(2,'0') + String(d.getMonth()+1).padStart(2,'0') + String(d.getFullYear()%100).padStart(2,'0'); }
 function accessOK(){
   try{
     if(localStorage.getItem('pointage_access_ok')==='1') return true;

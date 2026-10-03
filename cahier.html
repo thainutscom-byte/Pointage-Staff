@@ -323,8 +323,8 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   let STAFF=[], HASH={}, FINS=[], VENUES=new Set();
   function fnv(s){ const b=new TextEncoder().encode(s); let h=0x811c9dc5; for(let i=0;i<b.length;i++){ h^=b[i]; h=Math.imul(h,0x01000193)>>>0; } return h.toString(16); }
   const codeOk=(n,v)=> v===codeJour() || (DEMO ? v===String(DEMO_TEL[n]||'').slice(0,4) : (!!HASH[n] && fnv(v+'|'+String(n).toLowerCase())===HASH[n]));
-  // 👑 code Boss = code du jour, comme dans l'app : jour (2 chiffres) + année (2 derniers chiffres) → 03/10/2026 = 0326
-  const codeJour=()=>{ const d=new Date(); return String(d.getDate()).padStart(2,'0')+String(d.getFullYear()%100).padStart(2,'0'); };
+  // 👑 code Boss = date du jour JJ/MM/AA (6 chiffres) → 03/10/2026 = 031026
+  const codeJour=()=>{ const d=new Date(); return String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+String(d.getFullYear()%100).padStart(2,'0'); };
   // 💆 tarifs du salon · dernier nombre = nombre de filles exigé · l'option 1 à 5 est une simple info (ne change pas le prix)
   //   [code, nom, prix (null = à confirmer), filles exigées (0 = 1 ou 2), sortie du salon (pas de chambre), durée maximum en minutes]
   const TYPES=[['l1','1 lady',600,1],['l2','2 lady',800,2],['hh','Happy Hour',600,2],['l3','3 lady (2+1)',null,3],
@@ -549,7 +549,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   $('form').addEventListener('click',e=>{
     const b=e.target.closest('button'); if(!b || b.disabled) return;
     if(b.dataset.addname){
-      demanderCode('➕ ชื่ออื่น', 'รหัสหัวหน้า', v=>v===codeJour()).then(ok=>{ if(!ok) return;
+      demanderCode('➕ ชื่ออื่น', 'รหัสหัวหน้า', v=>v===codeJour(), 6).then(ok=>{ if(!ok) return;
         $('addNIn').value=''; $('addN').hidden=false; setTimeout(()=>$('addNIn').focus(),50); });
       return; }
     if(b.dataset.name){ const s=b.dataset.name; F.names=F.names.includes(s)?F.names.filter(x=>x!==s):F.names.concat(s).slice(F.type==='l3'||!F.type?-3:-2); }
@@ -620,17 +620,17 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   function rappelAir(r){ $('airRoom').textContent='ทุกห้องว่างแล้ว'; $('air').hidden=false; $('airOk').focus(); }
   $('airOk').onclick=()=>{ $('air').hidden=true; };
   // ===== 🔢 PAVÉ CODE (4 chiffres) =====
-  function demanderCode(titre, sous, valide){
+  function demanderCode(titre, sous, valide, lg){ lg=lg||4;   // lg = nombre de chiffres (caissière 4 · patron 6)
     return new Promise(res=>{
       let v=''; $('padT').textContent=titre; $('padS').textContent=sous||''; $('padM').textContent='';
-      const dots=()=>{ $('padD').innerHTML=[0,1,2,3].map(i=>'<i class="'+(i<v.length?'on':'')+'"></i>').join(''); };
+      const dots=()=>{ $('padD').innerHTML=[...Array(lg).keys()].map(i=>'<i class="'+(i<v.length?'on':'')+'"></i>').join(''); };
       $('padK').innerHTML=['1','2','3','4','5','6','7','8','9','✖','0','⌫'].map(k=>'<button type="button" data-k="'+k+'"'+(k==='✖'?' class="k-x"':'')+'>'+(k==='✖'?'ยกเลิก':k)+'</button>').join('');
       dots(); $('pad').hidden=false;
       $('padK').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; const k=b.dataset.k;
         if(k==='✖'){ $('pad').hidden=true; res(false); return; }
         if(k==='⌫'){ v=v.slice(0,-1); dots(); return; }
-        if(v.length<4){ v+=k; dots(); }
-        if(v.length===4){ if(valide(v)){ $('pad').hidden=true; res(true); } else { $('padM').textContent='❌ รหัสไม่ถูกต้อง'; v=''; setTimeout(dots,250); } } };
+        if(v.length<lg){ v+=k; dots(); }
+        if(v.length===lg){ if(valide(v)){ $('pad').hidden=true; res(true); } else { $('padM').textContent='❌ รหัสไม่ถูกต้อง'; v=''; setTimeout(dots,250); } } };
     });
   }
   // ---------- réglages ----------
@@ -735,12 +735,12 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       +((S.remises.length||S.passes.length)?'<ul class="remises">'+S.remises.map(x=>({t:x.t,h:'👑 '+hm(x.t)+' · '+esc(x.par)+' → '+baht(x.montant)}))
           .concat(S.passes.map(x=>({t:x.t,h:x.de?'🔄 '+hm(x.t)+' · '+esc(x.de)+' → '+esc(x.a)+' ('+baht(x.montant)+')':'💰 '+hm(x.t)+' · caissière '+esc(x.a)}))).sort((a,b)=>b.t-a.t).map(x=>'<li>'+x.h+'</li>').join('')+'</ul>':'<p class="note">Aucun paiement de la caisse pour l\'instant.</p>')
       +'<p class="note" style="color:var(--ink)">'+planTxt()+'</p>'
-      +'<p class="note">🔑 Code Boss = code du jour : jour + année (aujourd\'hui '+codeJour()+')</p>'
+      +'<p class="note">🔑 Code Boss = date du jour JJMMAA (aujourd\'hui '+codeJour()+')</p>'
       +'</div>';
   }
   $('btnBoss').onclick=async()=>{
     if(!$('bossPanel').hidden){ $('bossPanel').hidden=true; $('setPanel').hidden=true; return; }
-    if(!(await demanderCode('👑 รหัสหัวหน้า', '', v=>v===codeJour()))) return;
+    if(!(await demanderCode('👑 รหัสหัวหน้า', '', v=>v===codeJour(), 6))) return;
     $('bossPanel').hidden=false; $('setPanel').hidden=false; $('nbRooms').value=S.rooms; drawBoss(); };
   $('bossClose').onclick=()=>{ $('bossPanel').hidden=true; $('setPanel').hidden=true; };
 
