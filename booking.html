@@ -289,7 +289,7 @@ async function charger(){
 function draw(){
   const S=$('shifts'), n=$('contract').value; S.innerHTML='';
   SH[n].forEach(([k,l])=>{
-    const cap=capPeriode($('start').value, n), x=res[k]||{v:'',max:0}, libre=Math.max(0,cap-(+x.max||0)), plein=(x.v && x.v.startsWith('plein')) || libre<=0;
+    const cap=capPeriode($('start').value, n, k), x=res[k]||{v:'',max:0}, libre=Math.max(0,cap-(+x.max||0)), plein=(x.v && x.v.startsWith('plein')) || libre<=0;
     const b=document.createElement('button'); b.className='sh'+(choix===k?' on':'');
     let etat = plein ? '🔴 เต็ม' : x.v ? (x.v.startsWith('meme')?'⛔ มีคนเริ่มวันนี้แล้ว':'🔄 ต้องเปลี่ยน') : '✅ ว่าง '+libre+'/'+cap;
     b.innerHTML='<span></span><small></small>'; b.querySelector('span').textContent=l; b.querySelector('small').textContent=etat;
@@ -365,9 +365,9 @@ function parResa(p){ const r=parValide(); if(r) scan('📝 réservation parrain�
 // 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
 // 👥 places par horaire : réglées par le patron (page « 🗓️ Places disponibles ») · avril→octobre = ete · 1er nov.→30 mars = hiver
 let CAPS={ete:4,hiver:5}; try{ const c0=JSON.parse(localStorage.getItem('pointage_caps')||'null'); if(c0 && c0.ete) CAPS=c0; }catch(e){}
-fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
-function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? CAPS.hiver : CAPS.ete; }
-function capPeriode(deb, n){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
+fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver, sh:c.sh||{}}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
+function capJour(iso, sh){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10), hiv=(m>=11 || m<=2 || (m===3 && d<=30)), p=(sh && CAPS.sh && CAPS.sh[sh]) || CAPS; return +(hiv ? p.hiver : p.ete) || (hiv ? 5 : 4); }   // sh = horaire (places réglées horaire par horaire)
+function capPeriode(deb, n, sh){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso, sh)); } return c; }
 function ctl(){ return (SIG.thai?'✅ ภาษาไทย':'⚠️ langue '+(SIG.lang||'?'))+' · '+(SIG.bkk?'heure BKK':'⚠️ '+(SIG.tz||'?'))+' · '+SIG.model+' · quiz ✅'; }
 function scan(res){ try{ fetch(API,{method:'POST',body:JSON.stringify({type:'scan',page:'booking',src:SRC,lang:SIG.lang,tz:SIG.tz,model:SIG.model,thai:SIG.thai,res})}).catch(()=>{}); }catch(e){} }
 const mel=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);

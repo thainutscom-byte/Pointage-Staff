@@ -275,7 +275,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div style="font-weight:900;font-size:1.2rem;margin:4px 0;">ชวนเพื่อน 1 คน = 2,000 ฿</div>
     <div id="parGateTxt" style="line-height:1.6;margin:8px 0 14px;"></div>
     <button type="button" onclick="parFermer();parTypeSet('ami');parPartager('line')" style="width:100%;border:none;border-radius:12px;padding:14px;font-size:1.05rem;font-weight:800;background:#06c755;color:#fff;">💬 ส่งให้เพื่อนตอนนี้เลย</button>
-    <button type="button" onclick="parFermer();document.getElementById('parCard').scrollIntoView({behavior:'smooth',block:'center'})" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:11px;font-weight:800;background:#fdf2f8;color:#db2777;">📲 Messenger · Instagram · TikTok · SMS</button>
+    <button type="button" onclick="parFermer();parOuvrirCarte(true);document.getElementById('parCard').scrollIntoView({behavior:'smooth',block:'center'})" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:11px;font-weight:800;background:#fdf2f8;color:#db2777;">📲 Messenger · Instagram · TikTok · SMS</button>
     <button type="button" onclick="parFermer()" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:11px;font-weight:700;background:#e5e7eb;">ภายหลัง</button>
   </div>
 </div>
@@ -402,7 +402,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
           <option>10h-16h</option><option>13h-19h</option><option>16h-22h</option><option>19h-01h</option><option>21h-03h</option>
         </select>
       </div>
-      🕐 เลือกได้ 5 ช่วงเวลา (6-8 ชม. ขึ้นอยู่กับพนักงาน) · 👥 สูงสุด 4 คน ต่อช่วงเวลา (1 พ.ย. – 30 มี.ค.: 5 คน)
+      🕐 เลือกได้ 5 ช่วงเวลา (6-8 ชม. ขึ้นอยู่กับพนักงาน) · 👥 จำนวนคนต่อช่วงเวลามีจำกัด
     </div>
 
     <div id="monthlyCard" style="display:none;">
@@ -412,7 +412,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
           <option>09:00-17:00</option><option>17:00-01:00</option>
         </select>
       </div>
-      <div class="small" style="margin-bottom:6px;">👥 สูงสุด 4 คน ต่อช่วงเวลา (1 พ.ย. – 30 มี.ค.: 5 คน)</div>
+      <div class="small" style="margin-bottom:6px;">👥 จำนวนคนต่อช่วงเวลามีจำกัด</div>
       <script>
       // horaires affichés en thaï + anglais (la valeur enregistrée reste « 10h-16h », « 09:00-17:00 »…)
       function shiftLabel(v){
@@ -471,7 +471,8 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <button type="button" onclick="reglesOuvrir(0)" style="width:100%;margin-top:8px;background:#fff;color:var(--text);border:2px solid var(--border);padding:12px;border-radius:12px;font-size:1rem;font-weight:800;">📋 อ่านกฎระเบียบ (แตะเพื่ออ่านทีละหมวด)</button>
     <a href="https://line.me/R/ti/g/vJMkG2gVhz" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;width:100%;margin-top:8px;background:#06c755;color:#fff;padding:13px;border-radius:12px;font-size:1rem;font-weight:800;box-sizing:border-box;">💬 เข้ากลุ่ม LINE พนักงาน</a>
     <div id="parCard" style="margin-top:10px;border:3px solid #ec4899;background:#fdf2f8;border-radius:14px;padding:12px;">
-      <div style="font-weight:900;font-size:1.1rem;">🤝 ชวนเพื่อนมาทำงาน รับ <span style="color:#db2777;">2,000 ฿</span></div>
+      <button type="button" id="parToggle" onclick="parOuvrirCarte()" style="width:100%;border:none;background:transparent;padding:4px 0;text-align:left;font-weight:900;font-size:1.1rem;color:var(--text);display:flex;justify-content:space-between;align-items:center;gap:8px;"><span>🤝 ชวนเพื่อนมาทำงาน รับ <span style="color:#db2777;">2,000 ฿</span></span><span id="parFleche" style="color:#db2777;">▼</span></button>
+      <div id="parBody" style="display:none;margin-top:6px;">
       <div class="small" style="margin:4px 0 8px;line-height:1.5;">เพื่อนต้องจองผ่าน <b>ลิงก์ของคุณ</b> และทำงานครบ <b>2 เดือน</b> → คุณได้ค่าแนะนำ <b>2,000 ฿ / คน</b> · ชวนได้ไม่จำกัด!</div>
       <div id="parStats" class="small" style="font-weight:700;margin-bottom:8px;"></div>
       <div id="parObj" style="display:none;border:2px solid #db2777;border-radius:12px;padding:10px;margin-bottom:10px;"></div>
@@ -493,6 +494,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
         <button type="button" onclick="parCopier()" style="border:2px solid #db2777;border-radius:10px;padding:8px 4px;font-weight:800;font-size:.85rem;background:#fff;color:#db2777;">📋 คัดลอก</button>
       </div>
       <div id="parAide" class="small" style="display:none;margin-top:8px;font-weight:700;color:#16a34a;text-align:center;"></div>
+      </div>
     </div>
     <input type="hidden" id="rate" value="135"><input type="hidden" id="rateUrg" value="100">
     <input type="hidden" id="penRate1" value="20"><input type="hidden" id="penRate2" value="30">
@@ -1287,7 +1289,7 @@ function shiftSel(){ return document.getElementById(N===10 ? 'shiftGlobal' : 'sh
 function planMsg(v){
   if(!v) return '';
   const p=v.split('|');
-  if(p[0]==='plein') return '🔴 ช่วงเวลานี้เต็มแล้ว (4 คน) วันที่ '+String(p[1]||'').split('-').reverse().slice(0,2).join('/');
+  if(p[0]==='plein') return '🔴 ช่วงเวลานี้เต็มแล้ว วันที่ '+String(p[1]||'').split('-').reverse().slice(0,2).join('/');
   if(p[0]==='meme') return '⛔ มีคนเริ่มรอบวันเดียวกันในช่วงเวลานี้แล้ว — เลือกช่วงเวลาอื่น หรือวันเริ่มอื่น';
   if(p[0]==='roulement') return '🔄 สัญญาที่แล้วทำช่วงเวลานี้แล้ว — สัญญาใหม่ต้องเปลี่ยนช่วงเวลา';
   if(p[0]==='impose') return '👑 หัวหน้ากำหนดช่วงเวลาให้คุณแล้ว ('+(p[1]||'')+') — เปลี่ยนเองไม่ได้';
@@ -1306,8 +1308,7 @@ async function planRefresh(){
       '&s='+sv+'&n='+N+'&sh='+encodeURIComponent(opts.map(o=>o.value).join(','))+'&_='+Date.now());
     const t=await readTxt(r); if(t[0]!=='{') return;
     const res=JSON.parse(t);
-    const cap=capPeriode(sv, N);
-    opts.forEach(o=>{ const x=res[o.value]; if(!x) return;
+    opts.forEach(o=>{ const x=res[o.value]; if(!x) return; const cap=capPeriode(sv, N, o.value);
       const libre=Math.max(0,cap-(+x.max||0)), plein=(x.v && x.v.startsWith('plein')) || libre<=0;
       const bad=(!!x.v || plein) && o.value!==sel.value;
       o.disabled=bad;
@@ -2148,6 +2149,8 @@ function startPickOk(){
 }
 setInterval(startPickMaj, 1500); setTimeout(startPickMaj, 300);
 
+// 🤝 carte parrainage réduite à 1 bouton : on l'ouvre / la ferme en touchant le titre
+function parOuvrirCarte(ouvrir){ const B=document.getElementById('parBody'), F=document.getElementById('parFleche'); if(!B) return; const on=ouvrir===true?true:B.style.display==='none'; B.style.display=on?'block':'none'; if(F) F.textContent=on?'▲':'▼'; }
 // ===== 🤝 PARRAINAGE : lien personnel par employée → suivi des partages, ouvertures, réservations (2 000 ฿ si l'amie travaille 2 mois) =====
 const PAR_BOOK='https://thainutscom-byte.github.io/Pointage-Staff/booking.html', PAR_COMM=2000, PAR_RAPPEL_J=3;
 function parCode(){ const n=(document.getElementById('name').value||'').toLowerCase().replace(/[^a-z]/g,'').slice(0,12), t=(document.getElementById('phone').value||'').replace(/\D/g,'');
@@ -2308,8 +2311,8 @@ function inscOpts(n){ return [...document.getElementById(n===30?'shiftGlobalMont
 async function inscPlan(){
   const n=+document.getElementById('iCtr').value, deb=document.getElementById('iDeb').value, B=document.getElementById('iSh');
   const L=inscOpts(n); if(!L.some(x=>x[0]===inscSh)) inscSh='';
-  const dessiner=res=>{ B.innerHTML=''; const cap=deb?capPeriode(deb,n):5;
-    L.forEach(([v,lab])=>{ const x=(res||{})[v]||{}, libre=Math.max(0,cap-(+x.max||0)), plein=(x.v && String(x.v).startsWith('plein')) || (res && libre<=0), bad=!!x.v || plein;
+  const dessiner=res=>{ B.innerHTML='';
+    L.forEach(([v,lab])=>{ const cap=deb?capPeriode(deb,n,v):5, x=(res||{})[v]||{}, libre=Math.max(0,cap-(+x.max||0)), plein=(x.v && String(x.v).startsWith('plein')) || (res && libre<=0), bad=!!x.v || plein;
       const b=document.createElement('button'); b.type='button';
       b.style.cssText='border-radius:12px;padding:12px 6px;font-weight:800;font-size:1rem;line-height:1.35;border:3px solid '+(inscSh===v?'#16a34a':'var(--border)')+';background:'+(inscSh===v?'#dcfce7':'#fff')+';color:#111827;'+(bad?'opacity:.45;':'');
       b.innerHTML=lab+'<br><span style="font-size:.8rem;font-weight:700;color:'+(bad?'var(--red)':'var(--green)')+'">'+(!res?'':plein?'🔴 เต็ม':x.v?'⛔ เลือกไม่ได้':'✅ ว่าง '+libre+'/'+cap)+'</span>';
@@ -2520,8 +2523,11 @@ function paieSigner(){
 }
 
 // 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
-function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? 5 : 4; }
-function capPeriode(deb, n){ let c=5; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
+// 👥 places par horaire : réglées par le patron (page « 🗓️ Places disponibles ») · avril→octobre = ete · 1er nov.→30 mars = hiver
+let CAPS={ete:4,hiver:5}; try{ const c0=JSON.parse(localStorage.getItem('pointage_caps')||'null'); if(c0 && c0.ete) CAPS=c0; }catch(e){}
+fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver, sh:c.sh||{}}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
+function capJour(iso, sh){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10), hiv=(m>=11 || m<=2 || (m===3 && d<=30)), p=(sh && CAPS.sh && CAPS.sh[sh]) || CAPS; return +(hiv ? p.hiver : p.ete) || (hiv ? 5 : 4); }   // sh = horaire (places réglées horaire par horaire)
+function capPeriode(deb, n, sh){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso, sh)); } return c; }
 
 // ===== 💬 LINE ID de l'employée : le patron peut lui écrire / l'appeler sur LINE (alerte retard) =====
 function lineIdCle(){ return 'pointage_lineid_'+(empKey()||''); }
@@ -2966,6 +2972,6 @@ function checkAccess(){
 })();
 </script>
 <script src="demandes.js?v=3"></script>
-<script src="cahier-fiche.js?v=3"></script>
+<script src="cahier-fiche.js?v=4"></script>
 </body>
 </html>

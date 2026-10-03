@@ -90,9 +90,9 @@
 // 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
 // 👥 places par horaire : réglées par le patron (page « 🗓️ Places disponibles ») · avril→octobre = ete · 1er nov.→30 mars = hiver
 let CAPS={ete:4,hiver:5}; try{ const c0=JSON.parse(localStorage.getItem('pointage_caps')||'null'); if(c0 && c0.ete) CAPS=c0; }catch(e){}
-fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
-function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? CAPS.hiver : CAPS.ete; }
-function capPeriode(deb, n){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
+fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver, sh:c.sh||{}}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
+function capJour(iso, sh){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10), hiv=(m>=11 || m<=2 || (m===3 && d<=30)), p=(sh && CAPS.sh && CAPS.sh[sh]) || CAPS; return +(hiv ? p.hiver : p.ete) || (hiv ? 5 : 4); }   // sh = horaire (places réglées horaire par horaire)
+function capPeriode(deb, n, sh){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso, sh)); } return c; }
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
 function getPin(){ return 'x'; }   // plus de code patron
@@ -110,7 +110,7 @@ async function places(){
     const col=l=>l<=0?'var(--red)':l===1?'#ea580c':'var(--green)';
     let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
     const ca=capJour(isoJ(0)), cb=capPeriode(isoJ(0),10);
-    SH.forEach(([k,l])=>{ const la=ca-((a[k]||{}).max||0), lb=cb-((b[k]||{}).max||0);
+    SH.forEach(([k,l])=>{ const ca=capJour(isoJ(0),k), cb=capPeriode(isoJ(0),10,k); const la=ca-((a[k]||{}).max||0), lb=cb-((b[k]||{}).max||0);
       h+='<tr class="plR" data-sh="'+k+'" style="border-top:1px solid var(--border);cursor:pointer" onclick="plDetail(this)"><td style="padding:8px 0">'+l+' <span style="color:var(--muted);font-size:.8rem">▸ qui ?</span></td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/'+ca+'</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/'+cb+'</td></tr>'; });
     P.innerHTML='<div id="plAlerte"></div>'+h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé · 👆 touchez un horaire pour voir qui occupe les places</div>';
     plCharger();
