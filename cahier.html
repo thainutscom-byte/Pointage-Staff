@@ -240,7 +240,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     </div>
   </div>
 
-  <section class="book" aria-label="Cahier du jour">
+  <section class="book" aria-label="Cahier du jour" id="bookSec" hidden>
     <div class="book-h"><h2>📋 วันนี้ · Aujourd'hui</h2><span id="sum"></span></div>
     <div class="tbl">
       <table>
@@ -661,7 +661,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   }
   setInterval(()=>{ if(lsG('cahier_staff_'+JOUR,null)) planCaisse(); },30000);   // (1er tirage : après le chargement depuis Google)
   function planTxt(){ const p=S.plan||{}; return CRENEAUX.map(c=>'🎲 '+c.lab+' : <b>'+esc(p[c.k]||'⏳')+'</b>').join(' · '); }
-  function drawCash(){
+  function drawCash(){ try{ majBook(); }catch(e){}
     $('btnCash').textContent='💰 แคชเชียร์'+(S.caissiere?' · '+S.caissiere:'');
     if($('cashPanel').hidden) return;
     $('cCash').innerHTML=(S.caissiere?'<p class="note" style="flex-basis:100%">🔄 เปลี่ยนแคชเชียร์: แตะชื่อคนใหม่ แล้วใส่รหัสของคนใหม่ · changer : toucher le nouveau nom puis son code</p>':'')
@@ -733,6 +733,14 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     $('bossPanel').hidden=false; $('setPanel').hidden=false; $('nbRooms').value=S.rooms; drawBoss(); };
   $('bossClose').onclick=()=>{ $('bossPanel').hidden=true; $('setPanel').hidden=true; };
 
+  // 🔒 le tableau « 📋 วันนี้ » (paiements, annulations) n'est visible QUE pour la caissière (💰 + son code) ou le patron (👑 + code du jour)
+  //    les employées voient seulement les chambres et « ➕ Nouveau massage » · fermeture automatique après 5 min sans toucher l'écran
+  function majBook(){ $('bookSec').hidden = $('bossPanel').hidden && ($('cashPanel').hidden || !S.caissiere); }
+  new MutationObserver(majBook).observe($('cashPanel'),{attributes:true,attributeFilter:['hidden']});
+  new MutationObserver(majBook).observe($('bossPanel'),{attributes:true,attributeFilter:['hidden']});
+  let toucheT=Date.now(); document.addEventListener('pointerdown',()=>{ toucheT=Date.now(); },true);
+  setInterval(()=>{ if(Date.now()-toucheT>5*60000 && !$('bookSec').hidden){ $('cashPanel').hidden=true; $('bossPanel').hidden=true; $('setPanel').hidden=true; } },15000);
+  majBook();
   $('setOk').onclick=()=>{ const v=Math.max(1,Math.min(20,+$('nbRooms').value||S.rooms)); S.rooms=v; lsS('cahier_rooms',v); save(); $('setPanel').hidden=true; draw(); if(!$('form').hidden) drawForm(); toast('✅ '+v+' ห้อง'); };
 
   // ===== 🧪 MODE ENTRAÎNEMENT : exemple complet (caissière Mint, code 0934), effacé en sortant =====
