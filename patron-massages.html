@@ -6,8 +6,8 @@
 <meta name="color-scheme" content="light only">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#dc2626">
-<title>✏️ Patron · Massages · Arrivée · Horaires</title>
+<meta name="theme-color" content="#16a34a">
+<title>✏️ Corriger les massages</title>
 <style>
   :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--redbg:#fee2e2;--green:#16a34a;--border:#e5e7eb;}
   *{box-sizing:border-box}
@@ -49,7 +49,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>✏️ Massages · Arrivée · Horaires</h1>
+  <h1>✏️ Corriger les massages</h1>
   <div id="main">
 <div class="card">
       <h2>✏️ Corriger les massages d'une employée</h2>
@@ -68,41 +68,12 @@
       <button class="big green" id="corOk" disabled onclick="corEnvoyer()">✔ Enregistrer la correction</button>
       <div id="corMsg" class="small" style="margin-top:6px"></div>
     </div>
-    <div class="card" style="margin-top:14px">
-      <h2>⏰ Valider l'heure d'arrivée <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(aujourd'hui)</span></h2>
-      <select id="arrEmp" onchange="arrDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
-      <div id="arrInfo" class="small" style="text-align:left;margin:8px 0"></div>
-      <input id="arrH" type="time" style="letter-spacing:0;font-size:1.5rem;padding:10px">
-      <div style="height:10px"></div>
-      <button class="big green" id="arrOk" disabled onclick="arrValider()">✔ Valider l'arrivée</button>
-      <div id="arrMsg" class="small" style="margin-top:6px"></div>
-    </div>
-    <div class="card" style="margin-top:14px">
-      <h2>🕐 Changer l'horaire d'une employée</h2>
-      <select id="horEmp" onchange="horDraw()" style="width:100%;font-size:1.05rem;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)"></select>
-      <div id="horInfo" class="small" style="text-align:left;margin:8px 0"></div>
-      <div class="pen" id="horSh"></div>
-      <div style="height:10px"></div>
-      <button class="big green" id="horOk" disabled onclick="horValider()">✔ Changer l'horaire</button>
-      <div id="horMsg" class="small" style="margin-top:6px"></div>
-    </div>
-    <div class="card">
-      <h2>💰 À payer aux employées</h2>
-      <input id="paieMois" type="month" onchange="paieCharger()" style="width:100%;box-sizing:border-box;font-size:1.05rem;letter-spacing:0;padding:11px;border-radius:12px;border:2px solid var(--border);background:#fff;color:var(--text)">
-      <div id="paieAuj" class="small" style="text-align:left;margin:8px 0;font-weight:700"></div>
-      <div id="paieRes" class="small" style="text-align:left">Chargement…</div>
-      <div style="overflow-x:auto"><table class="paie" id="paieTab" style="display:none"></table></div>
-      <div class="small" style="text-align:left;margin-top:6px">Brut − pénalités. Contrats en cours = provisoire. Logement, uniformes et autres retenues : onglet « 💰 Paie contrats » de Google Sheets.</div>
-    </div>
-    <div class="card" style="margin-top:14px">
-      <h2>🗓️ Places disponibles <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(4 max par horaire · 5 du 01/11 au 30/03)</span></h2>
-      <div id="places">Chargement…</div>
-    </div>
-        <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
+    <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
     <div class="small" style="margin-top:14px"><a href="#" onclick="actualiser();return false">🔄 Actualiser</a></div>
   </div>
+  <a href="patron.html" style="display:block;text-align:center;margin-top:12px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
 </div>
-<script src="autorisation.js?v=7"></script>
+<script src="autorisation.js?v=8"></script>
 <script>
 
 // 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
@@ -126,29 +97,41 @@ async function places(){
     let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">Aujourd\'hui</td><td style="text-align:center">10 jours</td></tr>';
     const ca=capJour(isoJ(0)), cb=capPeriode(isoJ(0),10);
     SH.forEach(([k,l])=>{ const la=ca-((a[k]||{}).max||0), lb=cb-((b[k]||{}).max||0);
-      h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px 0">'+l+'</td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/'+ca+'</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/'+cb+'</td></tr>'; });
-    P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé</div>';
+      h+='<tr class="plR" data-sh="'+k+'" style="border-top:1px solid var(--border);cursor:pointer" onclick="plDetail(this)"><td style="padding:8px 0">'+l+' <span style="color:var(--muted);font-size:.8rem">▸ qui ?</span></td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/'+ca+'</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/'+cb+'</td></tr>'; });
+    P.innerHTML='<div id="plAlerte"></div>'+h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé · 👆 touchez un horaire pour voir qui occupe les places</div>';
+    plCharger();
   }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
 }
-// ===== 💰 À PAYER AUX EMPLOYÉES : par mois, par employée, + montant du jour =====
-const fb=n=>(Math.round(n)||0).toLocaleString('en-US')+' ฿';
-async function paieCharger(){
-  if(!$('paieMois').value) $('paieMois').value=isoJ(0).slice(0,7);
-  const km=$('paieMois').value, R=$('paieRes'), T=$('paieTab'); R.textContent='Chargement…'; T.style.display='none';
-  try{
-    const j=JSON.parse(await readTxt(await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&paie='+km+'&_='+Date.now()))).paie;
-    if(!j||j.err) throw 0;
-    if($('paieMois').value!==km) return;
-    $('paieAuj').textContent=j.auj?('Aujourd\'hui : '+j.auj.tours+' tours → '+fb(j.auj.net)+' à payer'+(j.auj.pen?' (après '+fb(j.auj.pen)+' de pénalités)':'')):'Aujourd\'hui : rien d\'enregistré pour le moment';
-    if(!j.emps.length){ R.textContent='Aucune journée enregistrée ce mois-ci.'; return; }
-    R.textContent='Mois : CA '+fb(j.ca)+' · à payer (net) '+fb(j.net)+' · reste '+fb(j.ca-j.net);
-    T.innerHTML='<tr><th>Employée</th><th>Jours</th><th>Tours</th><th>Brut</th><th>Pénal.</th><th>Net</th></tr>';
-    j.emps.forEach(e=>{ const tr=document.createElement('tr'); tr.innerHTML='<td class="nom"></td><td></td><td></td><td></td><td></td><td><b></b></td>';
-      const c=tr.children; c[0].textContent=e.nom; c[1].textContent=e.jours; c[2].textContent=e.tours; c[3].textContent=fb(e.brut); c[4].textContent=e.pen?'-'+fb(e.pen):'—'; c[5].firstChild.textContent=fb(e.net); T.appendChild(tr); });
-    const tr=document.createElement('tr'); tr.className='tot'; tr.innerHTML='<td class="nom">TOTAL</td><td></td><td></td><td></td><td></td><td></td>';
-    tr.children[2].textContent=j.tours; tr.children[3].textContent=fb(j.brut); tr.children[4].textContent=j.pen?'-'+fb(j.pen):'—'; tr.children[5].textContent=fb(j.net); T.appendChild(tr);
-    T.style.display='';
-  }catch(e){ R.textContent='⚠️ Pas de connexion — réessayez'; }
+// ===== 🗓️ QUI OCCUPE LES PLACES (contrats comptés dans le planning) =====
+let PLD=null;
+const dm=s=>String(s||'').split('-').reverse().slice(0,2).join('/');
+const escH=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function plCharger(){
+  try{ const j=JSON.parse(await readTxt(await fetch(API+'?placesdetail='+isoJ(0)+'&n=10&_='+Date.now()))); if(!j.ok) return; PLD=j.places||{};
+    const fant=[]; Object.keys(PLD).forEach(sh=>PLD[sh].forEach(c=>{ if(c.compte && !c.dansEmp) fant.push(c.nom+' '+(c.tel||'')+' ('+sh+(c.auj?', aujourd\'hui':', du '+dm(c.deb))+')'); }));
+    $('plAlerte').innerHTML = fant.length ? '<div style="background:#fef2f2;border:2px solid var(--red);border-radius:10px;padding:8px;margin-bottom:8px;font-size:.88rem;color:var(--red);font-weight:700">⚠️ '+fant.length+' contrat'+(fant.length>1?'s':'')+' compté'+(fant.length>1?'s':'')+' sans fiche dans « Employés » : '+escH(fant.join(' · '))+'<br><span style="font-weight:600">→ touchez l\'horaire pour le voir et le retirer si c\'est un doublon</span></div>' : '';
+    document.querySelectorAll('.plR').forEach(r=>{ if(r.nextElementSibling && r.nextElementSibling.classList.contains('plD')) plDetail(r, true); });
+  }catch(e){}
+}
+function plDetail(tr, refaire){
+  const nx=tr.nextElementSibling; if(nx && nx.classList.contains('plD')){ nx.remove(); if(!refaire) return; }
+  const L=(PLD||{})[tr.dataset.sh]||[], d=document.createElement('tr'); d.className='plD';
+  let h='<td colspan="3" style="padding:4px 0 10px;font-size:.85rem">';
+  if(!PLD) h+='Chargement… (réessayez dans un instant)';
+  else if(!L.length) h+='<span style="color:var(--muted)">Personne sur cet horaire.</span>';
+  L.forEach(c=>{ const ko=c.compte && !c.dansEmp;
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 6px;border-radius:8px;margin-top:3px;background:'+(ko?'#fee2e2':c.compte?'#f3f4f6':'#fafafa')+';'+(c.compte?'':'opacity:.6')+'">'
+      +'<span><b>'+escH(c.nom)+'</b> <span style="color:var(--muted)">'+escH(c.tel)+'</span><br>'+dm(c.deb)+' → '+dm(c.fin)+(c.auj?' · <b>aujourd\'hui</b>':'')+(c.impose?' · 👑':'')
+      +(ko?' · <b style="color:var(--red)">⚠️ pas dans Employés</b>':'')+(c.bloque?' · 🚫 bloquée (pas comptée)':'')+(c.test?' · 🧪 test (pas comptée)':'')+'</span>'
+      +'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plRetirer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#fff;border:1px solid var(--red);color:var(--red);font-weight:800;font-size:.75rem;white-space:nowrap">🗑️ Retirer</button></div>'; });
+  d.innerHTML=h+'</td>'; tr.after(d);
+}
+async function plRetirer(btn){
+  const sh=btn.dataset.sh, c=((PLD||{})[sh]||[])[+btn.dataset.i]; if(!c) return; const row=c.row, cle=c.cle, deb=c.deb, nom=c.nom;
+  if(!confirm('Retirer du planning le contrat de '+nom+' ('+sh+', début '+dm(deb)+') ?\n\nÀ faire seulement pour un doublon ou une fille qui ne travaille plus.\n⚠️ Si son téléphone est encore actif, il peut le renvoyer : dans ce cas mettez son numéro dans l\'onglet « 🚫 Interdites ».')) return;
+  try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'cycleretire',row,cle,deb})})));
+    if(!j.ok) throw j.err||'x'; places(); }
+  catch(e){ alert(e==='tok'?'🔐 Activez ce téléphone patron':e==='change'?'⚠️ Le planning a changé — rechargez la page':'❌ Pas fait — réessayez'); }
 }
 // ===== ✏️ CORRIGER LES MASSAGES D'UNE EMPLOYÉE : employée + date → tableau à remplir → le téléphone se met à jour =====
 let JOURS={}, orig=null;   // JOURS[date] = { clé employée : {l1,l2,hh} }
@@ -185,7 +168,7 @@ async function corEnvoyer(){
   try{
     const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'bosscorrige',label:k,date:d,l1:+$('l1').value||0,l2:+$('l2').value||0,hh:+$('hh').value||0})})));
     if(!j.ok) throw j.err||'x';
-    JOURS[d][cleE(k)]={l1:j.l1,l2:j.l2,hh:j.hh}; await corDraw(); paieCharger();
+    JOURS[d][cleE(k)]={l1:j.l1,l2:j.l2,hh:j.hh}; await corDraw();
     $('corMsg').style.color='var(--green)'; $('corMsg').textContent='✅ Corrigé ('+j.ca.toLocaleString('en-US')+' ฿) — le téléphone de '+k.split(' — ')[0]+' se met à jour à la prochaine ouverture';
   }catch(e){ $('corMsg').style.color='var(--red)'; $('corMsg').textContent=e==='ligne'?'❌ Aucune journée envoyée à cette date':e==='date'?'❌ Date non permise (pas dans le futur, 60 jours max)':'❌ Pas envoyé — réessayez'; $('corOk').disabled=false; }
   b.textContent='✔ Enregistrer la correction';
@@ -208,7 +191,7 @@ function arrDraw(){
   $('arrH').value=ok||(h?debutSh(h.sh):'')||e.depuis||'';
   $('arrOk').textContent='✔ Valider : '+(e.nom||'')+' arrivée à '+($('arrH').value||'…');
 }
-$('arrH').addEventListener('input',()=>{ const e=emps.find(x=>x.label===$('arrEmp').value); if(e) $('arrOk').textContent='✔ Valider : '+e.nom+' arrivée à '+$('arrH').value; });
+if($('arrH')) $('arrH').addEventListener('input',()=>{ const e=emps.find(x=>x.label===$('arrEmp').value); if(e) $('arrOk').textContent='✔ Valider : '+e.nom+' arrivée à '+$('arrH').value; });
 async function arrValider(){
   const k=$('arrEmp').value, h=$('arrH').value; if(!k||!h) return; const b=$('arrOk'); b.disabled=true; const t0=b.textContent; b.textContent='⏳ …';
   try{
@@ -245,7 +228,7 @@ async function horValider(){
     const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'bosshoraire',label:k,sh:horChoix})})));
     if(!j.ok) throw j.err||'x';
     $('horMsg').style.color='var(--green)'; $('horMsg').textContent='✅ Horaire changé — le téléphone de '+k.split(' — ')[0]+' se met à jour à la prochaine ouverture'+(j.alerte?' · ⚠️ '+j.alerte:'');
-    HOR[k]={...HOR[k],sh:j.sh,impose:true}; horListe(); places();
+    HOR[k]={...HOR[k],sh:j.sh,impose:true}; horListe(); if($('places')) places();
   }catch(e){ $('horMsg').style.color='var(--red)'; $('horMsg').textContent=e==='contrat'?'❌ Pas de contrat en cours pour cette employée':e==='meme'?'⛔ Refusé : une autre employée commence le même jour sur cet horaire':'❌ Pas envoyé — réessayez'; }
   b.textContent='✔ Changer l\'horaire';
 }
@@ -253,11 +236,11 @@ async function horValider(){
 async function charger(){
   try{
     const j=await chargerBoss(); $('err').textContent='';
-    emps=j.emps||[]; HOR=j.hor||{}; horListe(); ARR=j.arr||{}; arrListe();
-    JOURS[isoJ(0)]=j.jour||{}; corListe();
+    emps=j.emps||[]; HOR=j.hor||{}; ARR=j.arr||{}; JOURS[isoJ(0)]=j.jour||{};
+    if($('horEmp')) horListe(); if($('arrEmp')) arrListe(); if($('corEmp')) corListe();
   }catch(e){ $('err').textContent='⚠️ Pas de connexion — réessayez'; }
 }
-function actualiser(){ charger(); places(); paieCharger(); }
+function actualiser(){ if($('corEmp')||$('arrEmp')||$('horEmp')) charger(); if($('places')) places(); }
 actualiser();
 </script>
 </body>

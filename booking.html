@@ -134,6 +134,12 @@
     <div class="ic">✅</div>
     <h2 style="margin:6px 0">จองเรียบร้อยแล้ว</h2>
     <div class="sum" id="sum"></div>
+    <div id="appBox" class="adr" style="display:none;border-color:#2563eb;background:#eff6ff">
+      <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px">📲 วันที่ <span id="appJour"></span> มาทำงาน</div>
+      <div style="text-align:left;line-height:1.6;font-size:.95rem">สแกน QR ที่ร้านด้วย <b>โทรศัพท์เครื่องนี้</b> — แอปจะจำคุณได้เอง <b>ไม่ต้องใส่รหัส</b> ✅<br>ถ้าใช้โทรศัพท์เครื่องอื่น ให้เปิดลิงก์ของคุณ:</div>
+      <a id="appBtn" class="adrBtn" style="background:#2563eb">📲 เปิดแอปลงเวลาของฉัน</a>
+      <a id="appCopie" href="#" class="adrBtn" style="background:#fff;color:#2563eb;border:2px solid #2563eb">📋 คัดลอกลิงก์ของฉัน</a>
+    </div>
     <div id="photoBox" class="adr" style="display:none;border-color:#06c755;background:#f0fdf4">
       <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px">📷 ขั้นตอนสุดท้าย</div>
       <div style="text-align:left;line-height:1.6;font-size:.95rem">กรุณาส่ง <b>รูปถ่ายเต็มตัว</b> (เห็นตั้งแต่หัวถึงเท้า) ให้หัวหน้าทาง LINE <b>ก่อนวันมาทำงาน</b><br>และนำ <b>บัตรประชาชน</b> มาด้วยในวันแรกที่มาทำงาน</div>
@@ -226,12 +232,22 @@ function dessinerJours(){
     b.disabled=pris; b.onclick=()=>{ $('start').value=k; essaiOk=true; dessinerJours(); $('essaiDispo').textContent='✅ '+dm(k)+' · 12:00 – 20:00 น.'; $('essaiDispo').style.color='var(--green)'; $('essaiDispo').style.fontWeight='800'; check(); };
     G.appendChild(b); }
 }
+// 📲 après la réservation : le téléphone est mémorisé → le jour J, scanner le QR de la boutique suffit (pas de code)
+const APP='https://thainutscom-byte.github.io/Pointage-Staff/';
+function appLien(u, jour){
+  const B=$('appBox'); if(!B) return; B.style.display='block';
+  $('appJour').textContent=dm(jour);
+  const a=$('appBtn'); a.href=u;
+  $('appCopie').onclick=async e=>{ e.preventDefault(); let ok=false; try{ await navigator.clipboard.writeText(u); ok=true; }catch(x){} if(!ok) prompt('คัดลอกลิงก์นี้', u); else $('appCopie').textContent='✅ คัดลอกแล้ว — เก็บไว้ใน LINE / โน้ต'; };
+}
 async function reserverEssai(){
   const b=$('go'); b.disabled=true; b.textContent='⏳ …'; $('msg').style.display='none';
   const p={type:'essai', th:ctl()+parTh(), parrain:parValide(), name:$('name').value.trim(), phone:$('phone').value.replace(/\D/g,''), date:$('start').value, age:ageVal(), naissance:dnIso(), line:$('lineid').value.trim().toLowerCase()};
   try{
     const t=await readTxt(await fetch(API,{method:'POST',body:JSON.stringify(p)}));
     if(t==='ok'){ parResa(p);
+      try{ localStorage.setItem('pointage_ident', JSON.stringify({name:p.name, phone:p.phone, mode:'essai', date:p.date, t:Date.now()})); }catch(e){}
+      appLien(APP+'?u='+encodeURIComponent(p.name)+'&t='+p.phone+'&essai='+p.date+'&src=resa', p.date);
       $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>💬 LINE: <span id="s2"></span><br>🧪 ทดลองงาน 1 วัน<br>🗓️ <span id="s3"></span><br>⏰ 12:00 – 20:00 น. · รับประกัน 500 ฿ หากไม่มีลูกค้า';
       $('sum').querySelector('b').textContent=p.name; $('s1').textContent=p.phone; $('s2').textContent=p.line; $('s3').textContent=dm(p.date);
       $('photoBox').style.display='block'; if(LINE_OA){ const lb=$('lineBtn'); lb.href=LINE_OA; lb.style.display='block'; }
@@ -292,6 +308,8 @@ async function reserver(){
     const r=await fetch(API,{method:'POST',body:JSON.stringify(p)}); const t=await readTxt(r);
     if(t==='ok'){ parResa(p);
       try{ localStorage.setItem('pointage_booking', JSON.stringify({...p, contractN:$('contract').value})); }catch(e){}
+      try{ localStorage.setItem('pointage_ident', JSON.stringify({name:p.name, phone:p.phone, mode:'contrat', date:p.cycleStart, t:Date.now()})); }catch(e){}
+      appLien(APP+'?u='+encodeURIComponent(p.name)+'&t='+p.phone+'&src=resa', p.cycleStart);
       const lab=SH[$('contract').value].find(x=>x[0]===choix)[1];
       $('sum').innerHTML='👤 <b></b><br>📞 <span id="s1"></span><br>📄 <span id="s2"></span><br>🗓️ <span id="s3"></span><br>🕐 <span id="s4"></span>';
       $('sum').querySelector('b').textContent=p.name; $('s1').textContent=p.phone; $('s2').textContent=$('contract').value==='30'?'รายเดือน (30 วัน)':'ฟรีแลนซ์ (10 วัน)';

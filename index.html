@@ -1656,6 +1656,8 @@ function calc(){
 }
 function getKey(){ return 'pointage_fiche_single'; }
 function saveState(){
+  try{ const n0=(document.getElementById('name').value||'').trim(), t0=(document.getElementById('phone').value||'').replace(/\D/g,'');
+       if(n0 && /^0\d{9}$/.test(t0) && !/^boss$/i.test(n0)){ const o=JSON.parse(localStorage.getItem('pointage_ident')||'null')||{}; if(o.name!==n0 || o.phone!==t0 || o.mode!=='emp') localStorage.setItem('pointage_ident', JSON.stringify({name:n0, phone:t0, mode:'emp', t:Date.now()})); } }catch(e){}
   try{
     const days=[...document.querySelectorAll('.day')].map(d=>({
       solo:d.querySelector('.solo').value, duo:d.querySelector('.duo').value, duo8:d.querySelector('.duo8').value,
@@ -1819,7 +1821,7 @@ document.getElementById('phone').addEventListener('change', calc);
 if(!loadState()) buildDays();
 // 📲 ouverte depuis le raccourci (?u=nom&t=téléphone) avec une fiche vide → nom + téléphone remplis, fiche récupérée automatiquement
 try{ const qp=new URLSearchParams(location.search), u=(qp.get('u')||'').trim(), t=(qp.get('t')||'').replace(/\D/g,'');
-  if(u && /^0\d{9}$/.test(t) && !document.getElementById('name').value.trim() && !document.querySelector('.day[data-locked="1"]')){
+  if(u && /^0\d{9}$/.test(t) && !qp.get('essai') && !document.getElementById('name').value.trim() && !document.querySelector('.day[data-locked="1"]')){
     document.getElementById('name').value=u; document.getElementById('phone').value=t; saveState(); window.__autoRestore=true; }
 }catch(e){}
 // ===== 🧪 MISS ESSAI : jour d'essai (code essai fixe 2027) → tableau des massages pour la comptabilité =====
@@ -2566,6 +2568,25 @@ try{ const bk=JSON.parse(localStorage.getItem('pointage_booking')||'null');
     document.getElementById('startDate').value=bk.cycleStart; buildDays();
     document.getElementById(bk.contractN==='30'?'shiftGlobalMonthly':'shiftGlobal').value=bk.sh;
     updateDates(); saveState(); localStorage.removeItem('pointage_booking');
+    localStorage.setItem('pointage_access_ok','1');
+    appScan('📱 reconnue par sa réservation (même téléphone, sans code) : '+bk.name+' '+bk.phone);
+  } }catch(e){}
+// 📱 TÉLÉPHONE RECONNU : réservation faite sur ce téléphone, ou fiche déjà utilisée ici → plus de code ni de 4 chiffres
+//   (un site web ne peut pas lire le numéro de la carte SIM : on reconnaît le TÉLÉPHONE grâce à sa mémoire)
+try{ const qp=new URLSearchParams(location.search), ie=(qp.get('essai')||'').trim(), iu=(qp.get('u')||'').trim(), it=(qp.get('t')||'').replace(/\D/g,'');
+  if(/^\d{4}-\d{2}-\d{2}$/.test(ie) && iu && /^0\d{9}$/.test(it))                                        // lien « ทดลองงาน » envoyé après la réservation
+    localStorage.setItem('pointage_ident', JSON.stringify({name:iu, phone:it, mode:'essai', date:ie, t:Date.now()}));
+  const id=JSON.parse(localStorage.getItem('pointage_ident')||'null');
+  if(id && !document.getElementById('name').value.trim() && !essaiEtat()){
+    if(id.mode==='essai' && id.date===isoD(workToday())){                                                    // 🧪 jour d'essai : Miss Essai s'ouvre toute seule
+      localStorage.setItem('pointage_essai', JSON.stringify({date:id.date, tel:id.phone, nom:id.name}));
+      localStorage.setItem('pointage_access_ok','1');
+      appScan('🧪 Miss Essai reconnue (réservation sur ce téléphone, sans code) : '+id.name+' '+id.phone);
+    } else if((id.mode==='emp' || id.mode==='contrat') && Date.now()-(id.t||0) < 90*86400000){                                                       // fiche effacée / nouveau navigateur : récupérée sans 4 chiffres
+      document.getElementById('name').value=id.name; document.getElementById('phone').value=id.phone; saveState();
+      localStorage.setItem('pointage_access_ok','1'); window.__autoRestore=true;
+      appScan('📱 téléphone reconnu (sans 4 chiffres) : '+id.name+' '+id.phone);
+    }
   } }catch(e){}
 // fiche vide (pas de nom) et pas ouverte depuis le raccourci → écran d'accueil
 try{ if(essaiEtat() && !document.getElementById('name').value.trim()){ window.__essai=true; essaiOuvrir(); } }catch(e){}
