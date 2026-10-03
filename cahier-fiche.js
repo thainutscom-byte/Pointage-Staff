@@ -103,6 +103,7 @@
       const t = await readTxt(await fetch(SHEET_URL + '?cahierjour=1&d=' + isoJ(workToday()) + '&_=' + Date.now()));
       if (t[0] !== '{') { erreur('⚠️ สมุดยังไม่เชื่อม · แจ้งหัวหน้า (' + t.slice(0, 30) + ')'); return; }
       const j = JSON.parse(t); if (!j.ok) { erreur('⚠️ ' + t.slice(0, 60)); return; }
+      window.__cahRows = j.rows || [];   // (tableau « mes massages du jour » quand elle appuie sur ⏹ เลิกงาน)
       remplir(j.rows || []);   // (la carte « สมุดวันนี้ » n'est plus affichée sur la page principale : demande du patron 03/10)
     } catch (e) { erreur('📶 ไม่มีอินเทอร์เน็ต'); dernier = 0; } finally { enCours = false; }
   }
