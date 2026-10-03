@@ -46,8 +46,31 @@
 </div>
 <div style="max-width:460px;margin:0 auto;padding:0 14px 30px;text-align:center">
   <div style="height:14px"></div>
+  <button id="majTout" onclick="majTout()" style="border:none;background:#2563eb;color:#fff;border-radius:12px;padding:14px;font-weight:800;font-size:1.05rem;width:100%;margin-bottom:6px">🔄 Tout actualiser sur Google</button>
+  <div id="majRes" style="display:none;background:#fff;border-radius:12px;padding:12px;text-align:left;font-size:.9rem;line-height:1.5;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.06)"></div>
   <button onclick="autGpsSalon()" style="border:2px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 14px;font-weight:700;font-size:.95rem;width:100%">📍 Enregistrer la position du salon (à faire au salon, 1 fois)</button>
 </div>
 <script src="autorisation.js?v=8"></script>
+<script>
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function majTout(){
+  const b=document.getElementById('majTout'), R=document.getElementById('majRes'); if(b.disabled) return;
+  b.disabled=true; b.textContent='⏳ Actualisation en cours… (jusqu\'à 1 minute)'; R.style.display='none';
+  try{
+    let t=(await (await fetch(API,{method:'POST',body:JSON.stringify({type:'majtout'})})).text()).trim();
+    if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} }
+    const j=JSON.parse(t); if(!j.ok) throw j.err||'x';
+    const L=(titre,a,c)=>a&&a.length?'<div style="color:'+c+'"><b>'+titre+' ('+a.length+') :</b> '+esc(a.join(', '))+'</div>':'';
+    R.innerHTML='<div style="font-weight:800;color:#16a34a;font-size:1rem">✅ Google actualisé en '+j.secondes+' s</div>'
+      +'<div style="color:#6b7280">'+esc((j.etapes||[]).map(x=>({fiches:'fiches',planning:'planning',paies:'paies signées',interdites:'numéros interdits',parrainages:'parrainages'}[x]||x)).join(' · '))+'</div>'
+      +L('➕ Fiches recréées dans « Employés »',j.fiches,'#16a34a')
+      +L('⚠️ Doublons à retirer (Places disponibles → 🗑️)',j.doublons,'#dc2626')
+      +L('❔ Contrat sans fiche et sans journée travaillée (réservation pas venue ?)',j.sansJournee,'#9a3412');
+    R.style.display='block';
+  }catch(e){ R.innerHTML=e==='tok'?'🔐 Activez d\'abord ce téléphone patron (code de la case B1).':'❌ Pas fait — réessayez. '+(typeof e==='string'&&e!=='x'?esc(e):''); R.style.display='block'; }
+  b.disabled=false; b.textContent='🔄 Tout actualiser sur Google';
+}
+</script>
 </body>
 </html>

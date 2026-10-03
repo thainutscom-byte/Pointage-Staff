@@ -125,7 +125,40 @@ function plDetail(tr, refaire){
       +(ko?' · <b style="color:var(--red)">⚠️ pas dans Employés</b>'+(c.memeTel?'<br><b style="color:#9a3412">📞 même numéro que la fiche « '+escH(c.memeTel)+' » → doublon (nom écrit autrement)</b>':''):'')+(c.bloque?' · 🚫 bloquée (pas comptée)':'')+(c.test?' · 🧪 test (pas comptée)':'')+'</span>'
       +'<span style="display:flex;flex-direction:column;gap:4px">'+(ko && !c.memeTel?'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plRecreer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#16a34a;color:#fff;font-weight:800;font-size:.75rem;white-space:nowrap">➕ Recréer sa fiche</button>':'')
       +'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plRetirer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#fff;border:1px solid var(--red);color:var(--red);font-weight:800;font-size:.75rem;white-space:nowrap">🗑️ Retirer</button></span></div>'; });
+  const mens=/mensuel/.test((SH.find(x=>x[0]===tr.dataset.sh)||['',''])[1]);
+  h+='<div style="margin-top:8px;padding:8px;border:2px dashed #16a34a;border-radius:10px;background:#f0fdf4">'
+    +'<div style="font-weight:800;color:#166534;margin-bottom:6px">➕ Ajouter une employée sur cet horaire</div>'
+    +'<select class="plEmp" onchange="this.parentElement.querySelector(\'.plAutre\').style.display=this.value===\'autre\'?\'flex\':\'none\'" style="width:100%;font-size:1rem;padding:9px;border-radius:10px;border:2px solid var(--border);background:#fff;margin-bottom:6px"><option value="">⏳ chargement des employées…</option></select>'
+    +'<div class="plAutre" style="display:none;gap:6px;margin-bottom:6px"><input class="plNom" placeholder="Surnom (ex. Namsom)" style="flex:1;min-width:0;font-size:1rem;letter-spacing:0;text-align:left;padding:8px;border-radius:10px;border:2px solid var(--border)"><input class="plTel" type="tel" inputmode="numeric" placeholder="06…" maxlength="10" style="flex:1;min-width:0;font-size:1rem;letter-spacing:0;text-align:left;padding:8px;border-radius:10px;border:2px solid var(--border)"></div>'
+    +'<div style="display:flex;gap:6px;align-items:center"><span style="font-size:.85rem;white-space:nowrap">Début :</span><input type="date" class="plDeb" value="'+isoJ(0)+'" style="flex:1;font-size:1rem;letter-spacing:0;padding:8px;border-radius:10px;border:2px solid var(--border)"></div>'
+    +'<div class="small" style="text-align:left;margin:4px 0 6px">Contrat '+(mens?'mensuel (30 jours)':'freelance (10 jours)')+' · marqué 👑 (imposé par vous)</div>'
+    +'<button data-sh="'+tr.dataset.sh+'" onclick="plAjout(this)" style="width:100%;border:none;border-radius:10px;padding:12px;font-weight:800;font-size:1rem;background:#16a34a;color:#fff">✔ Valider</button></div>';
   d.innerHTML=h+'</td>'; tr.after(d);
+  plEmpsRemplir(d.querySelector('.plEmp'));
+}
+let PLE=null;
+async function plEmpsRemplir(S){
+  try{ if(!PLE){ const j=JSON.parse(await readTxt(await fetch(API+'?boss=1&pin=x&d='+isoJ(0)+'&_='+Date.now()))); PLE=(j.emps||[]).filter(e=>!e.bloque && !/^boss$/i.test(String(e.nom).trim())).sort((a,b)=>String(a.nom).localeCompare(String(b.nom))); }
+    S.innerHTML='<option value="">— choisir l\'employée —</option>'+PLE.map((e,i)=>'<option value="'+i+'">'+escH(e.nom)+' · '+escH(e.tel)+'</option>').join('')+'<option value="autre">✍️ Autre : taper le nom et le numéro</option>';
+  }catch(e){ S.innerHTML='<option value="">⚠️ liste non chargée — touchez à nouveau l\'horaire</option>'; }
+}
+async function plAjout(btn, forcer){
+  const box=btn.parentElement, i=box.querySelector('.plEmp').value, deb=box.querySelector('.plDeb').value, sh=btn.dataset.sh, lab=(SH.find(x=>x[0]===sh)||['',sh])[1];
+  let e=null;
+  if(i==='autre'){ const n=(box.querySelector('.plNom').value||'').trim(), t=(box.querySelector('.plTel').value||'').replace(/\D/g,'');
+    if(!/^[A-Za-z][A-Za-z .-]{0,20}$/.test(n)){ alert('Surnom en lettres anglaises (ex. Namsom)'); return; }
+    if(!/^0[689]\d{8}$/.test(t)){ alert('Numéro thaï à 10 chiffres (06 / 08 / 09…)'); return; }
+    e={nom:n, tel:t}; }
+  else { if(i===''||!PLE||!PLE[+i]){ alert('Choisissez l\'employée'); return; } e=PLE[+i]; }
+  if(!deb){ alert('Choisissez la date de début'); return; }
+  if(!forcer && !confirm('Mettre '+e.nom+' sur '+lab+' à partir du '+dm(deb)+' ?')) return;
+  const t0=btn.textContent; btn.disabled=true; btn.textContent='⏳ …';
+  try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'cycleajout',nom:e.nom,tel:e.tel,sh,deb,forcer:!!forcer})})));
+    if(j.err==='plein'){ btn.disabled=false; btn.textContent=t0; if(confirm('🔴 Cet horaire est complet le '+dm(j.jour)+'.\nL\'ajouter quand même ?')) return plAjout(btn,true); return; }
+    if(j.err==='chevauche'){ alert('⛔ '+e.nom+' a déjà un contrat : '+j.info.replace(/(\d{4})-(\d{2})-(\d{2})/g,'$3/$2')+'.\nPour la changer d\'horaire, utilisez la page 🕐 Changer l\'horaire.'); btn.disabled=false; btn.textContent=t0; return; }
+    if(!j.ok) throw j.err||'x';
+    alert('✅ '+j.nom+' est sur '+lab+' du '+dm(j.deb)+' au '+dm(j.fin)); places();
+  }catch(x){ alert(x==='tok'?'🔐 Activez ce téléphone patron':'❌ Pas fait — réessayez'); btn.disabled=false; btn.textContent=t0; }
 }
 async function plRecreer(btn){
   const sh=btn.dataset.sh, c=((PLD||{})[sh]||[])[+btn.dataset.i]; if(!c) return;
