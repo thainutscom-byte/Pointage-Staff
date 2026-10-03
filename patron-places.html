@@ -51,8 +51,17 @@
 <div class="wrap">
   <h1>🗓️ Places disponibles</h1>
   <div id="main">
+    <div class="card" id="capCard">
+      <h2>👥 Places par horaire</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end">
+        <label style="font-weight:700">☀️ Avril → octobre<select id="capEte" style="width:100%;font-size:1.1rem;padding:10px;border-radius:10px;margin-top:4px"></select></label>
+        <label style="font-weight:700">🌙 1er nov. → 30 mars<select id="capHiver" style="width:100%;font-size:1.1rem;padding:10px;border-radius:10px;margin-top:4px"></select></label>
+      </div>
+      <button type="button" onclick="capEnregistrer()" style="width:100%;margin-top:10px;border:none;border-radius:12px;padding:13px;font-size:1.05rem;font-weight:800;background:#16a34a;color:#fff">✅ Enregistrer</button>
+      <div id="capMsg" class="small" style="margin-top:6px;font-weight:700"></div>
+    </div>
     <div class="card">
-      <h2>🗓️ Places disponibles <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(4 max par horaire · 5 du 01/11 au 30/03)</span></h2>
+      <h2>🗓️ Places disponibles <span id="capInfo" style="font-weight:normal;color:var(--muted);font-size:.8rem"></span></h2>
       <div id="places">Chargement…</div>
     </div>
     <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
@@ -64,8 +73,21 @@
 <script>
 
 // 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
-function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? 5 : 4; }
-function capPeriode(deb, n){ let c=5; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
+// 👥 places par horaire : réglées par le patron (page « 🗓️ Places disponibles ») · avril→octobre = ete · 1er nov.→30 mars = hiver
+let CAPS={ete:4,hiver:5}; try{ const c0=JSON.parse(localStorage.getItem('pointage_caps')||'null'); if(c0 && c0.ete) CAPS=c0; }catch(e){}
+fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
+function capAff(){ ['capEte','capHiver'].forEach((id,i)=>{ const S=document.getElementById(id); if(!S) return; if(!S.options.length) for(let k=1;k<=12;k++) S.add(new Option(k+' filles',k)); S.value=String(i?CAPS.hiver:CAPS.ete); });
+  const I=document.getElementById('capInfo'); if(I) I.textContent='('+CAPS.ete+' max par horaire · '+CAPS.hiver+' du 01/11 au 30/03)'; }
+async function capEnregistrer(){
+  const M=document.getElementById('capMsg'), ete=+document.getElementById('capEte').value, hiver=+document.getElementById('capHiver').value; M.style.color='var(--muted)'; M.textContent='⏳ …';
+  try{ const t=await (await fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec',{method:'POST',body:JSON.stringify({type:'autcaps',ete,hiver})})).text();
+    const j=JSON.parse(t); if(!j.ete) throw 0; CAPS={ete:+j.ete,hiver:+j.hiver}; try{ localStorage.setItem('pointage_caps',JSON.stringify(CAPS)); }catch(e){}
+    M.style.color='var(--green)'; M.textContent='✅ Enregistré : '+CAPS.ete+' filles (avril→octobre) · '+CAPS.hiver+' filles (nov.→mars)'; capAff(); try{ actualiser(); }catch(e){} }
+  catch(e){ M.style.color='var(--red)'; M.textContent='❌ Pas enregistré — le script Google « Autorisation » est-il à jour ?'; }
+}
+setTimeout(capAff,0); setTimeout(capAff,2500);
+function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? CAPS.hiver : CAPS.ete; }
+function capPeriode(deb, n){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
 function getPin(){ return 'x'; }   // plus de code patron

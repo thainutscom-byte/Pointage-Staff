@@ -123,7 +123,7 @@
       <div id="essaiDispo" class="small" style="margin-top:8px"></div>
     </div>
     <div class="card modeC">
-      <label style="margin-top:0">ช่วงเวลาทำงาน <span class="small">(สูงสุด 4 คน ต่อช่วงเวลา · 1 พ.ย. – 30 มี.ค.: 5 คน)</span></label>
+      <label style="margin-top:0">ช่วงเวลาทำงาน <span class="small">(จำนวนคนต่อช่วงเวลามีจำกัด)</span></label>
       <div id="shifts" class="small">เลือกวันที่เริ่มงานก่อน</div>
     </div>
     <button class="big" id="go" disabled onclick="reserver()">📝 จองเลย</button>
@@ -363,8 +363,11 @@ function parTh(){ const r=parValide(); return r ? ' · 🤝 ref '+r : ''; }
 function parResa(p){ const r=parValide(); if(r) scan('📝 réservation parrainée — ref '+r+' — '+p.name+' '+p.phone); }
 
 // 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
-function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? 5 : 4; }
-function capPeriode(deb, n){ let c=5; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
+// 👥 places par horaire : réglées par le patron (page « 🗓️ Places disponibles ») · avril→octobre = ete · 1er nov.→30 mars = hiver
+let CAPS={ete:4,hiver:5}; try{ const c0=JSON.parse(localStorage.getItem('pointage_caps')||'null'); if(c0 && c0.ete) CAPS=c0; }catch(e){}
+fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
+function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? CAPS.hiver : CAPS.ete; }
+function capPeriode(deb, n){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
 function ctl(){ return (SIG.thai?'✅ ภาษาไทย':'⚠️ langue '+(SIG.lang||'?'))+' · '+(SIG.bkk?'heure BKK':'⚠️ '+(SIG.tz||'?'))+' · '+SIG.model+' · quiz ✅'; }
 function scan(res){ try{ fetch(API,{method:'POST',body:JSON.stringify({type:'scan',page:'booking',src:SRC,lang:SIG.lang,tz:SIG.tz,model:SIG.model,thai:SIG.thai,res})}).catch(()=>{}); }catch(e){} }
 const mel=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
