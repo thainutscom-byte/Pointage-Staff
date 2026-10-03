@@ -36,12 +36,22 @@ h1{margin:0;font-size:1.45rem;text-wrap:balance}
 h1 .ti{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .ex{font-size:.8rem;font-weight:700;letter-spacing:.04em;background:var(--chip);color:var(--muted);padding:3px 10px;border-radius:999px;margin-left:8px;vertical-align:middle}
 .clock{font-family:var(--f-num);font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums}
-.hd-r{display:flex;align-items:center;gap:12px}
+.hd-r{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;max-width:100%}
+@media (max-width:560px){ .hd-r .icon-btn{padding:8px 10px} }
 button{font:inherit;color:inherit;cursor:pointer;border:none;-webkit-tap-highlight-color:transparent}
 button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .icon-btn{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-weight:600}
 /* chambres */
 .rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+/* 🛏️ les chambres toujours sur UNE seule ligne (3 colonnes) · la case « ยังไม่จ่าย » en dessous sur toute la largeur */
+#rooms{grid-template-columns:repeat(var(--nr,3),minmax(0,1fr));gap:8px}
+#rooms .room.unpaid{grid-column:1/-1;min-height:0}
+@media (max-width:560px){
+  #rooms .room:not(.unpaid){padding:9px 8px;min-height:112px}
+  #rooms .room .rn{font-size:1rem} #rooms .room .st{font-size:.7rem;letter-spacing:0}
+  #rooms .room .who{font-size:1rem;overflow-wrap:anywhere} #rooms .room .since{font-size:.8rem}
+  #rooms .room .fin,#rooms .room .add2,#rooms .room .go{padding:8px 4px;font-size:.85rem}
+}
 .room{min-width:0;border-radius:16px;padding:14px;min-height:132px;display:flex;flex-direction:column;gap:4px;border:2px solid transparent}
 .room.free{background:var(--free-bg);border-color:var(--free);box-shadow:0 0 0 1px rgba(52,211,153,.08),0 6px 20px rgba(52,211,153,.08)}
 .room.busy{background:var(--busy-bg);border-color:var(--busy);box-shadow:0 6px 20px rgba(251,113,133,.12)}
@@ -220,16 +230,16 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       <div class="chips" id="cRef"></div>
     </div>
     <div class="step">
-      <h2>2 · <b>ออปชั่น</b> 1–5 <span id="total" style="color:var(--accent);font-weight:700"></span></h2>
-      <div class="chips" id="cQty"></div>
+      <h2>2 · <b>ชื่อ</b></h2>
+      <div class="chips" id="cNames"></div>
     </div>
     <div class="step">
-      <h2>3 · <b>ประเภท</b></h2>
+      <h2>3 · <b>ประเภท</b> <small style="font-weight:600;color:var(--muted)">อัตโนมัติ</small></h2>
       <div class="chips" id="cType"></div>
     </div>
     <div class="step">
-      <h2>4 · <b>ชื่อ</b></h2>
-      <div class="chips" id="cNames"></div>
+      <h2>4 · <b>ออปชั่น</b> 1–5 <span id="total" style="color:var(--accent);font-weight:700"></span></h2>
+      <div class="chips" id="cQty"></div>
     </div>
     <div class="step" id="stRoom">
       <h2>5 · <b>ห้อง</b> — ห้องที่มีคนอยู่กดไม่ได้</h2>
@@ -493,7 +503,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
         +'<button class="paybtn" type="button" data-paye="'+r.n+'">💰</button></div>'; }).join('')
         :'<div class="since">✅ จ่ายครบแล้ว</div>')
       +'</div>';
-    $('rooms').innerHTML=h;
+    $('rooms').innerHTML=h; $('rooms').style.setProperty('--nr', S.rooms);
     // 🏁 filles qui ont terminé leur journée (« ⏹ เลิกงาน » dans l'app)
     $('finSec').hidden=!FINS.length;
     $('finList').innerHTML=FINS.slice().sort((a,b)=>a.h<b.h?-1:1).map(f=>'<span class="fin-p">'+esc(f.n)+'<small>'+esc(f.h)+'</small></span>').join('');
@@ -548,23 +558,27 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       +chip('➕ ชื่ออื่น','รหัสหัวหน้า',false,false,'data-addname="1"','#64748b');
     let rh=''; for(let k=1;k<=S.rooms;k++){ const r=roomOf(k); rh+=chip('ห้อง '+k, r?'🔴 '+r.names.map(esc).join('+'):'🟢 ว่าง', F.room===k, !!r, 'data-room="'+k+'"', '#34d399'); }
     $('cRooms').innerHTML=rh;
-    const hh=hhNow(); if((F.type==='hh' && !hh) || (F.type==='l2' && hh)) F.type=type2();
-    const sousT=t=>t[0]==='l3'?'3 ชื่อ · '+(hh?TH.hh:TH.l2)+' + '+TH.l1:t[0]==='hh'?(hh?'2 ชื่อ · 16:00–20:00':'16:00–20:00 เท่านั้น'):t[0]==='l2'&&hh?TH.hh+' ตอนนี้':t[5]?'สูงสุด 2 ชม. · ไม่ใช้ห้อง':t[4]?'ไม่ใช้ห้อง':t[3]===2?'2 ชื่อ':'1 ชื่อ';
+    // 🧮 FORMULE AUTOMATIQUE selon le nombre de noms et l'heure : 1 nom = 1 เลดี้ · 2 noms = 2 เลดี้ (แฮปปี้ฮาวร์ 16:00–20:00) · 3 noms = 3 เลดี้
+    //    🚗 นวดนอกร้าน / 🍸 บาร์ไฟน์ : à choisir (1 ou 2 noms)
+    const hh=hhNow(), nb=F.names.length;
+    F.type=F.special || (nb===1?'l1':nb===2?(hh?'hh':'l2'):nb===3?'l3':null);
     const COUL={l1:'#f472b6',l2:'#a78bfa',hh:'#fb923c',l3:'#facc15',out:'#60a5fa',bf:'#e879f9'};
-    const puce=t=>chip(TH[t[0]], sousT(t), F.type===t[0], (t[0]==='hh'&&!hh)||(t[0]==='l2'&&hh), 'data-type="'+t[0]+'"', COUL[t[0]]);
-    $('cType').innerHTML=TYPES.map(puce).join('');
+    const auto=F.special?null:F.type;
+    const formule=auto ? chip(TH[auto], auto==='l3'?(hh?TH.hh:TH.l2)+' + '+TH.l1:auto==='hh'?'2 ชื่อ · 16:00–20:00':nb+' ชื่อ', true, false, 'data-auto="1"', COUL[auto])
+                       : chip(F.special?'—':'👆 เลือกชื่อก่อน', F.special?'':'1 ชื่อ = 1 เลดี้ · 2 ชื่อ = '+(hh?TH.hh:TH.l2)+' · 3 ชื่อ = 3 เลดี้', false, true, 'data-auto="1"', '#94a3b8');
+    $('cType').innerHTML=formule+['out','bf'].map(k=>chip(TH[k], k==='out'?'สูงสุด 2 ชม. · ไม่ใช้ห้อง':'ไม่ใช้ห้อง', F.special===k, false, 'data-special="'+k+'"', COUL[k])).join('');
     $('cQty').innerHTML=[1,2,3,4,5].map(q=>chip('ออปชั่น '+q, '', F.qty===q, false, 'data-qty="'+q+'"', '#38bdf8')).join('');
     $('total').textContent='';
     $('cRef').innerHTML=REF.map(p=>chip(p[1],'',F.ref===p[0],false,'data-ref="'+p[0]+'"', p[0]==='new'?'#fbbf24':'#c084fc')).join('');
     const T=typ(F.type);
     // นอกร้าน / บาร์ไฟน์ : pas de chambre → chambres grisées
     if(T && T[4]){ F.room=null; $('cRooms').querySelectorAll('button').forEach(b=>b.disabled=true); }
-    const manque=!F.ref?'1 · เลือกลูกค้าใหม่ / เก่า':!T?'3 · เลือกประเภท'
-      :!F.names.length?'4 · เลือกชื่อ':(T[3]===2 && F.names.length!==2)?'4 · '+TH[F.type]+' = ต้องเลือก 2 ชื่อ':(T[3]===3 && F.names.length!==3)?'4 · '+TH.l3+' = ต้องเลือก 3 ชื่อ':(T[3]===1 && F.names.length!==1)?'4 · '+TH.l1+' = เลือก 1 ชื่อ':(T[3]===0 && F.names.length>2)?'4 · เลือก 1–2 ชื่อ'
+    const manque=!F.ref?'1 · เลือกลูกค้าใหม่ / เก่า':!F.names.length?'2 · เลือกชื่อ':(F.special && F.names.length>2)?'2 · '+TH[F.special]+' = เลือก 1–2 ชื่อ':!T?'3 · เลือกประเภท'
+      :false?'':(T[3]===2 && F.names.length!==2)?'4 · '+TH[F.type]+' = ต้องเลือก 2 ชื่อ':(T[3]===3 && F.names.length!==3)?'4 · '+TH.l3+' = ต้องเลือก 3 ชื่อ':(T[3]===1 && F.names.length!==1)?'4 · '+TH.l1+' = เลือก 1 ชื่อ':(T[3]===0 && F.names.length>2)?'4 · เลือก 1–2 ชื่อ'
       :(!T[4] && !F.room)?'5 · เลือกห้อง':'';
     $('start').disabled=!!manque; $('hint').textContent=manque?'👉 '+manque:'';
   }
-  function openForm(room){ F={names:[],room:room||null,type:null,qty:1,pay:null,ref:null}; $('form').hidden=false; drawForm(); $('form').scrollIntoView({behavior:'smooth',block:'start'}); }
+  function openForm(room){ F={names:[],room:room||null,type:null,special:null,qty:1,pay:null,ref:null}; $('form').hidden=false; drawForm(); $('form').scrollIntoView({behavior:'smooth',block:'start'}); }
   function closeForm(){ $('form').hidden=true; }
 
   $('btnNew').onclick=()=>openForm(null);
@@ -575,13 +589,13 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       demanderCode('➕ ชื่ออื่น', 'รหัสหัวหน้า', v=>v===codeJour(), 6).then(ok=>{ if(!ok) return;
         $('addNIn').value=''; $('addN').hidden=false; setTimeout(()=>$('addNIn').focus(),50); });
       return; }
-    if(b.dataset.name){ const s=b.dataset.name; F.names=F.names.includes(s)?F.names.filter(x=>x!==s):F.names.concat(s).slice(F.type==='l3'||!F.type?-3:-2); }
+    if(b.dataset.name){ const s=b.dataset.name; F.names=F.names.includes(s)?F.names.filter(x=>x!==s):F.names.concat(s).slice(F.special?-2:-3); }
     if(b.dataset.room){ F.room=+b.dataset.room; }
-    if(b.dataset.type){ F.type=b.dataset.type; }
+    if(b.dataset.special){ F.special=F.special===b.dataset.special?null:b.dataset.special; }
     if(b.dataset.qty){ F.qty=+b.dataset.qty; }
     if(b.dataset.pay){ F.pay=b.dataset.pay; }
     if(b.dataset.ref){ F.ref=b.dataset.ref; }
-    if(b.dataset.name||b.dataset.room||b.dataset.type||b.dataset.qty||b.dataset.pay||b.dataset.ref) drawForm();
+    if(b.dataset.name||b.dataset.room||b.dataset.special||b.dataset.qty||b.dataset.pay||b.dataset.ref) drawForm();
   });
   $('start').onclick=()=>{
     const T=typ(F.type); if(T[4]) F.room=null;
