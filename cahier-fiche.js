@@ -74,6 +74,7 @@
   // ---------- la fiche se remplit avec le cahier ----------
   function remplir(rows) {
     const day = jourFiche(); if (!day || day.dataset.locked === '1' || !rows.length) return;
+    try { if (localStorage.getItem('cah_libre_' + isoJ(workToday())) === '1') return; } catch (e) {}   // ✏️ le patron a autorisé la correction à la main
     const moi = nomMoi(); if (!moi) return;
     const mes = rows.filter(r => !r.annule && r.names.some(n => String(n).trim().toLowerCase() === moi));
     const vals = { '.solo': mes.filter(r => sonType(r, moi) === 'l1').length, '.duo8': mes.filter(r => sonType(r, moi) === 'l2').length, '.duo': mes.filter(r => sonType(r, moi) === 'hh').length };
