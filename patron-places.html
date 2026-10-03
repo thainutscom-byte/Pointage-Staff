@@ -90,11 +90,17 @@ async function places(){
   }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez'; }
 }
 // ===== 🗓️ QUI OCCUPE LES PLACES (contrats comptés dans le planning) =====
-let PLD=null;
+let PLD=null, PLDerr='';
 const dm=s=>String(s||'').split('-').reverse().slice(0,2).join('/');
 const escH=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function plCharger(){
-  try{ const j=JSON.parse(await readTxt(await fetch(API+'?placesdetail='+isoJ(0)+'&n=10&_='+Date.now()))); if(!j.ok) return; PLD=j.places||{};
+  PLDerr='';
+  let j=null;
+  let t=null; try{ t=await readTxt(await fetch(API+'?placesdetail='+isoJ(0)+'&n=10&_='+Date.now())); }catch(e){ PLDerr='reseau'; }
+  if(t!==null){ try{ j=JSON.parse(t); }catch(e){ j=null; } }
+  if(!PLDerr && (!j || !j.ok)) PLDerr = j && j.err==='tok' ? 'tok' : j && j.err ? 'serveur:'+j.err : 'version';
+  if(PLDerr){ document.querySelectorAll('.plR').forEach(r=>{ if(r.nextElementSibling && r.nextElementSibling.classList.contains('plD')) plDetail(r, true); }); return; }
+  try{ PLD=j.places||{};
     const fant=[]; Object.keys(PLD).forEach(sh=>PLD[sh].forEach(c=>{ if(c.compte && !c.dansEmp) fant.push(c.nom+' '+(c.tel||'')+' ('+sh+(c.auj?', aujourd\'hui':', du '+dm(c.deb))+')'+(c.memeTel?' = même numéro que '+c.memeTel+' → doublon':'')); }));
     $('plAlerte').innerHTML = fant.length ? '<div style="background:#fef2f2;border:2px solid var(--red);border-radius:10px;padding:8px;margin-bottom:8px;font-size:.88rem;color:var(--red);font-weight:700">⚠️ '+fant.length+' contrat'+(fant.length>1?'s':'')+' compté'+(fant.length>1?'s':'')+' sans fiche dans « Employés » : '+escH(fant.join(' · '))+'<br><span style="font-weight:600">→ touchez l\'horaire : 🗑️ Retirer si c\'est un doublon / une personne qui ne vient pas · ➕ Recréer sa fiche si c\'est une vraie employée</span></div>' : '';
     document.querySelectorAll('.plR').forEach(r=>{ if(r.nextElementSibling && r.nextElementSibling.classList.contains('plD')) plDetail(r, true); });
@@ -104,7 +110,14 @@ function plDetail(tr, refaire){
   const nx=tr.nextElementSibling; if(nx && nx.classList.contains('plD')){ nx.remove(); if(!refaire) return; }
   const L=(PLD||{})[tr.dataset.sh]||[], d=document.createElement('tr'); d.className='plD';
   let h='<td colspan="3" style="padding:4px 0 10px;font-size:.85rem">';
-  if(!PLD) h+='Chargement… (réessayez dans un instant)';
+  if(!PLD && PLDerr){
+    h+='<div style="background:#fef2f2;border:1px solid var(--red);border-radius:8px;padding:8px;color:var(--red);font-weight:700">'
+      +(PLDerr==='version' ? '⚠️ Le script Google n\'a pas encore la liste des noms.<br><span style="font-weight:600">→ Apps Script : collez le dernier <b>Autorisation.txt</b> puis <b>Déployer → Gérer les déploiements → ✏️ → Nouvelle version</b>.</span>'
+        : PLDerr==='tok' ? '🔐 Ce téléphone patron n\'est pas activé (code de la case B1).'
+        : PLDerr==='reseau' ? '⚠️ Google n\'a pas répondu.' : '⚠️ Erreur du script : '+escH(PLDerr.slice(8)))
+      +'<br><a href="#" onclick="plCharger();return false">🔄 Réessayer</a></div>';
+  }
+  else if(!PLD) h+='Chargement… (réessayez dans un instant)';
   else if(!L.length) h+='<span style="color:var(--muted)">Personne sur cet horaire.</span>';
   L.forEach(c=>{ const ko=c.compte && !c.dansEmp;
     h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 6px;border-radius:8px;margin-top:3px;background:'+(ko?'#fee2e2':c.compte?'#f3f4f6':'#fafafa')+';'+(c.compte?'':'opacity:.6')+'">'
