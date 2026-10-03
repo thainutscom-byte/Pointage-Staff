@@ -70,6 +70,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .room.out{background:#141a33;border-color:var(--pay)}
 .room.out .st{color:var(--pay)}
 .room.late{background:var(--busy-bg);border-color:var(--busy)}
+.room .reste{font-family:var(--f-num);font-size:1.15rem;font-weight:800;font-variant-numeric:tabular-nums}
 .room.late .st,.room .over{color:var(--busy);font-weight:700}
 .room.unpaid{background:var(--surface);border-color:var(--line);border-style:dashed}
 .room.unpaid.has{background:var(--gold-bg);border-color:var(--gold);border-style:solid;color:var(--ink)}
@@ -352,6 +353,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   const TYPES=[['l1','1 lady',600,1],['l2','2 lady',800,2],['hh','Happy Hour',600,2],['l3','3 lady (2+1)',null,3],
                ['out','🚗 Massage outside',null,0,true,120],['bf','🍸 Barfine',3000,0,true,0]];
   const typ=c=>TYPES.find(x=>x[0]===c);
+  const DUREE_CH=60;   // ⏳ durée d'un massage en chambre : 1 heure → la carte de la chambre affiche seulement le temps restant
   // 🇹🇭 noms affichés sur la tablette (thaï seulement) · TYPES[1] garde le nom pour le tableau Google du patron
   const TH={l1:'1 เลดี้',l2:'2 เลดี้',hh:'แฮปปี้ฮาวร์',l3:'3 เลดี้',out:'🚗 นวดนอกร้าน',bf:'🍸 บาร์ไฟน์'};
   // 🕓 Happy Hour de 16:00 à 20:00 : 2 filles = Happy Hour · le reste du temps : 2 lady
@@ -502,9 +504,9 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     let h='';
     for(let k=1;k<=S.rooms;k++){
       const r=roomOf(k);
-      if(r) h+='<div class="room busy"><div class="rn">ห้อง '+k+'<span class="st">ไม่ว่าง</span></div>'
+      if(r) h+='<div class="room busy'+(mins(r.start)>DUREE_CH?' late':'')+'"><div class="rn">ห้อง '+k+'<span class="st">ไม่ว่าง</span></div>'
         +'<div class="who">'+r.names.map(esc).join(' + ')+'</div>'
-        +'<div class="since">▶ '+hm(r.start)+' · '+mins(r.start)+' นาที</div>'
+        +(()=>{ const reste=DUREE_CH-mins(r.start); return reste>=0 ? '<div class="reste">⏳ เหลือ '+reste+' นาที</div>' : '<div class="reste over">⚠️ เกิน '+(-reste)+' นาที</div>'; })()
         +(r.type==='l1'&&r.names.length===1?'<button class="add2" type="button" data-add="'+r.n+'">👭 + เลดี้ · '+(hhR(r)?TH.hh:TH.l2)+'</button>'
           :(r.type==='l2'||r.type==='hh')&&r.names.length===2?'<button class="add2" type="button" data-add="'+r.n+'">👤 + เลดี้ · '+TH.l3+'</button>':'')
         +'<button class="fin" type="button" data-fin="'+r.n+'">⏹ เสร็จ</button></div>';
