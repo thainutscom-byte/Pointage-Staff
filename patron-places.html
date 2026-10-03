@@ -95,8 +95,8 @@ const dm=s=>String(s||'').split('-').reverse().slice(0,2).join('/');
 const escH=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function plCharger(){
   try{ const j=JSON.parse(await readTxt(await fetch(API+'?placesdetail='+isoJ(0)+'&n=10&_='+Date.now()))); if(!j.ok) return; PLD=j.places||{};
-    const fant=[]; Object.keys(PLD).forEach(sh=>PLD[sh].forEach(c=>{ if(c.compte && !c.dansEmp) fant.push(c.nom+' '+(c.tel||'')+' ('+sh+(c.auj?', aujourd\'hui':', du '+dm(c.deb))+')'); }));
-    $('plAlerte').innerHTML = fant.length ? '<div style="background:#fef2f2;border:2px solid var(--red);border-radius:10px;padding:8px;margin-bottom:8px;font-size:.88rem;color:var(--red);font-weight:700">⚠️ '+fant.length+' contrat'+(fant.length>1?'s':'')+' compté'+(fant.length>1?'s':'')+' sans fiche dans « Employés » : '+escH(fant.join(' · '))+'<br><span style="font-weight:600">→ touchez l\'horaire pour le voir et le retirer si c\'est un doublon</span></div>' : '';
+    const fant=[]; Object.keys(PLD).forEach(sh=>PLD[sh].forEach(c=>{ if(c.compte && !c.dansEmp) fant.push(c.nom+' '+(c.tel||'')+' ('+sh+(c.auj?', aujourd\'hui':', du '+dm(c.deb))+')'+(c.memeTel?' = même numéro que '+c.memeTel+' → doublon':'')); }));
+    $('plAlerte').innerHTML = fant.length ? '<div style="background:#fef2f2;border:2px solid var(--red);border-radius:10px;padding:8px;margin-bottom:8px;font-size:.88rem;color:var(--red);font-weight:700">⚠️ '+fant.length+' contrat'+(fant.length>1?'s':'')+' compté'+(fant.length>1?'s':'')+' sans fiche dans « Employés » : '+escH(fant.join(' · '))+'<br><span style="font-weight:600">→ touchez l\'horaire : 🗑️ Retirer si c\'est un doublon / une personne qui ne vient pas · ➕ Recréer sa fiche si c\'est une vraie employée</span></div>' : '';
     document.querySelectorAll('.plR').forEach(r=>{ if(r.nextElementSibling && r.nextElementSibling.classList.contains('plD')) plDetail(r, true); });
   }catch(e){}
 }
@@ -109,9 +109,17 @@ function plDetail(tr, refaire){
   L.forEach(c=>{ const ko=c.compte && !c.dansEmp;
     h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 6px;border-radius:8px;margin-top:3px;background:'+(ko?'#fee2e2':c.compte?'#f3f4f6':'#fafafa')+';'+(c.compte?'':'opacity:.6')+'">'
       +'<span><b>'+escH(c.nom)+'</b> <span style="color:var(--muted)">'+escH(c.tel)+'</span><br>'+dm(c.deb)+' → '+dm(c.fin)+(c.auj?' · <b>aujourd\'hui</b>':'')+(c.impose?' · 👑':'')
-      +(ko?' · <b style="color:var(--red)">⚠️ pas dans Employés</b>':'')+(c.bloque?' · 🚫 bloquée (pas comptée)':'')+(c.test?' · 🧪 test (pas comptée)':'')+'</span>'
-      +'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plRetirer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#fff;border:1px solid var(--red);color:var(--red);font-weight:800;font-size:.75rem;white-space:nowrap">🗑️ Retirer</button></div>'; });
+      +(ko?' · <b style="color:var(--red)">⚠️ pas dans Employés</b>'+(c.memeTel?'<br><b style="color:#9a3412">📞 même numéro que la fiche « '+escH(c.memeTel)+' » → doublon (nom écrit autrement)</b>':''):'')+(c.bloque?' · 🚫 bloquée (pas comptée)':'')+(c.test?' · 🧪 test (pas comptée)':'')+'</span>'
+      +'<span style="display:flex;flex-direction:column;gap:4px">'+(ko && !c.memeTel?'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plRecreer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#16a34a;color:#fff;font-weight:800;font-size:.75rem;white-space:nowrap">➕ Recréer sa fiche</button>':'')
+      +'<button data-sh="'+tr.dataset.sh+'" data-i="'+L.indexOf(c)+'" onclick="plRetirer(this)" style="border:none;border-radius:8px;padding:6px 8px;background:#fff;border:1px solid var(--red);color:var(--red);font-weight:800;font-size:.75rem;white-space:nowrap">🗑️ Retirer</button></span></div>'; });
   d.innerHTML=h+'</td>'; tr.after(d);
+}
+async function plRecreer(btn){
+  const sh=btn.dataset.sh, c=((PLD||{})[sh]||[])[+btn.dataset.i]; if(!c) return;
+  if(!confirm('Recréer la fiche de '+c.nom+' ('+c.tel+') dans « Employés » ?\nSon contrat '+sh+' du '+dm(c.deb)+' au '+dm(c.fin)+' est gardé.')) return;
+  try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify({type:'ficherecreer',row:c.row,cle:c.cle})})));
+    if(!j.ok) throw j.err||'x'; alert('✅ Fiche de '+j.nom+' recréée dans « Employés »'); places(); }
+  catch(e){ alert(e==='tok'?'🔐 Activez ce téléphone patron':e==='change'?'⚠️ Le planning a changé — rechargez la page':'❌ Pas fait — réessayez'); }
 }
 async function plRetirer(btn){
   const sh=btn.dataset.sh, c=((PLD||{})[sh]||[])[+btn.dataset.i]; if(!c) return; const row=c.row, cle=c.cle, deb=c.deb, nom=c.nom;

@@ -59,15 +59,6 @@
       <h2>📝 Réservations reçues / การจองที่ได้รับ</h2>
       <div id="resa" class="small">Chargement… / กำลังโหลด…</div>
     </div>
-    <div class="card" style="margin-top:14px">
-      <h2>🗓️ Places disponibles / ที่ว่าง <span style="font-weight:normal;color:var(--muted);font-size:.8rem">(4 max par horaire · 5 du 01/11 au 30/03 / สูงสุด 4 ที่ต่อช่วงเวลา)</span></h2>
-      <div id="places">Chargement… / กำลังโหลด…</div>
-    </div>
-    <div class="card" style="margin-top:14px">
-      <h2>📇 Contacts des employées / รายชื่อพนักงาน</h2>
-      <button class="big green" id="vcfBtn" onclick="vcfTelecharger()">📥 Ajouter les employées à mon répertoire<br><small style="font-weight:600">เพิ่มพนักงานลงในรายชื่อโทรศัพท์</small></button>
-      <div id="vcfMsg" class="small" style="margin-top:6px"></div>
-    </div>
     <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
     <div class="small" style="margin-top:14px"><a href="#" onclick="actualiser();return false">🔄 Actualiser / รีเฟรช</a></div>
   </div>
@@ -123,7 +114,6 @@ function boutonRefus(x,num,d){
       zone.innerHTML=''; d.style.opacity='.75'; const zr=d.querySelector('.zr'); if(zr) zr.remove();
       const m=ligne('✅ Essai annulé · la place est libérée dans le planning / ยกเลิกแล้ว คืนที่ว่างในตารางแล้ว','font-weight:800;color:var(--green)'); zone.appendChild(m);
       if(num){ const a=document.createElement('a'); a.className='sms'; a.href=smsRefus(num); a.textContent='📱 Envoyer le SMS de refus à / ส่ง SMS ปฏิเสธถึง '+x.nom.split(' ')[0]; zone.appendChild(a); }
-      places();
     }catch(e){ b.disabled=false; b.textContent='❌ Profil non retenu · annuler l\'essai / โปรไฟล์ไม่ผ่าน · ยกเลิกการทดลองงาน'; zone.appendChild(ligne('❌ Pas envoyé — réessayez (script Google à jour ?) / ส่งไม่สำเร็จ ลองใหม่ (อัปเดตสคริปต์ Google แล้วหรือยัง?)','color:var(--red);font-weight:700')); }
   };
   return zone;
@@ -153,34 +143,7 @@ async function charger(){
       R.appendChild(d); });
   }catch(e){ R.textContent='⚠️ Pas de connexion — réessayez / ไม่มีการเชื่อมต่อ ลองใหม่อีกครั้ง'; }
 }
-// 🗓️ places libres par horaire : aujourd'hui et sur les 10 prochains jours (jour le plus chargé)
-const SH=[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],['16h-22h','16:00-22:00 น.'],['19h-01h','19:00-01:00 น.'],['21h-03h','21:00-03:00 น.'],['09:00-17:00','09:00-17:00 น. (mensuel)'],['17:00-01:00','17:00-01:00 น. (mensuel)']];
-async function places(){
-  const P=$('places'); P.textContent='Chargement… / กำลังโหลด…';
-  try{
-    const q=n=>fetch(API+'?plan=1&emp=__patron__&tel=0&s='+isoJ(0)+'&n='+n+'&sh='+encodeURIComponent(SH.map(x=>x[0]).join(','))+'&_='+Date.now()).then(readTxt).then(JSON.parse);
-    const [a,b]=await Promise.all([q(1),q(10)]);
-    const col=l=>l<=0?'var(--red)':l===1?'#ea580c':'var(--green)';
-    let h='<table style="width:100%;border-collapse:collapse;font-size:.95rem"><tr style="color:var(--muted);font-size:.8rem"><td>Horaire / ช่วงเวลา</td><td style="text-align:center">Aujourd\'hui / วันนี้</td><td style="text-align:center">10 jours / 10 วัน</td></tr>';
-    const ca=capJour(isoJ(0)), cb=capPeriode(isoJ(0),10);
-    SH.forEach(([k,l])=>{ const la=ca-((a[k]||{}).max||0), lb=cb-((b[k]||{}).max||0);
-      h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px 0">'+l+'</td><td style="text-align:center;font-weight:800;color:'+col(la)+'">'+Math.max(0,la)+'/'+ca+'</td><td style="text-align:center;font-weight:800;color:'+col(lb)+'">'+Math.max(0,lb)+'/'+cb+'</td></tr>'; });
-    P.innerHTML=h+'</table><div class="small" style="margin-top:6px">= places libres · « 10 jours » = le jour le plus chargé<br>= ที่ว่าง · «10 วัน» = วันที่คนเยอะที่สุด</div>';
-  }catch(e){ P.textContent='⚠️ Pas de connexion — réessayez / ไม่มีการเชื่อมต่อ ลองใหม่อีกครั้ง'; }
-}
-// ===== 📇 CONTACTS : fichier .vcf (noms + numéros) à ouvrir sur le téléphone → ajout au répertoire =====
-async function vcfTelecharger(){
-  const b=$('vcfBtn'), m=$('vcfMsg'); b.disabled=true; m.style.color=''; m.textContent='⏳ …';
-  try{
-    const j=JSON.parse(await readTxt(await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&vcf=1&_='+Date.now())));
-    if(!j.n) { m.textContent='Aucune employée à ajouter. / ไม่มีพนักงานให้เพิ่ม'; b.disabled=false; return; }
-    const url=URL.createObjectURL(new Blob([j.vcf],{type:'text/vcard'})), a=document.createElement('a');
-    a.href=url; a.download='employees.vcf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000);
-    m.style.color='var(--green)'; m.textContent='✅ '+j.n+' employée(s) : ouvrez le fichier téléchargé et choisissez « Ajouter les contacts ». / เปิดไฟล์ที่ดาวน์โหลด แล้วเลือก «เพิ่มรายชื่อ»';
-  }catch(e){ m.style.color='var(--red)'; m.textContent='❌ Pas envoyé — réessayez / ส่งไม่สำเร็จ ลองใหม่อีกครั้ง'; }
-  b.disabled=false;
-}
-function actualiser(){ charger(); places(); }
+function actualiser(){ charger(); }
 actualiser();
 </script>
 </body>

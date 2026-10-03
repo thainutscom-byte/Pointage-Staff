@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#7c3aed">
-<title>📸 Contrôle du cahier</title>
+<title>✏️ Corriger avec le cahier</title>
 <style>
   :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--orange:#ea580c;--violet:#7c3aed;--border:#e5e7eb;}
   *{box-sizing:border-box}
@@ -53,7 +53,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>📸 Contrôle avec le cahier</h1>
+  <h1>✏️ Corriger les massages</h1>
+  <div style="display:flex;gap:8px;margin:0 0 12px"><a href="patron-massages.html" style="flex:1;text-align:center;text-decoration:none;font-weight:800;border-radius:12px;padding:12px 6px;font-size:.98rem;background:#fff;color:#16a34a;border:2px solid #16a34a">✍️ Manuellement<br><span style="font-weight:600;font-size:.75rem">une employée, une date</span></a><a href="patron-cahier.html" style="flex:1;text-align:center;text-decoration:none;font-weight:800;border-radius:12px;padding:12px 6px;font-size:.98rem;background:#7c3aed;color:#fff;border:2px solid #7c3aed">📖 Avec le cahier<br><span style="font-weight:600;font-size:.75rem">toutes les filles du jour</span></a></div>
   <div class="card" id="cahier">
         <div class="sub" style="text-align:left;margin:0 0 8px">1. Photo de la feuille papier · 2. Tapez les chiffres du cahier · 3. Les erreurs des filles sont en <b style="color:var(--red)">rouge</b> → ✔ Corriger</div>
     <div class="fjtop"><input type="date" id="chDate" onchange="chCharger()"><button onclick="chCharger()" style="border:none;border-radius:10px;padding:9px 12px;font-weight:800;background:var(--violet);color:#fff">🔄</button></div>

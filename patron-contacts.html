@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#dc2626">
+<title>📇 Contacts des employées</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--redbg:#fee2e2;--green:#16a34a;--border:#e5e7eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:460px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 30px;}
+  h1{font-size:1.25rem;margin:4px 0 12px;text-align:center}
+  .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  h2{font-size:1rem;margin:0 0 8px}
+  .emp{display:block;width:100%;text-align:left;border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px;margin:0 0 8px;font-size:1.05rem;color:var(--text)}
+  .emp small{color:var(--muted);font-size:.8rem}
+  .emp.svc{border-left:7px solid var(--green)}
+  .emp.on{border-color:var(--red);background:var(--redbg)}
+  .emp.blk{opacity:.5}
+  .sep{font-size:.8rem;color:var(--muted);margin:8px 0 6px}
+  .pen{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pen button{border:2px solid var(--border);background:#fff;border-radius:12px;padding:12px 8px;font-size:.95rem;text-align:left;color:var(--text)}
+  .pen button.on{border-color:var(--red);background:var(--redbg);font-weight:800}
+  .big{width:100%;border:none;border-radius:14px;padding:16px;font-size:1.15rem;font-weight:800;color:#fff;background:var(--red)}
+  .big:disabled{background:#9ca3af}
+  .big.green{background:var(--green)}
+  input{width:100%;font-size:1.6rem;text-align:center;letter-spacing:6px;padding:12px;border-radius:12px;border:2px solid var(--border)}
+  #msg{margin-top:10px;font-weight:700;text-align:center;min-height:20px}
+  a.sms{display:block;text-align:center;margin-top:10px;background:var(--green);color:#fff;text-decoration:none;font-weight:800;padding:14px;border-radius:14px}
+  .small{font-size:.8rem;color:var(--muted);text-align:center}
+  .cor{width:100%;border-collapse:collapse;margin-top:8px}
+  .cor th{background:#fef08a;font-size:.8rem;padding:6px 4px;border:1px solid #fde68a;text-align:center}
+  .cor td{border:1px solid #fde68a;padding:6px 4px;text-align:center;font-weight:700;background:#fefce8}
+  .cor td.nom{text-align:left;font-size:.9rem}
+  .cor .st{display:flex;align-items:center;justify-content:center;gap:2px}
+  .cor .st button{flex:0 0 30px;width:30px;height:34px;padding:0;border-radius:10px;border:none;background:#e5e7eb;font-size:1.2rem;font-weight:800;color:var(--text)}
+  .cor input{width:40px;min-width:0;font-size:1.25rem;letter-spacing:0;padding:4px 0;border:2px solid #fde68a;border-radius:8px;background:#fff;font-weight:800;text-align:center}
+  .cor tr.tot td{background:#fef08a;font-weight:800}
+  .paie{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+  .paie th{background:#dcfce7;font-size:.78rem;padding:6px 4px;border:1px solid #bbf7d0;text-align:center}
+  .paie td{border:1px solid #d1fae5;padding:6px 4px;text-align:center}
+  .paie td.nom{text-align:left;font-weight:700}
+  .paie tr.tot td{background:#fef3c7;font-weight:800}
+  .refus{display:block;width:100%;margin-top:10px;border:2px solid var(--red);background:#fff;color:var(--red);border-radius:12px;padding:11px;font-size:.95rem;font-weight:800;text-align:center;text-decoration:none}
+  .refus:disabled{opacity:.6}
+  .retenu{display:block;width:100%;margin-top:10px;border:none;background:var(--green);color:#fff;border-radius:12px;padding:12px;font-size:.95rem;font-weight:800;text-align:center}
+  .okrefus{margin-top:10px;font-weight:800;color:var(--green);text-align:left}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📇 Contacts des employées<br><span style="font-size:1rem;font-weight:700">รายชื่อพนักงาน</span></h1>
+  <div id="main">
+    <div class="card">
+      <input id="cherche" type="search" placeholder="🔎 Chercher un nom / ค้นหาชื่อ" oninput="dessiner()" style="width:100%;font-size:1rem;letter-spacing:0;text-align:left;padding:11px;border-radius:12px;border:2px solid var(--border)">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.9rem;color:var(--muted)"><input type="checkbox" id="voirBloq" onchange="dessiner()" style="width:auto"> Afficher aussi les bloquées</label>
+      <div id="liste" style="margin-top:8px">Chargement… / กำลังโหลด…</div>
+    </div>
+    <div class="card">
+      <h2>📥 Répertoire du téléphone / รายชื่อในโทรศัพท์</h2>
+      <button class="big green" id="vcfBtn" onclick="vcfTelecharger()">📥 Ajouter les employées à mon répertoire<br><small style="font-weight:600">เพิ่มพนักงานลงในรายชื่อโทรศัพท์</small></button>
+      <div id="vcfMsg" class="small" style="margin-top:6px"></div>
+    </div>
+    <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
+    <div class="small" style="margin-top:14px"><a href="#" onclick="charger();return false">🔄 Actualiser / รีเฟรช</a></div>
+  </div>
+  <a href="patron.html" style="display:block;text-align:center;margin-top:12px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
+</div>
+<script src="autorisation.js?v=8"></script>
+<script>
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const $=id=>document.getElementById(id);
+function getPin(){ return 'x'; }   // plus de code patron
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+function isoJ(o){ const d=new Date(Date.now()-6*3600e3); d.setDate(d.getDate()+(o||0)); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+async function chargerBoss(){ const r=await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&d='+isoJ(0)+'&_='+Date.now()); return JSON.parse(await readTxt(r)); }
+function fmtTel(t){ const d=String(t||'').replace(/\D/g,''); return d.length===10 ? d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6) : (t||''); }
+let EMPS=[], LIG={};
+const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cleE=(n,t)=>String(n||'').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(t||'').replace(/\D/g,'');
+function dessiner(){
+  const L=document.getElementById('liste'), q=(document.getElementById('cherche').value||'').trim().toLowerCase(), vb=document.getElementById('voirBloq').checked;
+  const M=EMPS.filter(e=>!/^boss$/i.test(String(e.nom).trim()) && (vb || !e.bloque) && (!q || String(e.nom).toLowerCase().includes(q) || String(e.tel).includes(q)));
+  if(!M.length){ L.innerHTML='<div class="small">Aucune employée. / ไม่มีพนักงาน</div>'; return; }
+  const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  L.innerHTML=M.map(e=>{ const num=String(e.tel||'').replace(/\D/g,''), tel=num.length===9?'0'+num:num, lid=LIG[cleE(e.nom,e.tel)]||LIG[cleE(e.nom,tel)];
+    const b=(h,t,c)=>'<a href="'+h+'" style="flex:1;text-align:center;background:'+c+';color:#fff;text-decoration:none;font-weight:800;padding:9px 4px;border-radius:10px;font-size:.88rem">'+t+'</a>';
+    return '<div style="border-top:1px solid var(--border);padding:10px 0;text-align:left">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><b style="font-size:1.08rem">'+(e.service?'🟢 ':'')+esc(e.nom)+(e.bloque?' 🚫':'')+'</b><span style="font-weight:800;letter-spacing:.5px">'+esc(fmtTel(tel))+'</span></div>'
+      +(tel?'<div style="display:flex;gap:6px;margin-top:6px">'+b('tel:'+tel,'📞 Appeler','#16a34a')+b('sms:'+tel+(ios?'&':'?')+'body=','✉️ SMS','#2563eb')
+        +(lid?b('https://line.me/R/ti/p/~'+encodeURIComponent(lid),'💬 LINE','#06c755'):'<span style="flex:1;text-align:center;background:#e5e7eb;color:#6b7280;font-weight:700;padding:9px 4px;border-radius:10px;font-size:.8rem">LINE ?</span>')+'</div>':'')
+      +'</div>'; }).join('');
+}
+async function charger(){
+  try{
+    const [j]=await Promise.all([chargerBoss(), (async()=>{ try{ if(window.autLineIds) LIG=await window.autLineIds()||{}; }catch(e){} })()]);
+    document.getElementById('err').textContent=''; EMPS=(j.emps||[]).slice().sort((a,b)=>(!!b.service-!!a.service)||String(a.nom).localeCompare(String(b.nom))); dessiner();
+  }catch(e){ document.getElementById('liste').textContent='⚠️ Pas de connexion — réessayez / ไม่มีการเชื่อมต่อ ลองใหม่อีกครั้ง'; }
+}
+// ===== 📇 CONTACTS : fichier .vcf (noms + numéros) à ouvrir sur le téléphone → ajout au répertoire =====
+async function vcfTelecharger(){
+  const b=$('vcfBtn'), m=$('vcfMsg'); b.disabled=true; m.style.color=''; m.textContent='⏳ …';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API+'?boss=1&pin='+encodeURIComponent(getPin())+'&vcf=1&_='+Date.now())));
+    if(!j.n) { m.textContent='Aucune employée à ajouter. / ไม่มีพนักงานให้เพิ่ม'; b.disabled=false; return; }
+    const url=URL.createObjectURL(new Blob([j.vcf],{type:'text/vcard'})), a=document.createElement('a');
+    a.href=url; a.download='employees.vcf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000);
+    m.style.color='var(--green)'; m.textContent='✅ '+j.n+' employée(s) : ouvrez le fichier téléchargé et choisissez « Ajouter les contacts ». / เปิดไฟล์ที่ดาวน์โหลด แล้วเลือก «เพิ่มรายชื่อ»';
+  }catch(e){ m.style.color='var(--red)'; m.textContent='❌ Pas envoyé — réessayez / ส่งไม่สำเร็จ ลองใหม่อีกครั้ง'; }
+  b.disabled=false;
+}
+charger();
+</script>
+</body>
+</html>
