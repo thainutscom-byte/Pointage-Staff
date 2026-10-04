@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>📲 ติดตั้งสมุดลงงาน</title>
+<link rel="manifest" href="cahier.webmanifest">
+<link rel="apple-touch-icon" href="cahier-icon-180.png">
+<link rel="icon" href="cahier-icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="สมุดลงงาน">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap">
+<style>
+  :root{--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--muted:#64748b;--teal:#0f766e;--line:#06c755;--amber:#f59e0b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',system-ui,sans-serif}
+  .wrap{max-width:480px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top,0px)) 16px calc(30px + env(safe-area-inset-bottom,0px))}
+  .top{text-align:center;margin-bottom:14px}
+  .top img{width:84px;height:84px;border-radius:20px;box-shadow:0 4px 14px rgba(15,118,110,.3)}
+  h1{font-size:1.4rem;margin:10px 0 2px}
+  .sub{color:var(--muted);font-size:.95rem}
+  .card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .step{display:flex;gap:12px;align-items:flex-start}
+  .num{flex:0 0 36px;height:36px;border-radius:50%;background:var(--teal);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+  .step b{display:block;font-size:1.1rem;margin-bottom:2px}
+  .step p{margin:2px 0;color:#334155;line-height:1.55}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:none;border-radius:14px;padding:15px;font:inherit;font-size:1.1rem;font-weight:700;color:#fff;background:var(--teal);margin-top:10px;text-decoration:none;cursor:pointer}
+  .btn.sec{background:#fff;color:var(--teal);border:2px solid var(--teal)}
+  .warn{background:#fef3c7;border:2px solid var(--amber);border-radius:14px;padding:12px;font-weight:600;line-height:1.5;margin-bottom:12px}
+  .ok{background:#dcfce7;border:2px solid #16a34a;border-radius:14px;padding:12px;font-weight:700;text-align:center;margin-bottom:12px}
+  .ios{background:#f8fafc;border-radius:12px;padding:10px 12px;margin-top:10px;line-height:1.7}
+  .k{display:inline-block;background:#e2e8f0;border-radius:8px;padding:0 8px;font-weight:700}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <img src="cahier-icon-192.png" alt="">
+    <h1>สมุดลงงาน</h1>
+    <div class="sub">ติดตั้งบนโทรศัพท์ · ห้องว่าง / ไม่ว่าง · ลงการนวด</div>
+  </div>
+
+  <div class="warn" id="inApp" hidden>⚠️ คุณเปิดลิงก์นี้ใน LINE / Facebook<br>แตะ <span class="k">⋮</span> หรือ <span class="k">…</span> มุมขวา แล้วเลือก <b>“เปิดในเบราว์เซอร์”</b> (Chrome / Safari) เพื่อติดตั้งได้</div>
+  <div class="ok" id="deja" hidden>✅ ติดตั้งแล้ว — เปิดจากไอคอน “สมุดลงงาน” บนหน้าจอ</div>
+
+  <div class="card">
+    <div class="step"><div class="num">1</div><div>
+      <b>📶 เชื่อมต่อ Wi-Fi ของร้าน</b>
+      <p>เปิด <b>กล้อง</b> ของโทรศัพท์ แล้วสแกน <b>QR Wi-Fi</b> ที่ติดอยู่ในร้าน → แตะ “เชื่อมต่อ”</p>
+      <p style="color:var(--muted);font-size:.9rem">ทำครั้งเดียว · ครั้งต่อไปโทรศัพท์จะเชื่อมต่อเองอัตโนมัติเมื่อมาถึงร้าน</p>
+    </div></div>
+  </div>
+
+  <div class="card">
+    <div class="step"><div class="num">2</div><div style="flex:1;min-width:0">
+      <b>📲 ติดตั้งสมุดลงงาน</b>
+      <div id="android">
+        <p>แตะปุ่มด้านล่าง แล้วแตะ “ติดตั้ง”</p>
+        <button class="btn" id="btnInst" type="button">📲 ติดตั้งสมุดลงงาน</button>
+        <div class="ios" id="andAide" hidden>ถ้าไม่มีหน้าต่างติดตั้ง: แตะ <span class="k">⋮</span> มุมขวาบนของ Chrome → <b>“ติดตั้งแอป”</b> หรือ <b>“เพิ่มลงในหน้าจอหลัก”</b></div>
+      </div>
+      <div id="iphone" hidden>
+        <div class="ios">① แตะปุ่ม <b>เปิดสมุดลงงาน</b> ด้านล่าง (ใน Safari)<br>② แตะ <span class="k">⬆️ แชร์</span> ด้านล่างของจอ<br>③ เลือก <b>“เพิ่มไปยังหน้าจอโฮม”</b> → <b>“เพิ่ม”</b></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="card">
+    <div class="step"><div class="num">3</div><div style="flex:1;min-width:0">
+      <b>🗒️ เปิดสมุดลงงาน</b>
+      <p>ใช้ไอคอน <b>“สมุดลงงาน”</b> บนหน้าจอทุกวัน</p>
+      <a class="btn sec" id="ouvrir" href="cahier.html?installer=1">🗒️ เปิดสมุดลงงาน</a>
+    </div></div>
+  </div>
+</div>
+<script>
+(function(){
+  const $=id=>document.getElementById(id), ua=navigator.userAgent;
+  const ios=/iPhone|iPad|iPod/i.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  const inApp=/Line\/|FBAN|FBAV|Instagram|TikTok|musical_ly|; wv\)/i.test(ua);
+  const standalone=window.matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
+  if(standalone){ location.replace('cahier.html'); return; }
+  if(inApp) $('inApp').hidden=false;
+  if(ios){ $('android').hidden=true; $('iphone').hidden=false; }
+  try{ if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js'); }catch(e){}
+  let ev=null;
+  window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); ev=e; });
+  window.addEventListener('appinstalled',()=>{ $('deja').hidden=false; });
+  $('btnInst').onclick=async()=>{
+    if(ev){ ev.prompt(); try{ const r=await ev.userChoice; if(r && r.outcome==='accepted') $('deja').hidden=false; }catch(e){} ev=null; return; }
+    $('andAide').hidden=false;
+  };
+})();
+</script>
+</body>
+</html>

@@ -6,7 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0b0d12">
-<title>🗒️ Cahier</title>
+<title>🗒️ สมุดลงงาน</title>
+<link rel="manifest" href="cahier.webmanifest">
+<link rel="apple-touch-icon" href="cahier-icon-180.png">
+<link rel="icon" href="cahier-icon-192.png">
+<meta name="apple-mobile-web-app-title" content="สมุดลงงาน">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
@@ -878,6 +882,14 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   tick(); draw(); etatSync(); majHH();
   setInterval(()=>{ tick(); drawRooms(); }, 20000);
 })();
+
+// 📲 installable comme une app (écran d'accueil) : même service worker que l'app
+// 🍎 iPhone ouvert depuis installer.html : rappel « ⬆️ แชร์ → เพิ่มไปยังหน้าจอโฮม » en bas de l'écran
+try{ if(/[?&]installer=1/.test(location.search) && /iPhone|iPad|iPod/i.test(navigator.userAgent) && !navigator.standalone){
+  const d=document.createElement('div'); d.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:9999;background:#0f766e;color:#fff;border-radius:16px;padding:14px 44px 14px 14px;font-weight:700;line-height:1.5;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+  d.innerHTML='📲 แตะ <b>⬆️ แชร์</b> ด้านล่าง แล้วเลือก <b>“เพิ่มไปยังหน้าจอโฮม”</b><button type="button" style="position:absolute;top:8px;right:8px;border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:10px;width:30px;height:30px;font-weight:800">✕</button>';
+  d.querySelector('button').onclick=()=>d.remove(); document.body.appendChild(d); } }catch(e){}
+try{ if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js'); }catch(e){}
 </script>
 </body>
 </html>
