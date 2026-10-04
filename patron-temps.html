@@ -31,6 +31,7 @@
   .eh b{font-size:1.1rem}
   .eh .m{font-weight:800;color:var(--violet);white-space:nowrap}
   .ms{margin-top:6px;display:grid;gap:4px}
+  #tous{display:grid;gap:5px}
   .mx{display:flex;gap:8px;align-items:center;background:#f9fafb;border-radius:10px;padding:7px 9px;font-size:.88rem}
   .mx.live{background:var(--live)}
   .mx .d{min-width:62px;font-weight:800;font-variant-numeric:tabular-nums}
@@ -59,7 +60,9 @@
     <table><thead><tr><th>Employée</th><th class="c">Massages</th><th class="c">Temps</th><th class="c">OP1</th><th class="c">OP2</th><th class="c">OP3</th><th class="c">OP4</th><th class="c">OP5</th></tr></thead><tbody id="resume"></tbody></table>
   </div>
 
-  <div class="card"><div id="detail"></div></div>
+  <div class="card"><h2 style="font-size:1.05rem;margin:0 0 8px">📋 Chaque massage effectué</h2><div id="tous"></div></div>
+
+  <div class="card"><h2 style="font-size:1.05rem;margin:0 0 8px">👩 Par employée</h2><div id="detail"></div></div>
 
   <a href="patron.html" style="display:block;text-align:center;margin-top:12px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
 </div>
@@ -93,13 +96,20 @@
     $('tot').innerHTML='<div><b>'+nb+'</b><span>massages</span></div><div><b>'+duree(minTot)+'</b><span>temps total</span></div><div><b>'+(live?enCours:L.length)+'</b><span>'+(live?'🔴 en cours':'employées')+'</span></div>';
     $('resume').innerHTML=L.length?L.map(e=>'<tr><td><b>'+esc(e.nom)+'</b></td><td class="c">'+e.n+'</td><td class="c"><b>'+duree(e.min)+'</b></td>'+e.op.map(x=>'<td class="c">'+(x||'·')+'</td>').join('')+'</tr>').join('')
       :'<tr><td colspan="8" class="vide">Aucun massage ce jour-là</td></tr>';
-    $('detail').innerHTML=L.length?L.map(e=>'<div class="emp"><div class="eh" data-e="'+esc(e.nom)+'"><b>'+(ouvert[e.nom]?'▾ ':'▸ ')+esc(e.nom)+'</b><span class="m">'+e.n+' · '+duree(e.min)+'</span></div>'
-        +(ouvert[e.nom]?'<div class="ms">'+e.L.sort((a,b)=>a.r.n-b.r.n).map(x=>'<div class="mx'+(x.live?' live':'')+'"><span class="d">'+(x.live?'🔴 ':'')+duree(x.min)+'</span>'
-          +'<span class="x">'+esc(FORM[x.r.type]||x.r.label||x.r.type)+' <span class="op">OP'+x.op+'</span>'+((x.r.names||[]).length>1?' <span class="small">avec '+esc(x.r.names.filter(n=>String(n).trim()!==e.nom).join(' + '))+'</span>':'')+'</span>'
-          +'<span class="small">'+(x.r.ref==='new'?'🆕':'🔁')+' '+(DEHORS[x.r.type]?'dehors':'ch. '+esc(x.r.room||''))+'</span></div>').join('')+'</div>':'')+'</div>').join('')
+    const T=ROWS.slice().sort((a,b)=>a.n-b.n);
+    $('tous').innerHTML=T.length?T.map(r=>{ const fin=r.end||(live?now:null), min=fin?(fin-r.start)/60000:0, enC=!r.end&&!r.annule;
+      return '<div class="mx'+(enC?' live':'')+'" style="'+(r.annule?'opacity:.55;text-decoration:line-through;':'')+'"><span class="d" style="min-width:34px;color:var(--muted)">#'+r.n+'</span>'
+        +'<span class="d" style="min-width:70px;font-size:1rem">'+(r.annule?'❌':enC?'🔴 '+duree(min):duree(min))+'</span>'
+        +'<span class="x"><b>'+esc((r.names||[]).join(' + '))+'</b><br><span class="small">'+esc(FORM[r.type]||r.label||r.type)+' · <span class="op">OP'+Math.min(5,Math.max(1,+r.qty||1))+'</span> · '+(DEHORS[r.type]?'dehors':'ch. '+esc(r.room||''))+' · '+(r.ref==='new'?'🆕 nouveau':'🔁 habitué')+'</span>'
+        +(r.court?'<br><span style="color:#b45309;font-weight:700">⚠️ parti avant 15 min : '+esc(r.court)+'</span>':'')+(r.annule?'<br><span class="small">annulé</span>':'')+'</span></div>'; }).join('')
+      :'<div class="vide">Aucun massage ce jour-là</div>';
+    $('detail').innerHTML=L.length?L.map(e=>'<div class="emp"><div class="eh" data-e="'+esc(e.nom)+'"><b>'+(ouvert[e.nom]!==false?'▾ ':'▸ ')+esc(e.nom)+'</b><span class="m">'+e.n+' · '+duree(e.min)+'</span></div>'
+        +(ouvert[e.nom]!==false?'<div class="ms">'+e.L.sort((a,b)=>a.r.n-b.r.n).map(x=>'<div class="mx'+(x.live?' live':'')+'"><span class="d">'+(x.live?'🔴 ':'')+duree(x.min)+'</span>'
+          +'<span class="x">'+esc(FORM[x.r.type]||x.r.label||x.r.type)+' <span class="op">OP'+x.op+'</span>'+((x.r.names||[]).length>1?' <span class="small">avec '+esc(x.r.names.filter(n=>String(n).trim()!==e.nom).join(' + '))+'</span>':'')
+          +(x.r.court?'<br><span style="color:#b45309;font-weight:700">⚠️ parti avant 15 min : '+esc(x.r.court)+'</span>':'')+'</span>'+'<span class="small">'+(x.r.ref==='new'?'🆕':'🔁')+' '+(DEHORS[x.r.type]?'dehors':'ch. '+esc(x.r.room||''))+'</span></div>').join('')+'</div>':'')+'</div>').join('')
       :'<div class="vide">—</div>';
   }
-  $('detail').addEventListener('click',e=>{ const h=e.target.closest('.eh'); if(!h) return; ouvert[h.dataset.e]=!ouvert[h.dataset.e]; dessiner(); });
+  $('detail').addEventListener('click',e=>{ const h=e.target.closest('.eh'); if(!h) return; ouvert[h.dataset.e]=ouvert[h.dataset.e]===false; dessiner(); });
 
   let n0=0;
   async function charger(){
