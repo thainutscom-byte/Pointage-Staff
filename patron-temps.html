@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#7c3aed">
+<title>⏱️ Temps de massage</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--blue:#2563eb;--violet:#7c3aed;--border:#e5e7eb;--live:#fee2e2}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:560px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px))}
+  h1{font-size:1.25rem;margin:4px 0 12px;text-align:center}
+  .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .jour{display:flex;gap:8px;align-items:center}
+  .jour button{border:2px solid var(--border);background:#fff;border-radius:12px;padding:10px 14px;font-size:1.1rem;font-weight:800;cursor:pointer}
+  .jour input{flex:1;min-width:0;font:inherit;font-size:1.05rem;padding:10px;border-radius:12px;border:2px solid var(--border)}
+  .etat{font-size:.85rem;color:var(--muted);text-align:center;margin-top:8px;font-weight:600}
+  .tot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+  .tot div{background:#f5f3ff;border-radius:12px;padding:10px 4px}
+  .tot b{display:block;font-size:1.35rem;color:var(--violet);font-variant-numeric:tabular-nums}
+  .tot span{font-size:.75rem;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th{text-align:left;color:var(--muted);font-weight:700;padding:6px 4px;border-bottom:2px solid var(--border);font-size:.75rem}
+  td{padding:7px 4px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+  td.c,th.c{text-align:center}
+  .emp{border-top:1px solid var(--border);padding:10px 0}
+  .emp:first-child{border-top:none}
+  .eh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;cursor:pointer}
+  .eh b{font-size:1.1rem}
+  .eh .m{font-weight:800;color:var(--violet);white-space:nowrap}
+  .ms{margin-top:6px;display:grid;gap:4px}
+  .mx{display:flex;gap:8px;align-items:center;background:#f9fafb;border-radius:10px;padding:7px 9px;font-size:.88rem}
+  .mx.live{background:var(--live)}
+  .mx .d{min-width:62px;font-weight:800;font-variant-numeric:tabular-nums}
+  .mx .x{flex:1;min-width:0}
+  .op{display:inline-block;background:#ede9fe;color:#5b21b6;border-radius:6px;padding:0 6px;font-weight:800;font-size:.78rem}
+  .small{font-size:.8rem;color:var(--muted)}
+  .vide{text-align:center;color:var(--muted);padding:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⏱️ Temps de massage par employée</h1>
+
+  <div class="card">
+    <div class="jour">
+      <button type="button" id="prev" aria-label="Jour précédent">◀</button>
+      <input type="date" id="d">
+      <button type="button" id="next" aria-label="Jour suivant">▶</button>
+    </div>
+    <div class="etat" id="etat">⏳</div>
+  </div>
+
+  <div class="card"><div class="tot" id="tot"></div></div>
+
+  <div class="card">
+    <table><thead><tr><th>Employée</th><th class="c">Massages</th><th class="c">Temps</th><th class="c">OP1</th><th class="c">OP2</th><th class="c">OP3</th><th class="c">OP4</th><th class="c">OP5</th></tr></thead><tbody id="resume"></tbody></table>
+  </div>
+
+  <div class="card"><div id="detail"></div></div>
+
+  <a href="patron.html" style="display:block;text-align:center;margin-top:12px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
+</div>
+<script>
+(function(){
+  const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+  const $=id=>document.getElementById(id);
+  const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const FORM={l1:'1 lady',l2:'2 lady',hh:'Happy Hour',l3:'3 lady',out:'🚗 Outside',bf:'🍸 Barfine'}, DEHORS={out:1,bf:1};
+  const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const auj=()=>iso(new Date(Date.now()-6*3600e3));          // journée de travail (change à 06:00)
+  const duree=m=>{ m=Math.max(0,Math.round(m)); const h=Math.floor(m/60); return h?h+' h '+String(m%60).padStart(2,'0'):m+' min'; };
+  let ROWS=[], ouvert={};
+  $('d').value=auj();
+  const decale=n=>{ const p=$('d').value.split('-'), x=new Date(+p[0],+p[1]-1,+p[2]+n); $('d').value=iso(x); charger(); };
+  $('prev').onclick=()=>decale(-1); $('next').onclick=()=>decale(1); $('d').onchange=charger;
+
+  function dessiner(){
+    const jour=$('d').value, live=jour===auj(), now=Date.now(), E={};
+    let nb=0, minTot=0, enCours=0;
+    ROWS.filter(r=>!r.annule).forEach(r=>{
+      const fin=r.end||(live?now:null); if(!fin) return;
+      const min=(fin-r.start)/60000, op=Math.min(5,Math.max(1,+r.qty||1)); nb++; if(!r.end) enCours++;
+      (r.names||[]).forEach(n=>{          // 3 lady / 2 lady : chaque fille a son massage et son temps
+        const k=String(n).trim(); const e=E[k]||(E[k]={nom:k,n:0,min:0,op:[0,0,0,0,0],L:[]});
+        e.n++; e.min+=min; e.op[op-1]++; e.L.push({r,min,op,live:!r.end});
+      });
+      minTot+=min;
+    });
+    const L=Object.values(E).sort((a,b)=>b.min-a.min);
+    $('tot').innerHTML='<div><b>'+nb+'</b><span>massages</span></div><div><b>'+duree(minTot)+'</b><span>temps total</span></div><div><b>'+(live?enCours:L.length)+'</b><span>'+(live?'🔴 en cours':'employées')+'</span></div>';
+    $('resume').innerHTML=L.length?L.map(e=>'<tr><td><b>'+esc(e.nom)+'</b></td><td class="c">'+e.n+'</td><td class="c"><b>'+duree(e.min)+'</b></td>'+e.op.map(x=>'<td class="c">'+(x||'·')+'</td>').join('')+'</tr>').join('')
+      :'<tr><td colspan="8" class="vide">Aucun massage ce jour-là</td></tr>';
+    $('detail').innerHTML=L.length?L.map(e=>'<div class="emp"><div class="eh" data-e="'+esc(e.nom)+'"><b>'+(ouvert[e.nom]?'▾ ':'▸ ')+esc(e.nom)+'</b><span class="m">'+e.n+' · '+duree(e.min)+'</span></div>'
+        +(ouvert[e.nom]?'<div class="ms">'+e.L.sort((a,b)=>a.r.n-b.r.n).map(x=>'<div class="mx'+(x.live?' live':'')+'"><span class="d">'+(x.live?'🔴 ':'')+duree(x.min)+'</span>'
+          +'<span class="x">'+esc(FORM[x.r.type]||x.r.label||x.r.type)+' <span class="op">OP'+x.op+'</span>'+((x.r.names||[]).length>1?' <span class="small">avec '+esc(x.r.names.filter(n=>String(n).trim()!==e.nom).join(' + '))+'</span>':'')+'</span>'
+          +'<span class="small">'+(x.r.ref==='new'?'🆕':'🔁')+' '+(DEHORS[x.r.type]?'dehors':'ch. '+esc(x.r.room||''))+'</span></div>').join('')+'</div>':'')+'</div>').join('')
+      :'<div class="vide">—</div>';
+  }
+  $('detail').addEventListener('click',e=>{ const h=e.target.closest('.eh'); if(!h) return; ouvert[h.dataset.e]=!ouvert[h.dataset.e]; dessiner(); });
+
+  let n0=0;
+  async function charger(){
+    const jour=$('d').value, n=++n0; $('etat').textContent='⏳ Chargement…';
+    try{
+      let t=(await (await fetch(API+'?cahierjour=1&d='+jour+'&_='+Date.now())).text()).trim();
+      if(n!==n0) return;
+      if(t[0]!=='{'){ $('etat').textContent='⚠️ Le script Google « Cahier » ne répond pas'; return; }
+      const j=JSON.parse(t); ROWS=j.rows||[]; dessiner();
+      const d=new Date(); $('etat').textContent=(jour===auj()?'🟢 En direct · mis à jour à ':'Mis à jour à ')+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+    }catch(e){ if(n===n0) $('etat').textContent='📶 Pas de connexion — réessai dans 15 s'; }
+  }
+  charger();
+  setInterval(()=>{ if(!document.hidden && $('d').value===auj()) charger(); },15000);   // temps réel (jour en cours)
+  setInterval(()=>{ if($('d').value===auj()) dessiner(); },30000);                       // les minutes des massages en cours avancent
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) charger(); });
+})();
+</script>
+</body>
+</html>
