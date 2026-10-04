@@ -50,6 +50,8 @@
   .retenu{display:block;width:100%;margin-top:10px;border:none;background:var(--green);color:#fff;border-radius:12px;padding:12px;font-size:.95rem;font-weight:800;text-align:center}
   .okrefus{margin-top:10px;font-weight:800;color:var(--green);text-align:left}
 </style>
+<script src="manager-garde.js?v=2"></script>
+<script src="manager-th.js?v=1"></script>
 </head>
 <body>
 <div class="wrap">
@@ -62,6 +64,8 @@
     <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
     <div class="small" style="margin-top:14px"><a href="#" onclick="actualiser();return false">🔄 Actualiser / รีเฟรช</a></div>
   </div>
+  <a id="retour" href="patron.html" style="display:block;text-align:center;margin-top:12px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
+<script>try{ if(localStorage.getItem('pointage_espace')==='manager'){ const a=document.getElementById('retour'); a.href='manager.html'; a.textContent='← Fiche manager'; a.style.color='#7c3aed'; } }catch(e){}</script>
 </div>
 <script src="autorisation.js?v=8"></script>
 <script>
@@ -74,6 +78,8 @@ function capJour(iso, sh){ const m=+String(iso).slice(5,7), d=+String(iso).slice
 function capPeriode(deb, n, sh){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso, sh)); } return c; }
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
+// 🧪 ?f=essai → seulement les essais · 📝 ?f=resa → seulement les contrats (depuis la fiche manager)
+document.addEventListener('DOMContentLoaded',()=>{ const F=new URLSearchParams(location.search).get('f'); if(F==='essai'){ document.querySelector('h1').innerHTML='🧪 Gestion des essais<br><span style="font-size:1rem;font-weight:700">จัดการทดลองงาน</span>'; document.querySelector('#main h2').textContent='🧪 Essais / ทดลองงาน'; document.title='🧪 Essais'; } });
 function getPin(){ return 'x'; }   // plus de code patron
 async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
 function isoJ(o){ const d=new Date(Date.now()-6*3600e3); d.setDate(d.getDate()+(o||0)); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -125,8 +131,8 @@ async function charger(){
   const R=$('resa');
   try{
     const j=await chargerBoss(); $('err').textContent=''; R.innerHTML='';
-    const L=j.resa||[];
-    if(!L.length){ R.textContent='Aucune réservation pour le moment. / ยังไม่มีการจอง'; return; }
+    const F=new URLSearchParams(location.search).get('f'), L=(j.resa||[]).filter(x=>F==='essai'?/^🧪/.test(x.contrat||''):F==='resa'?!/^🧪/.test(x.contrat||''):true);
+    if(!L.length){ R.textContent=F==='essai'?'Aucun essai pour le moment. / ยังไม่มีการทดลองงาน':'Aucune réservation pour le moment. / ยังไม่มีการจอง'; return; }
     R.style.color='var(--text)'; R.style.fontSize='.95rem'; R.style.textAlign='left';
     L.forEach(x=>{
       const d=document.createElement('div'); d.style.cssText='border-top:1px solid var(--border);padding:12px 0;color:var(--text);font-size:.95rem';

@@ -27,6 +27,8 @@
   .seg button{flex:1;border:2px solid var(--border);background:#fff;border-radius:10px;padding:9px 4px;font-weight:800;cursor:pointer}
   .seg button.on{border-color:var(--red);background:#fee2e2;color:var(--red)}
 </style>
+<script src="manager-garde.js?v=2"></script>
+<script src="manager-th.js?v=1"></script>
 </head>
 <body>
 <div class="wrap">
@@ -58,7 +60,8 @@
     <div id="liens"></div>
   </div>
 
-  <a href="patron.html" style="display:block;text-align:center;margin-top:12px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
+  <a id="retour" href="patron.html" style="display:block;text-align:center;margin-top:12px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
+<script>try{ if(localStorage.getItem('pointage_espace')==='manager'){ const a=document.getElementById('retour'); a.href='manager.html'; a.textContent='← Fiche manager'; a.style.color='#7c3aed'; } }catch(e){}</script>
 </div>
 <script>
 (function(){

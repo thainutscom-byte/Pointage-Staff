@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#7c3aed">
-<title>🧑‍💼 Manager</title>
+<title>🧑‍💼 ผู้จัดการ</title>
 <style>
   :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--blue:#2563eb;--violet:#7c3aed;--border:#e5e7eb;}
   *{box-sizing:border-box}
@@ -34,27 +34,29 @@
   .hh button{width:100%;border:none;border-radius:14px;padding:14px;font-size:1.05rem;font-weight:800;cursor:pointer}
   .hh button:disabled{opacity:.6}
 </style>
+<script src="manager-garde.js?v=2"></script>
 </head>
 <body>
 <div class="wrap">
-  <h1>🧑‍💼 Fiche manager</h1>
-  <div class="sous">Happy Hour · recrutement · essais · places · réservations<br>แฮปปี้ฮาวร์ · รับสมัคร · ทดลองงาน · ที่ว่าง · การจอง</div>
+  <h1>🧑‍💼 หน้าผู้จัดการ</h1>
+  <div id="mgrNom" style="text-align:center;font-weight:700;color:#7c3aed"></div>
+  <div class="sous">แฮปปี้ฮาวร์ · รับสมัคร · ทดลองงาน · ที่ว่าง · การจอง</div>
 
-  <div class="resume" id="resume"><span class="small">⏳ Chargement… / กำลังโหลด…</span></div>
+  <div class="resume" id="resume"><span class="small">⏳ กำลังโหลด…</span></div>
 
   <div class="hh" id="hhCarte">
-    <b class="t">🍹 Happy Hour</b>
-    <span class="small">Normal : tous les jours de 16:00 à 20:00 (2 filles = 600 ฿). Activé ici, il vaut aussi en dehors de ces heures et s'arrête tout seul à 08:00 le lendemain matin.<br>แฮปปี้ฮาวร์ปกติ 16:00–20:00 · เปิดเองได้ ปิดอัตโนมัติ 08:00 น.</span>
+    <b class="t">🍹 แฮปปี้ฮาวร์</b>
+    <span class="small">ปกติทุกวัน 16:00–20:00 น. (2 คน = 600 ฿) · เปิดที่นี่ได้นอกเวลาปกติ และจะปิดเองอัตโนมัติ 08:00 น. เช้าวันถัดไป</span>
     <div class="etat" id="hhEtat">⏳</div>
     <button type="button" id="hhBtn" disabled>⏳</button>
   </div>
 
-  <a class="lien" href="patron-partage.html" style="--c:#db2777"><div class="t"><b>📣 Partager l'app (recrutement)</b><span>LINE · Messenger · TikTok · Instagram · Facebook<br>แชร์แอปเพื่อรับสมัครพนักงาน</span></div></a>
-  <a class="lien" href="patron-reservations.html?f=essai" style="--c:var(--violet)"><div class="t"><b>🧪 Gestion des essais</b><span>Retenue ✅ / non retenue ❌ · inviter sur LINE<br>จัดการทดลองงาน</span></div><div class="num" id="nEss"></div></a>
-  <a class="lien" href="patron-places.html" style="--c:var(--green)"><div class="t"><b>🗓️ Places disponibles</b><span>Places libres par horaire · qui les occupe<br>ที่ว่างแต่ละช่วงเวลา</span></div></a>
-  <a class="lien" href="patron-reservations.html?f=resa" style="--c:var(--blue)"><div class="t"><b>📝 Réservations</b><span>Nouvelles candidates (contrats) · appeler, SMS<br>การจองที่ได้รับ</span></div><div class="num" id="nResa"></div></a>
+  <a class="lien" href="patron-partage.html" style="--c:#db2777"><div class="t"><b>📣 แชร์แอป (รับสมัครพนักงาน)</b><span>LINE · Messenger · TikTok · Instagram · Facebook</span></div></a>
+  <a class="lien" href="patron-reservations.html?f=essai" style="--c:var(--violet)"><div class="t"><b>🧪 จัดการทดลองงาน</b><span>ผ่าน ✅ / ไม่ผ่าน ❌ · เชิญทาง LINE</span></div><div class="num" id="nEss"></div></a>
+  <a class="lien" href="patron-places.html" style="--c:var(--green)"><div class="t"><b>🗓️ ที่ว่าง</b><span>ที่ว่างแต่ละช่วงเวลา · ใครอยู่บ้าง</span></div></a>
+  <a class="lien" href="patron-reservations.html?f=resa" style="--c:var(--blue)"><div class="t"><b>📝 การจอง</b><span>ผู้สมัครใหม่ (สัญญา) · โทร · SMS</span></div><div class="num" id="nResa"></div></a>
 
-  <div class="small" style="text-align:center;margin-top:6px"><a href="#" onclick="charger();hhCharger();return false" style="color:var(--blue);font-weight:700;text-decoration:none">🔄 Actualiser / รีเฟรช</a></div>
+  <div class="small" style="text-align:center;margin-top:6px"><a href="#" onclick="charger();hhCharger();return false" style="color:var(--blue);font-weight:700;text-decoration:none">🔄 รีเฟรช</a></div>
 </div>
 <script>
 try{ localStorage.setItem('pointage_espace','manager'); }catch(e){}   // les pages ouvertes d'ici reviennent ici (← Fiche manager)
@@ -74,11 +76,11 @@ async function charger(){
     $('nEss').textContent=E.length||''; $('nResa').textContent=C.length||'';
     const auj=isoJ(0), dem=isoJ(1);
     const prochains=E.filter(x=>{ const d=iso(x.deb); return !d || d>=auj; }).sort((a,b)=>iso(a.deb).localeCompare(iso(b.deb)));
-    const quand=x=>{ const d=iso(x.deb); return d===auj?'<b style="color:var(--red)">aujourd\'hui / วันนี้</b>':d===dem?'<b style="color:#ea580c">demain / พรุ่งนี้</b>':esc(x.deb); };
-    R.innerHTML='<b>🧪 Prochains essais / ทดลองงานที่จะมาถึง</b>'
+    const quand=x=>{ const d=iso(x.deb); return d===auj?'<b style="color:var(--red)">วันนี้</b>':d===dem?'<b style="color:#ea580c">พรุ่งนี้</b>':esc(x.deb); };
+    R.innerHTML='<b>🧪 ทดลองงานที่จะมาถึง</b>'
       +(prochains.length ? prochains.slice(0,6).map(x=>{ const n=String(x.tel||'').replace(/\D/g,''); return '<div class="ess"><span>'+esc(x.nom)+' · '+quand(x)+' · 🕐 '+esc(x.sh||'')+'</span>'+(n?'<a href="tel:'+n+'">📞</a>':'')+'</div>'; }).join('')
-        : '<div class="small" style="margin-top:4px">Aucun essai prévu. / ยังไม่มีการทดลองงาน</div>');
-  }catch(e){ R.innerHTML='<span style="color:var(--red);font-weight:700">⚠️ Pas de connexion — réessayez / ไม่มีการเชื่อมต่อ</span>'; }
+        : '<div class="small" style="margin-top:4px">ยังไม่มีการทดลองงาน</div>');
+  }catch(e){ R.innerHTML='<span style="color:var(--red);font-weight:700">⚠️ ไม่มีการเชื่อมต่อ ลองใหม่</span>'; }
 }
 
 // 🍹 Happy Hour forcé (même réglage que le cahier 👑 : propriété CAH_HH sur Google) · s'arrête seul à 08:00
@@ -88,23 +90,23 @@ const hhNormal=()=>{ const h=new Date().getHours(); return h>=16 && h<20; };
 const jj=t=>{ const d=new Date(+t); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'); };
 function hhDessiner(){
   const E=$('hhEtat'), B=$('hhBtn');
-  if(hhActif()){ E.innerHTML='<span style="color:var(--green)">🟢 ACTIVÉ jusqu\'au '+jj(HH.jusqua)+' à 08:00</span><br><span class="small">เปิดอยู่ ถึง '+jj(HH.jusqua)+' เวลา 08:00 น.</span>';
-    B.textContent='⛔ Désactiver le Happy Hour / ปิดแฮปปี้ฮาวร์'; B.style.background='#dc2626'; B.style.color='#fff'; }
-  else { E.innerHTML=hhNormal()?'<span style="color:#ea580c">🕓 Happy Hour normal en cours (16:00–20:00)</span><br><span class="small">ช่วงแฮปปี้ฮาวร์ปกติ</span>':'<span style="color:var(--muted)">⚪ Pas de Happy Hour maintenant</span><br><span class="small">ไม่มีแฮปปี้ฮาวร์ตอนนี้</span>';
-    B.textContent='🍹 Activer le Happy Hour maintenant / เปิดแฮปปี้ฮาวร์'; B.style.background='#fb923c'; B.style.color='#111'; }
+  if(hhActif()){ E.innerHTML='<span style="color:var(--green)">🟢 เปิดอยู่ ถึง '+jj(HH.jusqua)+' เวลา 08:00 น.</span>';
+    B.textContent='⛔ ปิดแฮปปี้ฮาวร์'; B.style.background='#dc2626'; B.style.color='#fff'; }
+  else { E.innerHTML=hhNormal()?'<span style="color:#ea580c">🕓 ตอนนี้แฮปปี้ฮาวร์ปกติ (16:00–20:00 น.)</span>':'<span style="color:var(--muted)">⚪ ตอนนี้ไม่มีแฮปปี้ฮาวร์</span>';
+    B.textContent='🍹 เปิดแฮปปี้ฮาวร์ตอนนี้'; B.style.background='#fb923c'; B.style.color='#111'; }
   B.disabled=false;
 }
 async function lireT(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
 async function hhCharger(){
   try{ const j=JSON.parse(await lireT(await fetch(API+'?cahierjour=1&d='+isoJ(0)+'&_='+Date.now()))); if(j.hh) HH=j.hh; hhDessiner(); }
-  catch(e){ $('hhEtat').innerHTML='<span style="color:var(--red)">⚠️ Pas de connexion / ไม่มีการเชื่อมต่อ</span>'; $('hhBtn').disabled=false; $('hhBtn').textContent='🔄 Réessayer'; $('hhBtn').onclick=()=>{ $('hhBtn').onclick=hhBasculer; hhCharger(); }; }
+  catch(e){ $('hhEtat').innerHTML='<span style="color:var(--red)">⚠️ ไม่มีการเชื่อมต่อ</span>'; $('hhBtn').disabled=false; $('hhBtn').textContent='🔄 ลองใหม่'; $('hhBtn').onclick=()=>{ $('hhBtn').onclick=hhBasculer; hhCharger(); }; }
 }
 async function hhBasculer(){
   const B=$('hhBtn'), on=!hhActif();
-  if(!confirm(on?'Activer le Happy Hour maintenant ?\n(2 filles = 600 ฿ · s\'arrête seul à 08:00 demain matin)':'Désactiver le Happy Hour forcé ?')) return;
+  if(!confirm(on?'เปิดแฮปปี้ฮาวร์ตอนนี้?\n(2 คน = 600 ฿ · ปิดเองอัตโนมัติ 08:00 น. พรุ่งนี้เช้า)':'ปิดแฮปปี้ฮาวร์?')) return;
   B.disabled=true; B.textContent='⏳';
   try{ const j=JSON.parse(await lireT(await fetch(API,{method:'POST',body:JSON.stringify({type:'cahier',op:'hh',on})}))); if(!j.hh) throw 0; HH=j.hh; hhDessiner(); }
-  catch(e){ B.disabled=false; $('hhEtat').innerHTML='<span style="color:var(--red)">❌ Pas fait — réessayez / ไม่สำเร็จ ลองใหม่</span>'; B.textContent=on?'🍹 Activer le Happy Hour maintenant / เปิดแฮปปี้ฮาวร์':'⛔ Désactiver le Happy Hour / ปิดแฮปปี้ฮาวร์'; }
+  catch(e){ B.disabled=false; $('hhEtat').innerHTML='<span style="color:var(--red)">❌ ไม่สำเร็จ ลองใหม่</span>'; B.textContent=on?'🍹 เปิดแฮปปี้ฮาวร์ตอนนี้':'⛔ ปิดแฮปปี้ฮาวร์'; }
 }
 $('hhBtn').onclick=hhBasculer;
 hhCharger(); setInterval(()=>{ if(!document.hidden) hhCharger(); },60000);

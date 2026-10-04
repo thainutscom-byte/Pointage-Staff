@@ -41,6 +41,8 @@
     <a class="lien" href="patron-demission.html" style="--c:var(--red)"><b>🚪 Démission</b><span>Bloquer ou réintégrer une employée</span></a>
     <a class="lien" href="patron-parrainage.html" style="--c:#db2777"><b>🤝 Parrainage</b><span>🎯 Objectifs, relances, commissions</span></a>
     <a class="lien" href="manager.html" style="--c:#7c3aed"><b>🧑‍💼 Fiche manager</b><span>Happy Hour · recrutement · essais · places · réservations</span></a>
+    <a class="lien" href="#" onclick="envoyerManager();return false" style="--c:#06c755"><b>💬 Envoyer la fiche manager sur LINE</b><span>Un lien personnel par personne · accès retirable ci-dessous</span></a>
+    <details style="background:#fff;border-radius:16px;padding:12px 14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);border-left:7px solid #06c755"><summary style="font-weight:800;font-size:1.05rem;cursor:pointer">👥 Accès manager (<span id="mgrN">…</span>) · retirer</summary><div id="mgrListe" style="margin-top:6px"></div></details>
     <a class="lien" href="patron-partage.html" style="--c:#db2777"><b>📣 Partager l'app</b><span>LINE · Messenger · TikTok · Instagram</span></a>
     <a class="lien" href="patron-reservations.html" style="--c:var(--blue)"><b>📝 Réservations</b><span>Nouvelles candidates</span></a>
     <a class="lien" href="patron-contacts.html" style="--c:var(--blue)"><b>📇 Contacts</b><span>Appeler, SMS, LINE · ajouter au répertoire</span></a>
@@ -53,7 +55,33 @@
   <button onclick="autGpsSalon()" style="border:2px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 14px;font-weight:700;font-size:.95rem;width:100%">📍 Enregistrer la position du salon (à faire au salon, 1 fois)</button>
   <div style="display:flex;gap:8px;margin-top:8px"><button onclick="autGps2()" style="flex:1;border:2px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 10px;font-weight:700;font-size:.92rem">📍➕ 2e lieu autorisé : ICI (ordinateur…)</button><button onclick="autGps2(1)" style="border:2px solid #fecaca;background:#fff;color:#b91c1c;border-radius:12px;padding:12px 12px;font-weight:700">🗑️</button></div>
 </div>
-<script>try{ localStorage.setItem('pointage_espace','patron'); }catch(e){}</script>
+<script>
+// 💬 lien manager PERSONNEL (une clé par personne) envoyé UNIQUEMENT par LINE · retirable dans « 👥 Accès manager »
+const MGR_URL='https://thainutscom-byte.github.io/Pointage-Staff/manager.html';
+async function mgrPost(o){ let t=(await (await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({type:'mgr'},o))})).text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } const j=JSON.parse(t); if(!j.ok) throw j.err||'x'; return j; }
+async function envoyerManager(){
+  const nom=(prompt('Nom de la personne qui reçoit le lien manager ?\n(pour pouvoir lui retirer l\'accès plus tard)')||'').trim(); if(!nom) return;
+  try{ const j=await mgrPost({op:'new',nom}); mgrDessiner(j.liste);
+    const t='🧑‍💼 Fiche manager · '+nom+'\nHappy Hour · รับสมัคร · ทดลองงาน · ที่ว่าง · การจอง\n'+MGR_URL+'?k='+j.k;
+    location.href='https://line.me/R/share?text='+encodeURIComponent(t);
+  }catch(e){ alert('❌ Pas fait — réessayez (script Autorisation à jour sur Google ?)'); }
+}
+const jjhm=t=>{ if(!t) return '—'; const d=new Date(+t); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+function mgrDessiner(L){
+  const Z=document.getElementById('mgrListe'); document.getElementById('mgrN').textContent=L.filter(x=>x.actif).length;
+  Z.innerHTML=L.length ? L.map(x=>'<div style="border-top:1px solid #e5e7eb;padding:10px 0;display:flex;gap:8px;align-items:center"><div style="flex:1;min-width:0"><b style="'+(x.actif?'':'color:#9ca3af;text-decoration:line-through')+'">'+esc(x.nom)+'</b> '+(x.actif?'<span style="color:#16a34a;font-weight:700">🟢 accès</span>':'<span style="color:#dc2626;font-weight:700">⛔ retiré</span>')+'<div style="font-size:.78rem;color:#6b7280">envoyé '+jjhm(x.cree)+' · ouvert '+jjhm(x.vu)+'</div></div>'
+      +(x.actif?'<button data-op="retirer" data-k="'+x.k+'" style="border:none;background:#dc2626;color:#fff;border-radius:10px;padding:9px 10px;font-weight:800">🚫 Retirer</button>'
+               :'<button data-op="rendre" data-k="'+x.k+'" style="border:none;background:#16a34a;color:#fff;border-radius:10px;padding:9px 10px;font-weight:800">✅ Rendre</button><button data-op="suppr" data-k="'+x.k+'" style="border:2px solid #fecaca;background:#fff;color:#b91c1c;border-radius:10px;padding:7px 9px;font-weight:800">🗑️</button>')+'</div>').join('')
+    : '<div style="color:#6b7280;font-size:.85rem;padding:6px 0">Aucun lien manager envoyé.</div>';
+}
+async function mgrCharger(){ try{ let t=(await (await fetch(API+'?mgrliste=1&_='+Date.now())).text()).trim(); const j=JSON.parse(t); if(j.ok) mgrDessiner(j.liste||[]); }catch(e){ document.getElementById('mgrListe').innerHTML='<div style="color:#dc2626;font-size:.85rem">⚠️ Pas de connexion</div>'; } }
+document.addEventListener('click',async e=>{ const b=e.target.closest('#mgrListe button'); if(!b) return;
+  const nom=b.closest('div[style]').querySelector('b').textContent, op=b.dataset.op;
+  if(!confirm(op==='retirer'?'Retirer l\'accès manager à '+nom+' ?\nSa fiche manager affichera « ⛔ Accès retiré ».':op==='rendre'?'Redonner l\'accès à '+nom+' (même lien) ?':'Effacer '+nom+' de la liste ?')) return;
+  b.disabled=true; try{ mgrDessiner((await mgrPost({op,k:b.dataset.k})).liste); }catch(x){ b.disabled=false; alert('❌ Pas fait — réessayez'); } });
+document.addEventListener('DOMContentLoaded',mgrCharger);
+</script>
+<script>try{ localStorage.setItem('pointage_espace','patron'); localStorage.setItem('pointage_patron','1'); }catch(e){}</script>
 <script src="autorisation.js?v=9"></script>
 <script>
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';

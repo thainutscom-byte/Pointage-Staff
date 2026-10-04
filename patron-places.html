@@ -46,6 +46,8 @@
   .paie td.nom{text-align:left;font-weight:700}
   .paie tr.tot td{background:#fef3c7;font-weight:800}
 </style>
+<script src="manager-garde.js?v=2"></script>
+<script src="manager-th.js?v=1"></script>
 </head>
 <body>
 <div class="wrap">
@@ -53,21 +55,22 @@
   <div id="main">
     <div class="card" id="capCard">
       <h2>👥 Places par horaire</h2>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end">
-        <label style="font-weight:700">☀️ Avril → octobre<select id="capEte" style="width:100%;font-size:1.1rem;padding:10px;border-radius:10px;margin-top:4px"></select></label>
-        <label style="font-weight:700">🌙 1er nov. → 30 mars<select id="capHiver" style="width:100%;font-size:1.1rem;padding:10px;border-radius:10px;margin-top:4px"></select></label>
-      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:.95rem">
+        <thead><tr style="color:var(--muted);font-size:.8rem"><td>Horaire</td><td style="text-align:center">☀️ avril → oct.</td><td style="text-align:center">🌙 1 nov. → 30 mars</td></tr></thead>
+        <tbody id="capRows"></tbody>
+      </table>
       <button type="button" onclick="capEnregistrer()" style="width:100%;margin-top:10px;border:none;border-radius:12px;padding:13px;font-size:1.05rem;font-weight:800;background:#16a34a;color:#fff">✅ Enregistrer</button>
       <div id="capMsg" class="small" style="margin-top:6px;font-weight:700"></div>
     </div>
     <div class="card">
-      <h2>🗓️ Places disponibles <span id="capInfo" style="font-weight:normal;color:var(--muted);font-size:.8rem"></span></h2>
+      <h2>🗓️ Places disponibles</h2>
       <div id="places">Chargement…</div>
     </div>
     <div id="err" class="small" style="color:var(--red);font-weight:700"></div>
     <div class="small" style="margin-top:14px"><a href="#" onclick="actualiser();return false">🔄 Actualiser</a></div>
   </div>
-  <a href="patron.html" style="display:block;text-align:center;margin-top:12px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
+  <a id="retour" href="patron.html" style="display:block;text-align:center;margin-top:12px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
+<script>try{ if(localStorage.getItem('pointage_espace')==='manager'){ const a=document.getElementById('retour'); a.href='manager.html'; a.textContent='← Fiche manager'; a.style.color='#7c3aed'; } }catch(e){}</script>
 </div>
 <script src="autorisation.js?v=8"></script>
 <script>
@@ -75,19 +78,28 @@
 // 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
 // 👥 places par horaire : réglées par le patron (page « 🗓️ Places disponibles ») · avril→octobre = ete · 1er nov.→30 mars = hiver
 let CAPS={ete:4,hiver:5}; try{ const c0=JSON.parse(localStorage.getItem('pointage_caps')||'null'); if(c0 && c0.ete) CAPS=c0; }catch(e){}
-fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
-function capAff(){ ['capEte','capHiver'].forEach((id,i)=>{ const S=document.getElementById(id); if(!S) return; if(!S.options.length) for(let k=1;k<=12;k++) S.add(new Option(k+' filles',k)); S.value=String(i?CAPS.hiver:CAPS.ete); });
-  const I=document.getElementById('capInfo'); if(I) I.textContent='('+CAPS.ete+' max par horaire · '+CAPS.hiver+' du 01/11 au 30/03)'; }
+fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver, sh:c.sh||{}}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
+// 👥 places réglées HORAIRE PAR HORAIRE (été / hiver) → enregistrées dans Google, utilisées partout (réservation, app, pages patron)
+function capAff(){
+  const T=document.getElementById('capRows'); if(!T) return;
+  const opt=v=>{ let o=''; for(let k=1;k<=12;k++) o+='<option value="'+k+'"'+(k===v?' selected':'')+'>'+k+'</option>'; return o; };
+  const sel='style="width:100%;font-size:1.05rem;padding:8px;border-radius:10px"';
+  T.innerHTML=SH.map(([k,l])=>{ const p=(CAPS.sh||{})[k]||CAPS;
+    return '<tr style="border-top:1px solid var(--border)"><td style="padding:6px 0;font-weight:700">'+l+'</td>'
+      +'<td style="padding:4px"><select data-sh="'+k+'" data-s="ete" '+sel+'>'+opt(+p.ete)+'</select></td>'
+      +'<td style="padding:4px"><select data-sh="'+k+'" data-s="hiver" '+sel+'>'+opt(+p.hiver)+'</select></td></tr>'; }).join('');
+}
 async function capEnregistrer(){
-  const M=document.getElementById('capMsg'), ete=+document.getElementById('capEte').value, hiver=+document.getElementById('capHiver').value; M.style.color='var(--muted)'; M.textContent='⏳ …';
-  try{ const t=await (await fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec',{method:'POST',body:JSON.stringify({type:'autcaps',ete,hiver})})).text();
-    const j=JSON.parse(t); if(!j.ete) throw 0; CAPS={ete:+j.ete,hiver:+j.hiver}; try{ localStorage.setItem('pointage_caps',JSON.stringify(CAPS)); }catch(e){}
-    M.style.color='var(--green)'; M.textContent='✅ Enregistré : '+CAPS.ete+' filles (avril→octobre) · '+CAPS.hiver+' filles (nov.→mars)'; capAff(); try{ actualiser(); }catch(e){} }
+  const M=document.getElementById('capMsg'), sh={}; M.style.color='var(--muted)'; M.textContent='⏳ …';
+  document.querySelectorAll('#capRows select').forEach(x=>{ (sh[x.dataset.sh]=sh[x.dataset.sh]||{})[x.dataset.s]=+x.value; });
+  try{ const t=await (await fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec',{method:'POST',body:JSON.stringify({type:'autcaps',ete:CAPS.ete,hiver:CAPS.hiver,sh})})).text();
+    const j=JSON.parse(t); if(!j.ete) throw 0; CAPS={ete:+j.ete,hiver:+j.hiver,sh:j.sh||{}}; try{ localStorage.setItem('pointage_caps',JSON.stringify(CAPS)); }catch(e){}
+    M.style.color='var(--green)'; M.textContent='✅ Enregistré'; capAff(); try{ actualiser(); }catch(e){} }
   catch(e){ M.style.color='var(--red)'; M.textContent='❌ Pas enregistré — le script Google « Autorisation » est-il à jour ?'; }
 }
 setTimeout(capAff,0); setTimeout(capAff,2500);
-function capJour(iso){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10); return (m>=11 || m<=2 || (m===3 && d<=30)) ? CAPS.hiver : CAPS.ete; }
-function capPeriode(deb, n){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso)); } return c; }
+function capJour(iso, sh){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10), hiv=(m>=11 || m<=2 || (m===3 && d<=30)), p=(sh && CAPS.sh && CAPS.sh[sh]) || CAPS; return +(hiv ? p.hiver : p.ete) || (hiv ? 5 : 4); }   // sh = horaire (places réglées horaire par horaire)
+function capPeriode(deb, n, sh){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso, sh)); } return c; }
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const $=id=>document.getElementById(id);
 function getPin(){ return 'x'; }   // plus de code patron
@@ -107,7 +119,7 @@ async function places(){
     // PLACES LIBRES (le jour le plus chargé) : 3 filles sur 4 places → 1/4 · 🟢 il reste de la place · 🔴 0/4 complet
     const cell=(n,cap)=>{ const l=cap-n; return '<td style="text-align:center;font-weight:800;color:'+(l<=0?'var(--red)':'var(--green)')+'">'+Math.max(0,l)+'/'+cap+(l<0?'<div style="font-size:.7rem">⚠️ '+(-l)+' de trop</div>':l===0?'<div style="font-size:.7rem">complet</div>':'')+'</td>'; };
     PLN={};
-    SH.forEach(([k,l])=>{ const na=(a[k]||{}).max||0, nb=(b[k]||{}).max||0; PLN[k]=na;
+    SH.forEach(([k,l])=>{ const ca=capJour(isoJ(0),k), cb=capPeriode(isoJ(0),10,k); const na=(a[k]||{}).max||0, nb=(b[k]||{}).max||0; PLN[k]=na;
       h+='<tr class="plR" data-sh="'+k+'" style="border-top:1px solid var(--border);cursor:pointer" onclick="plDetail(this)"><td style="padding:8px 0">'+l+' <span style="color:var(--muted);font-size:.8rem">▸ qui ?</span></td>'+cell(na,ca)+cell(nb,cb)+'</tr>'; });
     P.innerHTML='<div id="plAlerte"></div>'+h+'</table><div class="small" style="margin-top:6px">1/4 = 1 place libre sur 4 · 🟢 il reste de la place · 🔴 0/4 complet · « 10 jours » = le jour le plus chargé · 👆 touchez un horaire pour voir qui occupe les places</div>';
     plCharger();
