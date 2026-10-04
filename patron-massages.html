@@ -195,6 +195,10 @@ function tousDessiner(d){
   TOUS=emps.filter(e=>!/^boss$/i.test(String(e.nom).trim())).map(e=>({label:e.label, nom:e.nom, m:J[k9(cleE(e.label))], bloque:e.bloque})).filter(x=>x.m || !x.bloque)
     .sort((a,b)=>(!!b.m-!!a.m) || a.nom.localeCompare(b.nom))
     .map(x=>({label:x.label, nom:x.nom, sans:!x.m, app:{l1:+(x.m||{}).l1||0, l2:+(x.m||{}).l2||0, hh:+(x.m||{}).hh||0}}));
+  // ⚠️ journées dans Google dont le nom n'est plus dans « Employés » (fiche effacée, nom écrit autrement…) : elles comptent dans « CA par jour » → affichées aussi
+  const vus9={}; TOUS.forEach(x=>vus9[k9(cleE(x.label))]=1);
+  Object.keys(JOURS[d]||{}).forEach(c=>{ const q=String(c).split('|'), k=k9(c); if(vus9[k] || !q[0]) return; vus9[k]=1; const m=JOURS[d][c];
+    TOUS.push({label:q[0].replace(/(^|\s)\S/g,t=>t.toUpperCase())+' — '+q[1], nom:q[0].replace(/(^|\s)\S/g,t=>t.toUpperCase()), hors:true, sans:false, app:{l1:+m.l1||0, l2:+m.l2||0, hh:+m.hh||0}}); });
   // même prénom 2 fois = 2 fiches avec des numéros différents → numéro affiché + ⚠️ doublon
   const nmT=x=>String(x.nom).trim().toLowerCase(), nbN={}; TOUS.forEach(x=>nbN[nmT(x)]=(nbN[nmT(x)]||0)+1);
   TOUS.forEach(x=>{ x.double=nbN[nmT(x)]>1; x.tel=String(x.label).split(' — ').pop(); });
@@ -205,7 +209,8 @@ function tousDessiner(d){
   let h='<table class="tous"><tr><th>Employée</th><th>1 lady<br>600</th><th>2 lady<br>800 · ½</th><th>Happy H.<br>600 · ½</th><th></th></tr>';
   TOUS.forEach((x,i)=>{ h+='<tr id="tR'+i+'"'+(x.double?' style="background:#fef2f2"':'')+'><td class="n">'+x.nom.replace(/[<>&]/g,'')
       +(x.double?'<div style="font-size:.72rem;color:var(--red);font-weight:700">⚠️ doublon · 📞 '+x.tel.replace(/[<>&]/g,'')+'</div>':'')
-      +(x.sans?'<div style="font-size:.72rem;color:var(--muted);font-weight:600">pas de journée envoyée</div>':'')+'</td>';
+      +(x.sans?'<div style="font-size:.72rem;color:var(--muted);font-weight:600">pas de journée envoyée</div>':'')
+      +(x.hors?'<div style="font-size:.72rem;color:#b45309;font-weight:700">⚠️ pas dans « Employés » mais compte dans le CA</div>':'')+'</td>';
     ['l1','l2','hh'].forEach(k=>{ h+='<td><input type="number" min="0" step="'+(k==='l1'?'1':'0.5')+'" inputmode="decimal" id="t_'+i+'_'+k+'" value="'+x.app[k]+'" oninput="tousMaj()"><span class="av" id="ta_'+i+'_'+k+'"></span></td>'; });
     h+='<td><button id="tB'+i+'" style="visibility:hidden" onclick="tousCorriger('+i+')">✔</button></td></tr>'; });
   h+='<tr class="tot"><td class="n">TOTAL</td><td id="tT_l1"></td><td id="tT_l2"></td><td id="tT_hh"></td><td></td></tr></table>';
