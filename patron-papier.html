@@ -57,7 +57,7 @@ $('go').onclick=async()=>{
   if(!confirm('Remplacer les chiffres en rouge par ceux du cahier papier ?\nLes téléphones recevront les bons chiffres à leur prochaine ouverture.')) return;
   $('go').disabled=true; $('go').textContent='⏳ Correction en cours… (jusqu\'à 1 minute)';
   try{ const j=await post('appliquer'); dessiner(j);
-    $('msg').innerHTML='<span class="ok">✅ '+j.corrigees+' journée(s) corrigée(s) · « CA par jour » recalculé</span>'+(j.introuvables.length?'<br><span class="ko">⚠️ Pas trouvée dans « Employés » : '+esc(j.introuvables.join(', '))+' — à corriger à la main</span>':'');
+    $('msg').innerHTML='<span class="ok">✅ '+j.corrigees+' journée(s) corrigée(s) · « CA par jour » recalculé</span>'+(j.ajoutees&&j.ajoutees.length?'<br><span style="color:#b45309">🚪 Ajoutées (parties, sans fiche) : '+esc(j.ajoutees.join(', '))+'</span>':'')+(j.introuvables.length?'<br><span class="ko">⚠️ Pas trouvée dans « Employés » : '+esc(j.introuvables.join(', '))+' — à corriger à la main</span>':'');
     $('go').textContent='✅ Fait'; setTimeout(verifier,1500);
   }catch(e){ $('go').disabled=false; $('go').textContent='✅ Remettre les chiffres du cahier dans Google'; $('msg').innerHTML='<span class="ko">❌ Pas fait — réessayez</span>'; }
 };
