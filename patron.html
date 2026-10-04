@@ -58,6 +58,8 @@
   <div style="height:14px"></div>
   <button id="majTout" onclick="majTout()" style="border:none;background:#2563eb;color:#fff;border-radius:12px;padding:14px;font-weight:800;font-size:1.05rem;width:100%;margin-bottom:6px">🔄 Tout actualiser sur Google</button>
   <div id="majRes" style="display:none;background:#fff;border-radius:12px;padding:12px;text-align:left;font-size:.9rem;line-height:1.5;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.06)"></div>
+  <button id="sauvBtn" onclick="sauvegarder()" style="border:none;background:#0f766e;color:#fff;border-radius:12px;padding:13px;font-weight:800;font-size:1rem;width:100%;margin-bottom:8px">💾 Enregistrer une copie du tableau (Drive)</button>
+  <div id="sauvRes" style="font-size:.85rem;font-weight:700;margin:-2px 0 8px"></div>
   <button onclick="autGpsSalon()" style="border:2px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 14px;font-weight:700;font-size:.95rem;width:100%">📍 Enregistrer la position du salon (à faire au salon, 1 fois)</button>
   <div style="display:flex;gap:8px;margin-top:8px"><button onclick="autGps2()" style="flex:1;border:2px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 10px;font-weight:700;font-size:.92rem">📍➕ 2e lieu autorisé : ICI (ordinateur…)</button><button onclick="autGps2(1)" style="border:2px solid #fecaca;background:#fff;color:#b91c1c;border-radius:12px;padding:12px 12px;font-weight:700">🗑️</button></div>
 </div>
@@ -106,6 +108,15 @@ document.addEventListener('DOMContentLoaded',mgrCharger);
 <script>
 const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
 const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// 💾 copie complète du tableau Google dans Drive → dossier « Sauvegardes Pointage » (les 8 dernières sont gardées)
+async function sauvegarder(){
+  const b=document.getElementById('sauvBtn'), R=document.getElementById('sauvRes'); if(b.disabled) return;
+  b.disabled=true; b.textContent='⏳ Copie en cours…'; R.textContent='';
+  try{ let t=(await (await fetch(API,{method:'POST',body:JSON.stringify({type:'sauvegarde'})})).text()).trim(); const j=JSON.parse(t); if(!j.ok) throw j.err||'x';
+    R.style.color='#16a34a'; R.textContent='✅ Copie enregistrée le '+j.quand+' · Drive → « Sauvegardes Pointage »'; }
+  catch(e){ R.style.color='#dc2626'; R.textContent='❌ Pas fait — réessayez (script Autorisation à jour ?)'; }
+  b.disabled=false; b.textContent='💾 Enregistrer une copie du tableau (Drive)';
+}
 async function majTout(){
   const b=document.getElementById('majTout'), R=document.getElementById('majRes'); if(b.disabled) return;
   b.disabled=true; b.textContent='⏳ Actualisation en cours… (jusqu\'à 1 minute)'; R.style.display='none';
@@ -116,6 +127,7 @@ async function majTout(){
     const L=(titre,a,c)=>a&&a.length?'<div style="color:'+c+'"><b>'+titre+' ('+a.length+') :</b> '+esc(a.join(', '))+'</div>':'';
     R.innerHTML='<div style="font-weight:800;color:#16a34a;font-size:1rem">✅ Google actualisé en '+j.secondes+' s</div>'
       +'<div style="color:#6b7280">'+esc((j.etapes||[]).map(x=>({fiches:'fiches',planning:'planning',paies:'paies signées',interdites:'numéros interdits',parrainages:'parrainages'}[x]||x)).join(' · '))+'</div>'
+      +(j.supprimees?'<div style="color:#b91c1c">🗑️ '+j.supprimees+' fiche(s) effacée(s) notée(s) dans l\'onglet « 🗑️ Supprimées » — elles ne reviendront plus</div>':'')
       +L('📞 Doublons sans le 0 supprimés',j.reparTel&&j.reparTel.doublons,'#9a3412')
       +(j.reparTel&&j.reparTel.cellules?'<div style="color:#6b7280">📞 '+j.reparTel.cellules+' numéro(s) / clé(s) sans le 0 réparés</div>':'')
       +L('➕ Fiches recréées dans « Employés »',j.fiches,'#16a34a')
