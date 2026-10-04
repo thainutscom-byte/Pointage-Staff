@@ -154,9 +154,15 @@ function pm(k,d){ const el=$(k); el.value=Math.max(0,(+el.value||0)+d); corCa();
 function corAff(){ let t=0, o=0; ['l1','l2','hh'].forEach(k=>{ const v=Math.max(0,+$(k).value||0); $('m_'+k).textContent=(v*PX[k]).toLocaleString('en-US')+' ฿'; t+=v*PX[k]; o+=((orig||{})[k]||0)*PX[k]; });
   $('m_tot').textContent=t.toLocaleString('en-US')+' ฿'; $('o_tot').textContent=o.toLocaleString('en-US')+' ฿'; }
 function corCa(){ corAff(); $('corOk').disabled=false; $('corMsg').textContent='⚠️ pas encore enregistré'; $('corMsg').style.color='#d97706'; }
+// 👤 nom dans les listes : 🟢 = au travail maintenant · même nom 2 fois (2 numéros différents) → le numéro est affiché + ⚠️ doublon
+function nomListe(e){
+  const nm=x=>String(x.nom||'').replace(/ ·$/,'').trim().toLowerCase(), tel=String(e.label||'').split(' — ').pop().replace(/\D/g,'');
+  const double=emps.filter(x=>nm(x)===nm(e)).length>1;
+  return (e.service?'🟢 ':'')+e.nom+(double?' · 📞 '+tel.replace(/^(\d{3})(\d{3})(\d{4})$/,'$1-$2-$3')+' ⚠️ doublon':'');
+}
 function corListe(){
   const S=$('corEmp'), v=S.value; S.innerHTML='<option value="">— choisir l\'employée —</option><option value="__tous__">👥 Toutes les employées</option>';
-  emps.forEach(e=>{ const o=document.createElement('option'); o.value=e.label; o.textContent=(e.service?'● ':'')+e.nom; S.appendChild(o); });
+  emps.slice().sort((x,y)=>String(x.nom).localeCompare(String(y.nom))).forEach(e=>{ const o=document.createElement('option'); o.value=e.label; o.textContent=nomListe(e); S.appendChild(o); });
   S.value=(v==='__tous__'||emps.some(e=>e.label===v))?v:'';
   if(!$('corJour').value){ $('corJour').value=isoJ(0); $('corJour').max=isoJ(0); $('corJour').min=isoJ(-60); }
   corDraw();
@@ -188,12 +194,18 @@ function tousDessiner(d){
   // 👥 TOUTES les employées (même celles qui n'ont pas encore envoyé leur journée : la ligne est créée à l'enregistrement)
   TOUS=emps.filter(e=>!/^boss$/i.test(String(e.nom).trim())).map(e=>({label:e.label, nom:e.nom, m:J[k9(cleE(e.label))], bloque:e.bloque})).filter(x=>x.m || !x.bloque)
     .sort((a,b)=>(!!b.m-!!a.m) || a.nom.localeCompare(b.nom))
-    .map(x=>({label:x.label, nom:x.nom+(x.m?'':' ·'), app:{l1:+(x.m||{}).l1||0, l2:+(x.m||{}).l2||0, hh:+(x.m||{}).hh||0}}));
+    .map(x=>({label:x.label, nom:x.nom, sans:!x.m, app:{l1:+(x.m||{}).l1||0, l2:+(x.m||{}).l2||0, hh:+(x.m||{}).hh||0}}));
+  // même prénom 2 fois = 2 fiches avec des numéros différents → numéro affiché + ⚠️ doublon
+  const nmT=x=>String(x.nom).trim().toLowerCase(), nbN={}; TOUS.forEach(x=>nbN[nmT(x)]=(nbN[nmT(x)]||0)+1);
+  TOUS.forEach(x=>{ x.double=nbN[nmT(x)]>1; x.tel=String(x.label).split(' — ').pop(); });
   const p=d.split('-');
   if(!TOUS.length){ $('corInfo').textContent='❌ Aucune employée.'; return; }
-  $('corInfo').textContent=TOUS.length+' employée'+(TOUS.length>1?'s':'')+' · journée du '+p[2]+'/'+p[1]+'/'+p[0]+' · changez les chiffres faux puis ✔ · « · » = pas encore de journée envoyée';
+  const nD=TOUS.filter(x=>x.double).length;
+  $('corInfo').innerHTML=TOUS.length+' employée'+(TOUS.length>1?'s':'')+' · journée du '+p[2]+'/'+p[1]+'/'+p[0]+' · changez les chiffres faux puis ✔'+(nD?'<br><b style="color:var(--red)">⚠️ '+nD+' fiches en double (même nom, numéro différent) : effacez la mauvaise ligne dans l\'onglet « Employés » — elle ne reviendra plus</b>':'');
   let h='<table class="tous"><tr><th>Employée</th><th>1 lady<br>600</th><th>2 lady<br>800</th><th>Happy H.<br>600</th><th></th></tr>';
-  TOUS.forEach((x,i)=>{ h+='<tr id="tR'+i+'"><td class="n">'+x.nom.replace(/[<>&]/g,'')+'</td>';
+  TOUS.forEach((x,i)=>{ h+='<tr id="tR'+i+'"'+(x.double?' style="background:#fef2f2"':'')+'><td class="n">'+x.nom.replace(/[<>&]/g,'')
+      +(x.double?'<div style="font-size:.72rem;color:var(--red);font-weight:700">⚠️ doublon · 📞 '+x.tel.replace(/[<>&]/g,'')+'</div>':'')
+      +(x.sans?'<div style="font-size:.72rem;color:var(--muted);font-weight:600">pas de journée envoyée</div>':'')+'</td>';
     ['l1','l2','hh'].forEach(k=>{ h+='<td><input type="number" min="0" step="'+(k==='hh'?'0.5':'1')+'" inputmode="decimal" id="t_'+i+'_'+k+'" value="'+x.app[k]+'" oninput="tousMaj()"><span class="av" id="ta_'+i+'_'+k+'"></span></td>'; });
     h+='<td><button id="tB'+i+'" style="visibility:hidden" onclick="tousCorriger('+i+')">✔</button></td></tr>'; });
   h+='<tr class="tot"><td class="n">TOTAL</td><td id="tT_l1"></td><td id="tT_l2"></td><td id="tT_hh"></td><td></td></tr></table>';
@@ -243,8 +255,8 @@ const cleE=l=>{ const p=l.split(' — '); return p.slice(0,-1).join(' — ').tri
 const debutSh=sh=>{ const m=String(sh||'').match(/^(\d{1,2})[h:](\d{2})?/); return m?('0'+m[1]).slice(-2)+':'+(m[2]||'00'):''; };
 function arrListe(){
   const S=$('arrEmp'), v=S.value; S.innerHTML='<option value="">— choisir l\'employée —</option>';
-  emps.forEach(e=>{ const o=document.createElement('option'); o.value=e.label; const ok=ARR[cleE(e.label)];
-    o.textContent=(e.service?'● ':'')+e.nom+(e.service&&e.depuis?' · ▶️ '+e.depuis:'')+(ok?' · ✔ '+ok:''); S.appendChild(o); });
+  emps.slice().sort((x,y)=>String(x.nom).localeCompare(String(y.nom))).forEach(e=>{ const o=document.createElement('option'); o.value=e.label; const ok=ARR[cleE(e.label)];
+    o.textContent=nomListe(e)+(e.service&&e.depuis?' · ▶️ '+e.depuis:'')+(ok?' · ✔ '+ok:''); S.appendChild(o); });
   S.value=emps.some(e=>e.label===v)?v:''; arrDraw();
 }
 function arrDraw(){

@@ -2433,7 +2433,8 @@ function tbFin(){ const d=tbJour(); if(!d){ alert('📅 วันนี้ไม
   const TH={l1:'1 เลดี้',l2:'2 เลดี้',hh:'แฮปปี้ฮาวร์',l3:'3 เลดี้',out:'🚗 นอกร้าน',bf:'🍸 บาร์ไฟน์'}, hm=t=>fmtHM(new Date(t));
   const v=sel=>+(d.querySelector(sel).value||0);
   let h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin-bottom:10px;">'
-    +[['1 เลดี้',v('.solo'),'#fce7f3'],['2 เลดี้',v('.duo8'),'#ede9fe'],['แฮปปี้ฮาวร์',v('.duo'),'#ffedd5']].map(x=>'<div style="border-radius:10px;padding:8px 2px;background:'+x[2]+'"><div class="small" style="font-weight:700">'+x[0]+'</div><div style="font-size:1.5rem;font-weight:900">'+x[1]+'</div></div>').join('')+'</div>';
+    +[['1 เลดี้',v('.solo'),'#fce7f3'],['2 เลดี้ (½)',Math.round(v('.duo8')*5)/10,'#ede9fe'],['แฮปปี้ฮาวร์ (½)',Math.round(v('.duo')*5)/10,'#ffedd5']].map(x=>'<div style="border-radius:10px;padding:8px 2px;background:'+x[2]+'"><div class="small" style="font-weight:700">'+x[0]+'</div><div style="font-size:1.5rem;font-weight:900">'+x[1]+'</div></div>').join('')+'</div>'
+    +'<div style="text-align:center;font-weight:800;margin:-4px 0 10px;">🧮 รวม '+(Math.round((v('.solo')+0.5*(v('.duo8')+v('.duo')))*10)/10)+' รอบ <span class="small" style="font-weight:600">(นวด 2 คน = 0.5 ต่อคน)</span></div>';
   h+=R.length?'<table style="width:100%;border-collapse:collapse;font-size:.9rem;"><tr style="color:#6b7280;text-align:left"><th>#</th><th>เวลา</th><th>นวด</th><th>ห้อง</th><th>นาที</th></tr>'
     +R.map(r=>'<tr style="border-top:1px solid #e5e7eb"><td>'+r.n+'</td><td>'+hm(r.start)+'</td><td>'+(TH[r.type]||r.label||'')+'</td><td>'+((r.type==='out'||r.type==='bf')?'นอกร้าน':(r.room||''))+'</td><td>'+(r.end?Math.round((r.end-r.start)/60000):'⏳')+'</td></tr>').join('')+'</table>'
     :'<div class="small" style="text-align:center">ไม่มีการนวดในสมุดวันนี้</div>';
@@ -2454,7 +2455,10 @@ function tbMaj(){
   s1.textContent=arr?'✅ เริ่มงาน '+arr:'▶️ เริ่มงาน'; s1.disabled=!!arr; s1.style.opacity=arr?.6:1;
   s2.textContent=fin?'✅ เลิกงาน '+fin:'⏹️ เลิกงาน'; s2.disabled=!!fin || !arr; s2.style.opacity=(fin||!arr)?.6:1; s2.style.background=arr&&!fin?'#dc2626':'#6b7280';
   const v=sel=>+(d.querySelector(sel).value||0), box=(l,n,c)=>'<div style="border-radius:10px;padding:8px 2px;background:'+c+';"><div class="small" style="font-weight:700;">'+l+'</div><div style="font-size:1.4rem;font-weight:900;">'+n+'</div></div>';
-  document.getElementById('tbMass').innerHTML=box('1 เลดี้',v('.solo'),'#fce7f3')+box('2 เลดี้',v('.duo8'),'#ede9fe')+box('แฮปปี้ฮาวร์',v('.duo'),'#ffedd5');
+  // 👭 massage à 2 filles = 0.5 massage pour chacune (2 เลดี้ et แฮปปี้ฮาวร์)
+  const dm=n=>String(Math.round(n*10)/10), tot=v('.solo')+0.5*(v('.duo8')+v('.duo'));
+  document.getElementById('tbMass').innerHTML=box('1 เลดี้',dm(v('.solo')),'#fce7f3')+box('2 เลดี้ (½)',dm(v('.duo8')*0.5),'#ede9fe')+box('แฮปปี้ฮาวร์ (½)',dm(v('.duo')*0.5),'#ffedd5')
+    +'<div style="grid-column:1/-1;text-align:center;font-weight:800;margin-top:2px;">🧮 รวม '+dm(tot)+' รอบ <span class="small" style="font-weight:600">(นวด 2 คน = 0.5 ต่อคน)</span></div>';
   document.getElementById('tbDate').textContent='('+fmtDate(workToday()).slice(0,5)+')';
 }
 async function tbErreur(){
@@ -3145,6 +3149,6 @@ function checkAccess(){
 })();
 </script>
 <script src="demandes.js?v=3"></script>
-<script src="cahier-fiche.js?v=7"></script>
+<script src="cahier-fiche.js?v=8"></script>
 </body>
 </html>

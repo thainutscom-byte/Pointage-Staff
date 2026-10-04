@@ -54,7 +54,7 @@
     }).join('');
     c.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;">'
       + '<b style="font-size:1.1rem;">🗒️ สมุดวันนี้</b><span class="small">🔄 ' + hm(Date.now()) + '</span></div>'
-      + '<div style="margin:8px 0;padding:8px 10px;border-radius:10px;background:#f0fdfa;font-weight:700;">👤 ของฉัน: 1 เลดี้ <b>' + nb('l1') + '</b> · 2 เลดี้ <b>' + nb('l2') + '</b> · แฮปปี้ฮาวร์ <b>' + nb('hh') + '</b>'
+      + '<div style="margin:8px 0;padding:8px 10px;border-radius:10px;background:#f0fdfa;font-weight:700;">👤 ของฉัน: 1 เลดี้ <b>' + nb('l1') + '</b> · 2 เลดี้ <b>' + nb('l2') * 0.5 + '</b> · แฮปปี้ฮาวร์ <b>' + nb('hh') * 0.5 + '</b> · 🧮 รวม <b>' + (nb('l1') + 0.5 * (nb('l2') + nb('hh'))) + '</b> รอบ'
       + (nb('out') + nb('bf') ? ' · นอกร้าน <b>' + (nb('out') + nb('bf')) + '</b>' : '') + '</div>'
       + (rows.length ? '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:.85rem;min-width:420px;">'
         + '<thead><tr style="text-align:left;color:#6b7280;"><th>#</th><th>ชื่อ</th><th>เริ่ม</th><th>เสร็จ</th><th>ห้อง</th><th>นวด</th><th>ลูกค้า</th></tr></thead>'

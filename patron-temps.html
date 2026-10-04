@@ -74,6 +74,7 @@
   const FORM={l1:'1 lady',l2:'2 lady',hh:'Happy Hour',l3:'3 lady',out:'🚗 Outside',bf:'🍸 Barfine'}, DEHORS={out:1,bf:1};
   const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const auj=()=>iso(new Date(Date.now()-6*3600e3));          // journée de travail (change à 06:00)
+  const fr=n=>String(Math.round(n*10)/10).replace('.',',');   // 1,5 massage
   const duree=m=>{ m=Math.max(0,Math.round(m)); const h=Math.floor(m/60); return h?h+' h '+String(m%60).padStart(2,'0'):m+' min'; };
   let ROWS=[], ouvert={};
   $('d').value=auj();
@@ -88,24 +89,25 @@
       const min=(fin-r.start)/60000, op=Math.min(5,Math.max(1,+r.qty||1)); nb++; if(!r.end) enCours++;
       (r.names||[]).forEach(n=>{          // 3 lady / 2 lady : chaque fille a son massage et son temps
         const k=String(n).trim(); const e=E[k]||(E[k]={nom:k,n:0,min:0,op:[0,0,0,0,0],L:[]});
-        e.n++; e.min+=min; e.op[op-1]++; e.L.push({r,min,op,live:!r.end});
+        const part=(r.names||[]).length===2?0.5:1;   // 👭 massage à 2 filles = 0.5 pour chacune (3 lady = 1 chacune)
+        e.n+=part; e.min+=min; e.op[op-1]+=part; e.L.push({r,min,op,live:!r.end,part});
       });
       minTot+=min;
     });
     const L=Object.values(E).sort((a,b)=>b.min-a.min);
     $('tot').innerHTML='<div><b>'+nb+'</b><span>massages</span></div><div><b>'+duree(minTot)+'</b><span>temps total</span></div><div><b>'+(live?enCours:L.length)+'</b><span>'+(live?'🔴 en cours':'employées')+'</span></div>';
-    $('resume').innerHTML=L.length?L.map(e=>'<tr><td><b>'+esc(e.nom)+'</b></td><td class="c">'+e.n+'</td><td class="c"><b>'+duree(e.min)+'</b></td>'+e.op.map(x=>'<td class="c">'+(x||'·')+'</td>').join('')+'</tr>').join('')
+    $('resume').innerHTML=L.length?L.map(e=>'<tr><td><b>'+esc(e.nom)+'</b></td><td class="c">'+fr(e.n)+'</td><td class="c"><b>'+duree(e.min)+'</b></td>'+e.op.map(x=>'<td class="c">'+(x?fr(x):'·')+'</td>').join('')+'</tr>').join('')
       :'<tr><td colspan="8" class="vide">Aucun massage ce jour-là</td></tr>';
     const T=ROWS.slice().sort((a,b)=>a.n-b.n);
     $('tous').innerHTML=T.length?T.map(r=>{ const fin=r.end||(live?now:null), min=fin?(fin-r.start)/60000:0, enC=!r.end&&!r.annule;
       return '<div class="mx'+(enC?' live':'')+'" style="'+(r.annule?'opacity:.55;text-decoration:line-through;':'')+'"><span class="d" style="min-width:34px;color:var(--muted)">#'+r.n+'</span>'
         +'<span class="d" style="min-width:70px;font-size:1rem">'+(r.annule?'❌':enC?'🔴 '+duree(min):duree(min))+'</span>'
-        +'<span class="x"><b>'+esc((r.names||[]).join(' + '))+'</b><br><span class="small">'+esc(FORM[r.type]||r.label||r.type)+' · <span class="op">OP'+Math.min(5,Math.max(1,+r.qty||1))+'</span> · '+(DEHORS[r.type]?'dehors':'ch. '+esc(r.room||''))+' · '+(r.ref==='new'?'🆕 nouveau':'🔁 habitué')+'</span>'
+        +'<span class="x"><b>'+esc((r.names||[]).join(' + '))+'</b><br><span class="small">'+esc(FORM[r.type]||r.label||r.type)+' · <span class="op">OP'+Math.min(5,Math.max(1,+r.qty||1))+'</span>'+((r.names||[]).length===2?' · <b style="color:#7c3aed">½ chacune</b>':'')+' · '+(DEHORS[r.type]?'dehors':'ch. '+esc(r.room||''))+' · '+(r.ref==='new'?'🆕 nouveau':'🔁 habitué')+'</span>'
         +(r.court?'<br><span style="color:#b45309;font-weight:700">⚠️ parti avant 15 min : '+esc(r.court)+'</span>':'')+(r.annule?'<br><span class="small">annulé</span>':'')+'</span></div>'; }).join('')
       :'<div class="vide">Aucun massage ce jour-là</div>';
-    $('detail').innerHTML=L.length?L.map(e=>'<div class="emp"><div class="eh" data-e="'+esc(e.nom)+'"><b>'+(ouvert[e.nom]!==false?'▾ ':'▸ ')+esc(e.nom)+'</b><span class="m">'+e.n+' · '+duree(e.min)+'</span></div>'
+    $('detail').innerHTML=L.length?L.map(e=>'<div class="emp"><div class="eh" data-e="'+esc(e.nom)+'"><b>'+(ouvert[e.nom]!==false?'▾ ':'▸ ')+esc(e.nom)+'</b><span class="m">'+fr(e.n)+' · '+duree(e.min)+'</span></div>'
         +(ouvert[e.nom]!==false?'<div class="ms">'+e.L.sort((a,b)=>a.r.n-b.r.n).map(x=>'<div class="mx'+(x.live?' live':'')+'"><span class="d">'+(x.live?'🔴 ':'')+duree(x.min)+'</span>'
-          +'<span class="x">'+esc(FORM[x.r.type]||x.r.label||x.r.type)+' <span class="op">OP'+x.op+'</span>'+((x.r.names||[]).length>1?' <span class="small">avec '+esc(x.r.names.filter(n=>String(n).trim()!==e.nom).join(' + '))+'</span>':'')
+          +'<span class="x">'+esc(FORM[x.r.type]||x.r.label||x.r.type)+' <span class="op">OP'+x.op+'</span>'+(x.part===0.5?' <b style="color:#7c3aed">½</b>':'')+((x.r.names||[]).length>1?' <span class="small">avec '+esc(x.r.names.filter(n=>String(n).trim()!==e.nom).join(' + '))+'</span>':'')
           +(x.r.court?'<br><span style="color:#b45309;font-weight:700">⚠️ parti avant 15 min : '+esc(x.r.court)+'</span>':'')+'</span>'+'<span class="small">'+(x.r.ref==='new'?'🆕':'🔁')+' '+(DEHORS[x.r.type]?'dehors':'ch. '+esc(x.r.room||''))+'</span></div>').join('')+'</div>':'')+'</div>').join('')
       :'<div class="vide">—</div>';
   }
