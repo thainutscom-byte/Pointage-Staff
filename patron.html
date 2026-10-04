@@ -129,6 +129,7 @@ async function majTout(){
     R.innerHTML='<div style="font-weight:800;color:#16a34a;font-size:1rem">✅ Google actualisé en '+j.secondes+' s</div>'
       +'<div style="color:#6b7280">'+esc((j.etapes||[]).map(x=>({fiches:'fiches',planning:'planning',paies:'paies signées',interdites:'numéros interdits',parrainages:'parrainages'}[x]||x)).join(' · '))+'</div>'
       +(j.supprimees?'<div style="color:#b91c1c">🗑️ '+j.supprimees+' fiche(s) effacée(s) notée(s) dans l\'onglet « 🗑️ Supprimées » — elles ne reviendront plus</div>':'')
+      +(j.ca?'<div style="color:#9a3412">💰 CA recalculé sur '+j.ca+' journée(s) (« CA par jour » à jour)</div>':'')
       +L('📞 Doublons sans le 0 supprimés',j.reparTel&&j.reparTel.doublons,'#9a3412')
       +(j.reparTel&&j.reparTel.cellules?'<div style="color:#6b7280">📞 '+j.reparTel.cellules+' numéro(s) / clé(s) sans le 0 réparés</div>':'')
       +L('➕ Fiches recréées dans « Employés »',j.fiches,'#16a34a')

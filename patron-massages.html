@@ -70,8 +70,8 @@
       <table class="cor" id="corTab" style="display:none">
         <tr><th style="width:34%">Massage</th><th>Envoyé par<br>l'employée</th><th>✏️ Corrigé</th><th>Montant</th></tr>
         <tr><td class="nom">1 lady<br><small>600 ฿</small></td><td id="o_l1">0</td><td><div class="st"><button onclick="pm('l1',-1)">−</button><input id="l1" type="number" min="0" inputmode="numeric" value="0" oninput="corCa()"><button onclick="pm('l1',1)">+</button></div></td><td id="m_l1">0</td></tr>
-        <tr><td class="nom">2 lady<br><small>800 ฿</small></td><td id="o_l2">0</td><td><div class="st"><button onclick="pm('l2',-1)">−</button><input id="l2" type="number" min="0" inputmode="numeric" value="0" oninput="corCa()"><button onclick="pm('l2',1)">+</button></div></td><td id="m_l2">0</td></tr>
-        <tr><td class="nom">Happy Hour<br><small>600 ฿</small></td><td id="o_hh">0</td><td><div class="st"><button onclick="pm('hh',-1)">−</button><input id="hh" type="number" min="0" step="0.5" inputmode="decimal" value="0" oninput="corCa()"><button onclick="pm('hh',1)">+</button></div></td><td id="m_hh">0</td></tr>
+        <tr><td class="nom">2 lady<br><small>800 ฿ · ½ par fille</small></td><td id="o_l2">0</td><td><div class="st"><button onclick="pm('l2',-1)">−</button><input id="l2" type="number" min="0" step="0.5" inputmode="decimal" value="0" oninput="corCa()"><button onclick="pm('l2',1)">+</button></div></td><td id="m_l2">0</td></tr>
+        <tr><td class="nom">Happy Hour<br><small>600 ฿ · ½ par fille</small></td><td id="o_hh">0</td><td><div class="st"><button onclick="pm('hh',-1)">−</button><input id="hh" type="number" min="0" step="0.5" inputmode="decimal" value="0" oninput="corCa()"><button onclick="pm('hh',1)">+</button></div></td><td id="m_hh">0</td></tr>
         <tr class="tot"><td class="nom">TOTAL</td><td id="o_tot">0 ฿</td><td></td><td id="m_tot">0 ฿</td></tr>
       </table>
       <div id="corTous"></div>
@@ -150,7 +150,7 @@ async function plRetirer(btn){
 // ===== ✏️ CORRIGER LES MASSAGES D'UNE EMPLOYÉE : employée + date → tableau à remplir → le téléphone se met à jour =====
 let JOURS={}, orig=null;   // JOURS[date] = { clé employée : {l1,l2,hh} }
 const PX={l1:600,l2:800,hh:600};
-function pm(k,d){ const el=$(k); el.value=Math.max(0,(+el.value||0)+d); corCa(); }
+function pm(k,d){ const el=$(k); el.value=Math.max(0,(+el.value||0)+(k==='l1'?d:d*0.5)); corCa(); }   // 2 lady / Happy Hour : ± 0,5 (1 massage à 2 = 0,5 par fille)
 function corAff(){ let t=0, o=0; ['l1','l2','hh'].forEach(k=>{ const v=Math.max(0,+$(k).value||0); $('m_'+k).textContent=(v*PX[k]).toLocaleString('en-US')+' ฿'; t+=v*PX[k]; o+=((orig||{})[k]||0)*PX[k]; });
   $('m_tot').textContent=t.toLocaleString('en-US')+' ฿'; $('o_tot').textContent=o.toLocaleString('en-US')+' ฿'; }
 function corCa(){ corAff(); $('corOk').disabled=false; $('corMsg').textContent='⚠️ pas encore enregistré'; $('corMsg').style.color='#d97706'; }
@@ -202,11 +202,11 @@ function tousDessiner(d){
   if(!TOUS.length){ $('corInfo').textContent='❌ Aucune employée.'; return; }
   const nD=TOUS.filter(x=>x.double).length;
   $('corInfo').innerHTML=TOUS.length+' employée'+(TOUS.length>1?'s':'')+' · journée du '+p[2]+'/'+p[1]+'/'+p[0]+' · changez les chiffres faux puis ✔'+(nD?'<br><b style="color:var(--red)">⚠️ '+nD+' fiches en double (même nom, numéro différent) : effacez la mauvaise ligne dans l\'onglet « Employés » — elle ne reviendra plus</b>':'');
-  let h='<table class="tous"><tr><th>Employée</th><th>1 lady<br>600</th><th>2 lady<br>800</th><th>Happy H.<br>600</th><th></th></tr>';
+  let h='<table class="tous"><tr><th>Employée</th><th>1 lady<br>600</th><th>2 lady<br>800 · ½</th><th>Happy H.<br>600 · ½</th><th></th></tr>';
   TOUS.forEach((x,i)=>{ h+='<tr id="tR'+i+'"'+(x.double?' style="background:#fef2f2"':'')+'><td class="n">'+x.nom.replace(/[<>&]/g,'')
       +(x.double?'<div style="font-size:.72rem;color:var(--red);font-weight:700">⚠️ doublon · 📞 '+x.tel.replace(/[<>&]/g,'')+'</div>':'')
       +(x.sans?'<div style="font-size:.72rem;color:var(--muted);font-weight:600">pas de journée envoyée</div>':'')+'</td>';
-    ['l1','l2','hh'].forEach(k=>{ h+='<td><input type="number" min="0" step="'+(k==='hh'?'0.5':'1')+'" inputmode="decimal" id="t_'+i+'_'+k+'" value="'+x.app[k]+'" oninput="tousMaj()"><span class="av" id="ta_'+i+'_'+k+'"></span></td>'; });
+    ['l1','l2','hh'].forEach(k=>{ h+='<td><input type="number" min="0" step="'+(k==='l1'?'1':'0.5')+'" inputmode="decimal" id="t_'+i+'_'+k+'" value="'+x.app[k]+'" oninput="tousMaj()"><span class="av" id="ta_'+i+'_'+k+'"></span></td>'; });
     h+='<td><button id="tB'+i+'" style="visibility:hidden" onclick="tousCorriger('+i+')">✔</button></td></tr>'; });
   h+='<tr class="tot"><td class="n">TOTAL</td><td id="tT_l1"></td><td id="tT_l2"></td><td id="tT_hh"></td><td></td></tr></table>';
   h+='<div id="tEcart" style="text-align:center;font-weight:800;margin:10px 0 4px"></div>';
