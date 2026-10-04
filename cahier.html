@@ -313,6 +313,15 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     <button class="cancel" type="button" id="supX">ปิด</button>
   </div>
 </div>
+<div class="air" id="court" hidden role="dialog" aria-modal="true" aria-labelledby="courtT" style="z-index:60">
+  <div class="air-box" style="border-color:var(--gold)">
+    <div class="air-t" id="courtT" style="font-size:1.3rem;color:var(--gold)"></div>
+    <div class="air-s">ลูกค้ากลับก่อน 15 นาที — เพราะอะไร?</div>
+    <div class="chips" id="courtC" style="justify-content:center"></div>
+    <input id="courtTxt" maxlength="120" placeholder="เขียนเหตุผล" hidden style="font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">
+    <button class="ok" type="button" id="courtGo" style="background:var(--gold);color:#1a1200">📩 ส่งให้หัวหน้า</button>
+  </div>
+</div>
 <div class="air" id="annul" hidden role="dialog" aria-modal="true" aria-labelledby="annT">
   <div class="air-box" style="border-color:var(--busy)">
     <div class="air-t" id="annT" style="font-size:1.35rem;color:var(--busy)"></div>
@@ -662,7 +671,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     if(b.dataset.fin){ const n=+b.dataset.fin;
       // ⏹ sur la carte de la chambre : 1 seule touche → la chambre est libérée tout de suite
       if(!b.classList.contains('fin') && armed!=='f'+n){ armed='f'+n; b.textContent='แตะอีกครั้ง ✔'; setTimeout(()=>{ if(armed==='f'+n){ armed=null; draw(); } },4000); return; }
-      armed=null; const r=S.rows.find(x=>x.n===n); if(r && !r.end){ r.end=Date.now(); save(); if(!dehors(r) && !live().some(x=>!dehors(x))) rappelAir(r); toast('💰 แคชเชียร์: ยืนยันรับเงิน #'+r.n+' · '+(dehors(r)?'🏠 กลับมาแล้ว · ':'⏹ ห้อง '+r.room+' ว่างแล้ว · ')+r.names.join(' + ')+' '+hm(r.start)+'–'+hm(r.end)); }
+      armed=null; const r=S.rows.find(x=>x.n===n); if(r && !r.end){ r.end=Date.now(); save(); if(!dehors(r) && !live().some(x=>!dehors(x))) rappelAir(r); if(!dehors(r) && r.end-r.start<COURT_MIN*60000) demanderCourt(r); toast('💰 แคชเชียร์: ยืนยันรับเงิน #'+r.n+' · '+(dehors(r)?'🏠 กลับมาแล้ว · ':'⏹ ห้อง '+r.room+' ว่างแล้ว · ')+r.names.join(' + ')+' '+hm(r.start)+'–'+hm(r.end)); }
       draw(); if(!$('form').hidden) drawForm(); return; }
     // 💰 paiement validé par la caissière (son code) — seulement après la fin du massage
     // 👭 le client change d'avis : 2e fille ajoutée → 2 lady (ou Happy Hour de 16:00 à 20:00)
@@ -874,8 +883,24 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   function drawAnn(){ $('annC').innerHTML=RAISONS.map(x=>chip(x[0]==='autre'?'อื่นๆ':x[0],'',annRaison===x[0],false,'data-r="'+esc(x[0])+'"',x[1])).join(''); $('annTxt').hidden=annRaison!=='autre'; }
   $('annC').onclick=e=>{ const c=e.target.closest('button'); if(!c) return; annRaison=c.dataset.r; drawAnn(); };
   $('annX').onclick=()=>{ $('annul').hidden=true; };
+
+  // ⚠️ MASSAGE TERMINÉ AVANT 15 MIN : la fille dit pourquoi le client est parti → envoyé sur le groupe LINE du patron
+  const COURT_MIN=15;
+  const COURT_R=[['ลูกค้าไม่พอใจ / ไม่ชอบ','client pas satisfait'],['ลูกค้ามีธุระ / รีบไป','client pressé / occupé'],['ลูกค้าเปลี่ยนใจ','client a changé d\'avis'],['ลูกค้าเมา / ไม่สบาย','client ivre / malade'],['ลงผิด (ไม่ได้นวดจริง)','erreur de saisie'],['อื่นๆ','autre']];
+  let courtR=null, courtRow=null;
+  function drawCourt(){ $('courtC').innerHTML=COURT_R.map((x,i)=>chip(x[0],'',courtR===i,false,'data-c="'+i+'"','var(--gold)')).join(''); $('courtTxt').hidden=courtR!==COURT_R.length-1; $('courtGo').disabled=courtR===null; $('courtGo').style.opacity=courtR===null?.4:1; }
+  function demanderCourt(r){ courtRow=r; courtR=null; $('courtTxt').value='';
+    $('courtT').textContent='⚠️ #'+r.n+' · '+r.names.join(' + ')+' · '+Math.max(1,Math.round((r.end-r.start)/60000))+' นาที'; drawCourt(); $('court').hidden=false; }
+  $('courtC').onclick=e=>{ const c=e.target.closest('button'); if(!c) return; courtR=+c.dataset.c; drawCourt(); if(courtR===COURT_R.length-1) setTimeout(()=>$('courtTxt').focus(),50); };
+  $('courtGo').onclick=()=>{ const r=courtRow; if(!r || courtR===null) return;
+    const txt=($('courtTxt').value||'').trim(); if(courtR===COURT_R.length-1 && !txt){ $('courtTxt').focus(); return; }
+    const x=COURT_R[courtR], raison=courtR===COURT_R.length-1?txt:x[0];
+    r.court={raison, fr:courtR===COURT_R.length-1?'autre : '+txt:x[1], min:Math.max(1,Math.round((r.end-r.start)/60000)), t:Date.now()};
+    save(); $('court').hidden=true; toast('📩 ส่งให้หัวหน้าแล้ว');
+    if(!DEMO){ const q=lsG('cahier_file',{}); q[cle(r)+'|court']={type:'cahier', op:'court', id:cle(r)+'|court', n:r.n, names:r.names, room:r.room, formule:r.type, qty:r.qty||1, min:r.court.min, raison:r.court.raison, fr:r.court.fr, jour:JOUR}; lsS('cahier_file',q); setTimeout(envoyer,300); }
+  };
   // ❌ ANNULER UN MASSAGE (tous les téléphones) : liste des massages du jour → code 140963 → annulé partout (chambre libérée, plus compté)
-  const CODE_SUPPR='140963';
+  const CODE_SUPPR='140963'; window.demanderCode=demanderCode;   // (utilisé aussi par le blocage GPS)
   function supDessiner(){
     const L=S.rows.filter(r=>!annule(r)).slice().sort((a,b)=>b.n-a.n);
     $('supL').innerHTML=L.length ? L.map(r=>'<button type="button" data-sup="'+r.n+'" style="display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:14px;padding:12px;font:inherit;cursor:pointer">'
@@ -921,6 +946,58 @@ try{ if(/[?&]installer=1/.test(location.search) && /iPhone|iPad|iPod/i.test(navi
   d.innerHTML='📲 แตะ <b>⬆️ แชร์</b> ด้านล่าง แล้วเลือก <b>“เพิ่มไปยังหน้าจอโฮม”</b><button type="button" style="position:absolute;top:8px;right:8px;border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:10px;width:30px;height:30px;font-weight:800">✕</button>';
   d.querySelector('button').onclick=()=>d.remove(); document.body.appendChild(d); } }catch(e){}
 try{ if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js'); }catch(e){}
+
+// ===== 📍 CAHIER UTILISABLE UNIQUEMENT AU SALON (position GPS) — sauf téléphone du patron ou appareil débloqué par le code 👑 =====
+(function(){
+  const API_G='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+  const lg=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, ls=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
+  const exempt=()=>{ if(lg('pointage_patron')==='1' || lg('cahier_gps_libre')==='1') return true;
+    try{ const o=JSON.parse(lg('pointage_ident')||'null'); if(o && /^boss$/i.test(String(o.name||'').trim())) return true; }catch(e){} return false; };
+  if(exempt()) return;
+  const dist=(a,b,c,d)=>{ const R=6371000, r=x=>x*Math.PI/180, x=r(c-a), y=r(d-b); const h=Math.sin(x/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(y/2)**2; return 2*R*Math.asin(Math.sqrt(h)); };
+  let voile=null, enCours=false;
+  function montrer(titre, sous, d){
+    if(!voile){ voile=document.createElement('div'); voile.id='gpsVoile';
+      voile.style.cssText='position:fixed;inset:0;z-index:9999;background:#0b0d12;color:#f8fafc;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:inherit';
+      document.body.appendChild(voile); }
+    voile.innerHTML='<div style="max-width:420px;display:grid;gap:12px"><div style="font-size:3.5rem">📍</div><div style="font-size:1.4rem;font-weight:700">'+titre+'</div>'
+      +'<div style="font-size:1.05rem;line-height:1.6;color:#cbd5e1">'+sous+'</div>'
+      +'<button type="button" id="gpsRe" style="border:none;border-radius:14px;padding:15px;font:inherit;font-size:1.1rem;font-weight:700;background:#0f766e;color:#fff">🔄 ตรวจตำแหน่งอีกครั้ง</button>'
+      +'<button type="button" id="gpsBoss" style="border:2px solid #475569;border-radius:14px;padding:12px;font:inherit;font-weight:700;background:transparent;color:#cbd5e1">👑 รหัสหัวหน้า</button>'
+      +'<a href="./" style="color:#94a3b8;font-weight:600">🏠 กลับไปที่แอป</a></div>';
+    voile.hidden=false; document.body.style.overflow='hidden';
+    voile.querySelector('#gpsRe').onclick=()=>{ ls('cahier_gps_ok','0'); verifier(true); };
+    voile.querySelector('#gpsBoss').onclick=()=>{
+      if(typeof demanderCode!=='function'){ return; }
+      voile.style.zIndex='40';   // le pavé du code passe devant
+      demanderCode('👑 ใช้สมุดนอกร้าน', 'รหัสหัวหน้า (6 หลัก)', v=>v==='140963', 6).then(ok=>{ voile.style.zIndex='9999';
+        if(ok){ ls('cahier_gps_libre','1'); cacher(); } });
+    };
+  }
+  function cacher(){ if(voile){ voile.hidden=true; document.body.style.overflow=''; } }
+  async function salon(){
+    try{ const c=JSON.parse(lg('pointage_gps_salon')||'null'); if(c && Date.now()-c.t<6*3600e3 && c.v) return c.v; }catch(e){}
+    try{ const t=(await (await fetch(API_G+'?gps=1&_='+Date.now())).text()).trim(); const v=t[0]==='{'?JSON.parse(t):{}; ls('pointage_gps_salon', JSON.stringify({t:Date.now(), v})); return v; }catch(e){ return null; }
+  }
+  async function verifier(force){
+    if(exempt()){ cacher(); return; }
+    if(enCours) return; if(!force && Date.now()-(+lg('cahier_gps_ok')||0)<10*60000){ cacher(); return; }   // position OK il y a moins de 10 min
+    enCours=true;
+    try{
+      const S=await salon(); if(!S || !S.lat){ cacher(); return; }                 // position du salon pas encore enregistrée / pas d'internet → pas de blocage
+      const pos=await new Promise(res=>{ if(!navigator.geolocation) return res(null);
+        navigator.geolocation.getCurrentPosition(p=>res(p), ()=>res(null), {enableHighAccuracy:true, timeout:15000, maximumAge:30000}); });
+      if(!pos){ montrer('เปิดตำแหน่ง (Location)', 'สมุดลงงานใช้ได้เฉพาะที่ร้าน<br>กรุณาอนุญาตให้ใช้ตำแหน่ง<br><span style="font-size:.9rem">ตั้งค่า → ความเป็นส่วนตัว → บริการหาตำแหน่ง → เปิด</span>'); return; }
+      const L=[S].concat(S.p2 && S.p2.lat ? [S.p2] : []), d=Math.min.apply(null, L.map(p=>Math.round(dist(p.lat,p.lng,pos.coords.latitude,pos.coords.longitude))));
+      const acc=Math.round(pos.coords.accuracy||0), R=S.r||200;
+      if(d-Math.min(acc,150) <= R){ ls('cahier_gps_ok', String(Date.now())); cacher(); return; }
+      montrer('ใช้ได้เฉพาะที่ร้าน', '⛔ คุณอยู่ห่างจากร้าน <b>'+(d>=1000?(d/1000).toFixed(1)+' กม.':d+' ม.')+'</b><br>สมุดลงงานใช้ได้เมื่ออยู่ที่ร้านเท่านั้น', d);
+    } finally { enCours=false; }
+  }
+  verifier(false);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) verifier(false); });
+  setInterval(()=>{ if(!document.hidden) verifier(false); }, 5*60000);
+})();
 </script>
 </body>
 </html>
