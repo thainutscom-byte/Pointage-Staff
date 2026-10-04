@@ -203,6 +203,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       <button class="icon-btn bossbtn" id="btnBoss" type="button">👑 หัวหน้า</button>
     </div>
   </header>
+  <div id="caisseBar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin:-4px 0 10px;font-weight:700;font-size:.95rem"></div>
 
   <div class="panel cash" id="cashPanel" hidden>
     <div class="cash-h"><h2>💰 แคชเชียร์วันนี้</h2><button class="cancel" id="cashClose" type="button">ปิด</button></div>
@@ -320,6 +321,15 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     <div class="chips" id="courtC" style="justify-content:center"></div>
     <input id="courtTxt" maxlength="120" placeholder="เขียนเหตุผล" hidden style="font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">
     <button class="ok" type="button" id="courtGo" style="background:var(--gold);color:#1a1200">📩 ส่งให้หัวหน้า</button>
+  </div>
+</div>
+<div class="air" id="remDlg" hidden role="dialog" aria-modal="true" aria-labelledby="remT">
+  <div class="air-box" style="border-color:#16a34a">
+    <div class="air-t" id="remT" style="font-size:1.3rem;color:#4ade80"></div>
+    <div class="air-s">ให้เงินกับใคร?</div>
+    <div class="chips" id="remC" style="justify-content:center"></div>
+    <button class="ok" type="button" id="remGo" style="background:#16a34a;color:#fff">✅ ยืนยัน</button>
+    <button class="cancel" type="button" id="remX">ปิด</button>
   </div>
 </div>
 <div class="air" id="annul" hidden role="dialog" aria-modal="true" aria-labelledby="annT">
@@ -456,7 +466,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       annul:an?(an.etat==='ok'?'❌ annulé : ':'⏳ attente client : ')+(RAISON_FR[an.raison]||an.raison)+' ('+an.par+' '+hm(an.ok||an.t)+')':'',
       ajout:r.ajout?r.ajout.qui+' '+hm(r.ajout.t):'', etat };
   }
-  function evts(){ return S.remises.map(x=>({id:JOUR+'|r'+x.t, ev:Object.assign({k:'r'},x), a:{date:jourFr(JOUR), heure:hm(x.t), evenement:'👑 Argent remis au patron', caissiere:x.par, vers:'Patron', montant:x.montant}}))
+  function evts(){ return S.remises.map(x=>({id:JOUR+'|r'+x.t, ev:Object.assign({k:'r'},x), a:{date:jourFr(JOUR), heure:hm(x.t), evenement:(!x.vers||x.vers==='Patron')?'👑 Argent remis au patron':x.interne?'💵 Argent donné à l\'autre caissière':'💵 Argent remis à '+x.vers, caissiere:x.par, vers:x.vers||'Patron', montant:x.montant}}))
     .concat(S.passes.map(x=>({id:JOUR+'|p'+x.t, ev:Object.assign({k:'p'},x), a:{date:jourFr(JOUR), heure:hm(x.t), evenement:x.de?'🔄 Changement de caissière':'💰 Caissière du jour', caissiere:x.de||x.a, vers:x.de?x.a:'', montant:x.de?x.montant:''}}))); }
   function enfiler(){
     if(DEMO) return;
@@ -525,6 +535,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       window.__majOk=Date.now(); etatSync();
       lsS('cahier_staff_'+JOUR,j.staff||[]);
       if(j.hh && !DEMO){ HHF=j.hh; lsS('cahier_hhf',HHF); majHH(); }
+      if(j.caisses && !DEMO){ CAISSES={s1:j.caisses.s1||'', s2:j.caisses.s2||''}; lsS('cahier_caisses',CAISSES); }
       if(!DEMO){ STAFF=(j.staff||[]).map(x=>x.n); HASH={}; SHIFT={}; (j.staff||[]).forEach(x=>{ HASH[x.n]=x.h; SHIFT[x.n]=x.s||''; }); FINS=j.fins||[]; lsS('cahier_fins_'+JOUR,FINS);
         VENUES=new Set((j.staff||[]).filter(x=>x.v).map(x=>x.n.toLowerCase())); lsS('cahier_venues_'+JOUR,[...VENUES]); }
       const cible=DEMO?VRAI:S;
@@ -601,7 +612,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     return fr?t[1]:TH[r.type]; }
   function massTxt(r){ const t=typ(r.type); if(!t) return '—';
     return '<b>'+esc(libType(r))+'</b> · OP'+(r.qty||1); }
-  function draw(){ drawRooms(); drawRows(); try{ drawCash(); drawBoss(); }catch(e){} }
+  function draw(){ drawRooms(); drawRows(); try{ drawCash(); drawBoss(); majCaisseBar(); }catch(e){} }
 
   // ---------- saisie ----------
   let F={names:[],room:null,type:null,qty:1,pay:null,ref:null};
@@ -739,7 +750,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     const cash=ok.filter(r=>r.pay==='cash').reduce((a,r)=>a+(prix(r)||0),0);
     const qr=ok.filter(r=>r.pay==='qr').reduce((a,r)=>a+(prix(r)||0),0);
     const attente=actifs().filter(r=>r.end && !r.payOk).length;
-    const remis=S.remises.reduce((a,x)=>a+x.montant,0);
+    const remis=S.remises.filter(x=>!x.interne).reduce((a,x)=>a+x.montant,0);   // donné à l'autre caissière : reste dans la caisse du salon
     return {cash, qr, remis, reste:cash-remis, attente};
   }
   let payArmed=false;
@@ -750,15 +761,28 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     const p=DEMO ? DEMO_STAFF.filter(n=>n!=='Nok') : noms().filter(n=>VENUES.has(n.toLowerCase()) || (S.extra||[]).includes(n));
     return p.filter(n=>!finie(n));
   }
+  let CAISSES=lsG('cahier_caisses',{s1:'',s2:''});   // 👑 caissière du matin (s1) et du soir (s2) choisies par le patron
+  const tirage=(L,k)=>{ const A=L.slice().sort(); let h=0; for(const ch of JOUR+k) h=(h*31+ch.charCodeAt(0))>>>0; return A[h%A.length]; };   // même résultat sur tous les appareils
   function planCaisse(){
-    const now=new Date(), mn=now.getHours()*60+now.getMinutes(), P=presentes(); S.plan=S.plan||{}; let chg=false;
+    const now=new Date(), mn=now.getHours()*60+now.getMinutes(), P=presentes(); S.plan=S.plan||{}; S.rempl=S.rempl||{}; let chg=false;
     CRENEAUX.forEach(c=>{
-      if(mn>=c.fin*60 || mn<c.deb*60-15) return;                                  // tirage 15 min avant le créneau, jusqu'à sa fin
-      const x=S.plan[c.k]; if(x && P.includes(x)) return;
-      const autres=CRENEAUX.filter(z=>z.k!==c.k).map(z=>S.plan[z.k]);
+      if(mn>=c.fin*60 || mn<c.deb*60-15) return;                                  // à partir de 15 min avant le créneau, jusqu'à sa fin
+      const x=S.plan[c.k], D=DEMO?'':(CAISSES[c.k]||''), autres=CRENEAUX.filter(z=>z.k!==c.k).map(z=>S.plan[z.k]||CAISSES[z.k]);
+      if(D){
+        const ici=P.some(n=>n.toLowerCase()===D.toLowerCase());
+        if(ici && !S.rempl[c.k]){ if(x!==D){ S.plan[c.k]=D; chg=true; } return; }          // la caissière prévue est là
+        if(!ici && mn<c.deb*60+15) return;                                         // on l'attend jusqu'à 15 min après le début
+        if(x && x!==D && P.includes(x)) return;                                     // remplaçante déjà choisie
+        if(ici) return;
+        let choix=P.filter(n=>n!==D && !autres.includes(n)); if(!choix.length) choix=P.filter(n=>n!==D);
+        if(!choix.length) return;
+        S.plan[c.k]=tirage(choix,c.k); S.rempl[c.k]=D; chg=true;
+        toast('⏰ '+D+' มาสายเกิน 15 นาที → แคชเชียร์ '+c.lab+': '+S.plan[c.k]); return;
+      }
+      if(x && P.includes(x)) return;
       let choix=P.filter(n=>!autres.includes(n)); if(!choix.length) choix=P;
       if(!choix.length) return;
-      S.plan[c.k]=choix[Math.floor(Math.random()*choix.length)]; chg=true;
+      S.plan[c.k]=tirage(choix,c.k); chg=true;
       toast('🎲 แคชเชียร์ '+c.lab+': '+S.plan[c.k]+(x?' (แทน '+x+')':''));
     });
     const cur=CRENEAUX.find(c=>mn>=c.deb*60 && mn<c.fin*60);
@@ -768,9 +792,15 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       toast('💰 แคชเชียร์ตอนนี้ ('+cur.lab+'): '+a+(de?' · รับเงินต่อจาก '+de+' '+baht(c.reste):''));
     }
     if(chg){ save(); draw(); }
+    majCaisseBar();
   }
+  // 💰 bandeau visible par toutes : caissière du matin et du soir
+  function majCaisseBar(){ const B=$('caisseBar'); if(!B) return;
+    const mn=new Date().getHours()*60+new Date().getMinutes(), cur=CRENEAUX.find(c=>mn>=c.deb*60 && mn<c.fin*60), ic={s1:'🌅',s2:'🌙'};
+    B.innerHTML='<span>💰 แคชเชียร์</span>'+CRENEAUX.map(c=>{ const n=(S.plan||{})[c.k]||(DEMO?'':CAISSES[c.k])||'', on=cur&&cur.k===c.k, r=(S.rempl||{})[c.k];
+      return '<span style="border-radius:999px;padding:5px 12px;'+(on?'background:#fbbf24;color:#1a1200;':'border:1px solid var(--line);')+'">'+ic[c.k]+' '+c.lab+' · <b>'+esc(n||'⏳')+'</b>'+(r?' <span style="font-size:.8rem">(แทน '+esc(r)+')</span>':'')+'</span>'; }).join(''); }
   setInterval(()=>{ if(lsG('cahier_staff_'+JOUR,null)) planCaisse(); },30000);   // (1er tirage : après le chargement depuis Google)
-  function planTxt(){ const p=S.plan||{}; return CRENEAUX.map(c=>'🎲 '+c.lab+' : <b>'+esc(p[c.k]||'⏳')+'</b>').join(' · '); }
+  function planTxt(){ const p=S.plan||{}; return CRENEAUX.map(c=>({s1:'🌅',s2:'🌙'})[c.k]+' '+c.lab+' : <b>'+esc(p[c.k]||CAISSES[c.k]||'⏳')+'</b>'+((S.rempl||{})[c.k]?' (แทน '+esc(S.rempl[c.k])+')':'')).join(' · '); }
   function drawCash(){ try{ majBook(); }catch(e){}
     $('btnCash').textContent='💰 แคชเชียร์'+(S.caissiere?' · '+S.caissiere:'');
     if($('cashPanel').hidden) return;
@@ -785,8 +815,8 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       +'<div class="mbox"><span>👑 จ่ายหัวหน้าแล้ว</span><b>'+baht(c.remis)+'</b></div>'
       +'<div class="mbox due"><span>💰 ต้องจ่ายหัวหน้า</span><b>'+baht(c.reste)+'</b></div></div>'
       +(c.attente?'<p class="note" style="color:var(--gold);font-weight:700">⏳ รอยืนยันรับเงิน '+c.attente+' รายการ (แถวสีเหลืองในสมุด)</p>':'')
-      +'<button class="paid" id="paid" type="button"'+(c.reste>0?'':' disabled')+'>'+(payArmed?'แตะอีกครั้งเพื่อยืนยัน ✔ '+baht(c.reste):'✅ จ่ายหัวหน้าแล้ว ('+baht(c.reste)+')')+'</button>'
-      +((S.remises.length||S.passes.length)?'<ul class="remises">'+S.remises.map(x=>({t:x.t,h:'👑 '+hm(x.t)+' · '+esc(x.par)+' จ่ายหัวหน้า → '+baht(x.montant)}))
+      +'<button class="paid" id="paid" type="button"'+(c.reste>0?'':' disabled')+'>💵 ให้เงิน '+baht(c.reste)+' · หัวหน้า / แคชเชียร์อีกคน / คนอื่น</button>'
+      +((S.remises.length||S.passes.length)?'<ul class="remises">'+S.remises.map(x=>({t:x.t,h:(x.vers&&x.vers!=='Patron'?'💵 ':'👑 ')+hm(x.t)+' · '+esc(x.par)+' → '+(x.vers&&x.vers!=='Patron'?esc(x.vers)+(x.interne?' (แคชเชียร์)':''):'หัวหน้า')+' '+baht(x.montant)}))
           .concat(S.passes.map(x=>({t:x.t,h:x.de?(x.auto?'🎲 ':'🔄 ')+hm(x.t)+' · '+esc(x.de)+' → '+esc(x.a)+' (ส่งต่อเงินสด '+baht(x.montant)+')':'💰 '+hm(x.t)+' · แคชเชียร์วันนี้ '+esc(x.a)})))
           .sort((a,b)=>b.t-a.t).map(x=>'<li>'+x.h+'</li>').join('')+'</ul>':'')
       ;
@@ -809,13 +839,25 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       { const mn=new Date().getHours()*60+new Date().getMinutes(), cur=CRENEAUX.find(z=>mn>=z.deb*60 && mn<z.fin*60); if(cur){ S.plan=S.plan||{}; S.plan[cur.k]=n; } }   // changement à la main : remplace le tirage
       save(); drawCash();
       toast('🔄 แคชเชียร์ใหม่: '+n+' (จาก '+de+') · เงินสดที่ต้องจ่ายหัวหน้า '+baht(c.reste)); return; }
-    if(b.id==='paid'){
-      if(!payArmed){ payArmed=true; drawCash(); setTimeout(()=>{ if(payArmed){ payArmed=false; drawCash(); } },4000); return; }
-      payArmed=false; const c=caisse(); if(c.reste<=0) return;
-      S.remises.push({t:Date.now(), montant:c.reste, par:S.caissiere}); save(); drawCash();
-      toast('👑 '+S.caissiere+' จ่ายหัวหน้า '+baht(c.reste)+' · '+hm(Date.now()));
-    }
+    if(b.id==='paid'){ const c=caisse(); if(c.reste<=0) return; remDest=null; remMontant=c.reste; drawRem(); $('remDlg').hidden=false; }
   });
+  // 💵 à qui la caissière donne l'argent : 👑 patron · 💰 l'autre caissière · 👤 une autre personne
+  let remDest=null, remMontant=0;
+  function drawRem(){
+    const autre=CRENEAUX.map(c=>(S.plan||{})[c.k]||CAISSES[c.k]).filter(n=>n && n!==S.caissiere)[0];
+    $('remT').textContent='💵 '+(S.caissiere||'')+' · '+baht(remMontant);
+    const L=[['Patron','👑 หัวหน้า','#fbbf24']].concat(autre?[[autre,'💰 '+autre+' (แคชเชียร์อีกคน)','#4ade80']]:[])
+      .concat(STAFF.filter(n=>n!==S.caissiere && n!==autre).map(n=>[n,'👤 '+n,'#93c5fd']));
+    $('remC').innerHTML=L.map(x=>chip(esc(x[1]),'',remDest===x[0],false,'data-dest="'+esc(x[0])+'"',x[2])).join('');
+    $('remGo').disabled=!remDest; $('remGo').style.opacity=remDest?1:.4;
+  }
+  $('remC').onclick=e=>{ const c=e.target.closest('button'); if(!c) return; remDest=c.dataset.dest; drawRem(); };
+  $('remX').onclick=()=>{ $('remDlg').hidden=true; };
+  $('remGo').onclick=()=>{ if(!remDest) return; const c=caisse(); if(c.reste<=0){ $('remDlg').hidden=true; return; }
+    const autre=CRENEAUX.map(z=>(S.plan||{})[z.k]||CAISSES[z.k]).filter(n=>n && n!==S.caissiere)[0];
+    const x={t:Date.now(), montant:c.reste, par:S.caissiere, vers:remDest}; if(remDest!=='Patron' && remDest===autre) x.interne=1;
+    S.remises.push(x); save(); $('remDlg').hidden=true; drawCash();
+    toast((remDest==='Patron'?'👑 ':'💵 ')+S.caissiere+' → '+(remDest==='Patron'?'หัวหน้า':remDest)+' '+baht(x.montant)+' · '+hm(Date.now())); };
   // ===== 👑 BOSS : résumé complet du jour + réglages (code patron) =====
   // 🍹 badge visible par tout le monde quand le patron a forcé le Happy Hour
   function majHH(){ const b=$('hhBadge'); if(b) b.hidden=!hhForce(); }
@@ -839,13 +881,24 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       +'<div class="tbl"><table class="btbl"><thead><tr><th>Employée</th><th class="c">Total</th>'+L.map(x=>'<th class="c">'+x[1]+'</th>').join('')+'</tr></thead><tbody>'
       +(noms.length?noms.map(n=>'<tr><td><b>'+esc(n)+'</b></td><td class="c"><b>'+par[n].t+'</b></td>'+L.map(x=>'<td class="c">'+(par[n][x[0]]||'·')+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="8">—</td></tr>')
       +'</tbody></table></div>'
-      +((S.remises.length||S.passes.length)?'<ul class="remises">'+S.remises.map(x=>({t:x.t,h:'👑 '+hm(x.t)+' · '+esc(x.par)+' → '+baht(x.montant)}))
+      +((S.remises.length||S.passes.length)?'<ul class="remises">'+S.remises.map(x=>({t:x.t,h:(x.vers&&x.vers!=='Patron'?'💵 ':'👑 ')+hm(x.t)+' · '+esc(x.par)+' → '+(x.vers&&x.vers!=='Patron'?esc(x.vers)+(x.interne?' (caissière)':''):'patron')+' '+baht(x.montant)}))
           .concat(S.passes.map(x=>({t:x.t,h:x.de?'🔄 '+hm(x.t)+' · '+esc(x.de)+' → '+esc(x.a)+' ('+baht(x.montant)+')':'💰 '+hm(x.t)+' · caissière '+esc(x.a)}))).sort((a,b)=>b.t-a.t).map(x=>'<li>'+x.h+'</li>').join('')+'</ul>':'<p class="note">Aucun paiement de la caisse pour l\'instant.</p>')
       +'<p class="note" style="color:var(--ink)">'+planTxt()+'</p>'
+      +'<div style="display:grid;gap:8px;border:1px solid var(--line);border-radius:14px;padding:12px"><b>💰 Caissières (tous les jours)</b>'
+      +CRENEAUX.map(c=>'<label style="display:flex;gap:8px;align-items:center;justify-content:space-between">'+({s1:'🌅 Matin',s2:'🌙 Soir'})[c.k]+' '+c.lab
+        +'<select data-cais="'+c.k+'" style="font:inherit;padding:8px;border-radius:10px;min-width:150px"><option value="">🎲 tirage au sort</option>'
+        +STAFF.slice().sort().concat(CAISSES[c.k]&&!STAFF.includes(CAISSES[c.k])?[CAISSES[c.k]]:[]).map(n=>'<option'+(CAISSES[c.k]===n?' selected':'')+'>'+esc(n)+'</option>').join('')+'</select></label>').join('')
+      +'<span class="note" style="text-align:left">Si la caissière prévue n\'est pas arrivée 15 min après le début, une autre fille présente prend la caisse automatiquement.</span>'
+      +'<button type="button" id="caisOk" class="ok" style="background:#16a34a;color:#fff">✅ Enregistrer les caissières</button></div>'
       +'<button type="button" id="hhBtn" class="paid" style="background:'+(hhForce()?'#dc2626':'#fb923c')+';color:#111">'+(hhForce()?'🍹 Happy Hour forcé : ACTIF jusqu\'au '+(d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'))(new Date(+HHF.jusqua))+' à 08:00 → DÉSACTIVER':'🍹 ACTIVER Happy Hour maintenant (s\'arrête seul à 08:00 du matin)')+'</button>'
       +'<p class="note">🔑 Code Boss = date du jour JJMMAA (aujourd\'hui '+codeJour()+')</p>'
       +'</div>';
   }
+  document.addEventListener('click',async e=>{ if(e.target.id!=='caisOk') return; const b=e.target, v={};
+    document.querySelectorAll('select[data-cais]').forEach(x=>v[x.dataset.cais]=x.value);
+    CAISSES={s1:v.s1||'', s2:v.s2||''}; lsS('cahier_caisses',CAISSES); S.rempl={}; S.plan={}; b.textContent='⏳';
+    if(!DEMO){ try{ await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'cahier',op:'caisses',s1:CAISSES.s1,s2:CAISSES.s2})}); }catch(x){ toast('📶 ไม่มีอินเทอร์เน็ต'); } }
+    planCaisse(); draw(); toast('✅ Caissières : 🌅 '+(CAISSES.s1||'tirage')+' · 🌙 '+(CAISSES.s2||'tirage')); });
   $('btnBoss').onclick=async()=>{
     if(!$('bossPanel').hidden){ $('bossPanel').hidden=true; $('setPanel').hidden=true; return; }
     if(!(await demanderCode('👑 รหัสหัวหน้า', '', v=>v===codeJour(), 6))) return;
