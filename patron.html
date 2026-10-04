@@ -41,8 +41,14 @@
     <a class="lien" href="patron-demission.html" style="--c:var(--red)"><b>🚪 Démission</b><span>Bloquer ou réintégrer une employée</span></a>
     <a class="lien" href="patron-parrainage.html" style="--c:#db2777"><b>🤝 Parrainage</b><span>🎯 Objectifs, relances, commissions</span></a>
     <a class="lien" href="manager.html" style="--c:#7c3aed"><b>🧑‍💼 Fiche manager</b><span>Happy Hour · recrutement · essais · places · réservations</span></a>
-    <a class="lien" href="#" onclick="envoyerManager();return false" style="--c:#06c755"><b>💬 Envoyer la fiche manager sur LINE</b><span>Un lien personnel par personne · accès retirable ci-dessous</span></a>
-    <details style="background:#fff;border-radius:16px;padding:12px 14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06);border-left:7px solid #06c755"><summary style="font-weight:800;font-size:1.05rem;cursor:pointer">👥 Accès manager (<span id="mgrN">…</span>) · retirer</summary><div id="mgrListe" style="margin-top:6px"></div></details>
+    <a class="lien" href="#" onclick="mgrChoix();return false" style="--c:#06c755"><b>💬 Envoyer la fiche manager sur LINE</b><span>Choisir l'employée · un lien personnel · accès retirable ci-dessous</span></a>
+    <div id="mgrPick" style="display:none;grid-column:1/-1;background:#fff;border-radius:16px;padding:12px 14px;margin:0;box-shadow:0 2px 10px rgba(0,0,0,.06);border-left:7px solid #06c755">
+      <div style="font-weight:800;margin-bottom:6px">👤 À qui envoyer la fiche manager ?</div>
+      <select id="mgrEmp" onchange="document.getElementById('mgrAutre').style.display=this.value==='autre'?'block':'none'" style="width:100%;font-size:1.05rem;padding:10px;border-radius:10px;border:2px solid #d1d5db;background:#fff"><option value="">⏳ chargement des employées…</option></select>
+      <input id="mgrAutre" placeholder="Nom de la personne" style="display:none;width:100%;margin-top:6px;font-size:1.05rem;padding:10px;border-radius:10px;border:2px solid #d1d5db">
+      <button type="button" onclick="envoyerManager()" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:13px;font-size:1.05rem;font-weight:800;background:#06c755;color:#fff">💬 Envoyer sur LINE</button>
+    </div>
+    <details style="grid-column:1/-1;background:#fff;border-radius:16px;padding:12px 14px;margin-bottom:0;box-shadow:0 2px 10px rgba(0,0,0,.06);border-left:7px solid #06c755"><summary style="font-weight:800;font-size:1.05rem;cursor:pointer">👥 Accès manager (<span id="mgrN">…</span>) · retirer</summary><div id="mgrListe" style="margin-top:6px"></div></details>
     <a class="lien" href="patron-partage.html" style="--c:#db2777"><b>📣 Partager l'app</b><span>LINE · Messenger · TikTok · Instagram</span></a>
     <a class="lien" href="patron-reservations.html" style="--c:var(--blue)"><b>📝 Réservations</b><span>Nouvelles candidates</span></a>
     <a class="lien" href="patron-contacts.html" style="--c:var(--blue)"><b>📇 Contacts</b><span>Appeler, SMS, LINE · ajouter au répertoire</span></a>
@@ -59,15 +65,29 @@
 // 💬 lien manager PERSONNEL (une clé par personne) envoyé UNIQUEMENT par LINE · retirable dans « 👥 Accès manager »
 const MGR_URL='https://thainutscom-byte.github.io/Pointage-Staff/manager.html';
 async function mgrPost(o){ let t=(await (await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({type:'mgr'},o))})).text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } const j=JSON.parse(t); if(!j.ok) throw j.err||'x'; return j; }
+let MGR_L=[];   // accès déjà envoyés (pour marquer « déjà manager »)
+async function mgrChoix(){
+  const P=document.getElementById('mgrPick'), S=document.getElementById('mgrEmp');
+  if(P.style.display==='block'){ P.style.display='none'; return; }
+  P.style.display='block';
+  try{ let t=(await (await fetch(API+'?boss=1&pin=x&_='+Date.now())).text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} }
+    const j=JSON.parse(t), deja={}; MGR_L.filter(x=>x.actif).forEach(x=>deja[String(x.nom).trim().toLowerCase()]=1);
+    const L=(j.emps||[]).filter(e=>!e.bloque && !/^boss$/i.test(String(e.nom).trim())).sort((a,b)=>String(a.nom).localeCompare(String(b.nom)));
+    const vus={}; S.innerHTML='<option value="">— choisir l\'employée —</option>'+L.filter(e=>{ const k=String(e.nom).trim().toLowerCase(); if(vus[k]) return false; vus[k]=1; return true; })
+      .map(e=>'<option value="'+esc(e.nom)+'">'+esc(e.nom)+(e.tel?' · '+esc(e.tel):'')+(deja[String(e.nom).trim().toLowerCase()]?' — 🟢 a déjà l\'accès':'')+'</option>').join('')+'<option value="autre">✍️ Autre personne : taper le nom</option>';
+  }catch(e){ S.innerHTML='<option value="">⚠️ liste non chargée</option><option value="autre">✍️ Autre personne : taper le nom</option>'; }
+}
 async function envoyerManager(){
-  const nom=(prompt('Nom de la personne qui reçoit le lien manager ?\n(pour pouvoir lui retirer l\'accès plus tard)')||'').trim(); if(!nom) return;
-  try{ const j=await mgrPost({op:'new',nom}); mgrDessiner(j.liste);
-    const t='🧑‍💼 Fiche manager · '+nom+'\nHappy Hour · รับสมัคร · ทดลองงาน · ที่ว่าง · การจอง\n'+MGR_URL+'?k='+j.k;
+  const S=document.getElementById('mgrEmp'), nom=(S.value==='autre'?document.getElementById('mgrAutre').value:S.value).trim();
+  if(!nom){ alert('Choisissez l\'employée'); return; }
+  try{ const j=await mgrPost({op:'new',nom}); mgrDessiner(j.liste); document.getElementById('mgrPick').style.display='none';
+    const t='🧑‍💼 หน้าผู้จัดการ · '+nom+'\nแฮปปี้ฮาวร์ · รับสมัคร · ทดลองงาน · ที่ว่าง · การจอง\n'+MGR_URL+'?k='+j.k;
     location.href='https://line.me/R/share?text='+encodeURIComponent(t);
   }catch(e){ alert('❌ Pas fait — réessayez (script Autorisation à jour sur Google ?)'); }
 }
 const jjhm=t=>{ if(!t) return '—'; const d=new Date(+t); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
 function mgrDessiner(L){
+  MGR_L=L;
   const Z=document.getElementById('mgrListe'); document.getElementById('mgrN').textContent=L.filter(x=>x.actif).length;
   Z.innerHTML=L.length ? L.map(x=>'<div style="border-top:1px solid #e5e7eb;padding:10px 0;display:flex;gap:8px;align-items:center"><div style="flex:1;min-width:0"><b style="'+(x.actif?'':'color:#9ca3af;text-decoration:line-through')+'">'+esc(x.nom)+'</b> '+(x.actif?'<span style="color:#16a34a;font-weight:700">🟢 accès</span>':'<span style="color:#dc2626;font-weight:700">⛔ retiré</span>')+'<div style="font-size:.78rem;color:#6b7280">envoyé '+jjhm(x.cree)+' · ouvert '+jjhm(x.vu)+'</div></div>'
       +(x.actif?'<button data-op="retirer" data-k="'+x.k+'" style="border:none;background:#dc2626;color:#fff;border-radius:10px;padding:9px 10px;font-weight:800">🚫 Retirer</button>'
