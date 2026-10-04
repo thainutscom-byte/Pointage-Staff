@@ -405,7 +405,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <details id="ficheBox"><summary style="font-weight:900;font-size:1.05rem;cursor:pointer;padding:6px 0;">👤 ข้อมูลของฉัน · สัญญา · ช่วงเวลา</summary>
     <div class="field"><label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label><input id="name" placeholder="เช่น Noi, Ploy, Mint" autocapitalize="words" autocomplete="off" oninput="checkNameEn()"><div id="nameWarn" class="small" style="display:none;color:var(--red);font-weight:700;margin-top:4px;">⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z) เท่านั้น</div></div>
     <div class="field"><label>เบอร์โทรศัพท์</label><input id="phone" placeholder="0X XXX XXXX"></div>
-    <div class="field"><label>💬 LINE ID <span style="font-weight:400;font-size:.8rem;">(หัวหน้าใช้ติดต่อคุณทาง LINE)</span></label><div style="display:flex;gap:8px;"><input id="lineId" placeholder="เช่น noi.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" onchange="lineIdSave()" style="flex:1;min-width:0;"><button type="button" onclick="lineIdSave(true)" style="border:none;border-radius:10px;padding:0 14px;font-weight:800;background:#06c755;color:#fff;">✅ ยืนยัน</button></div><div id="lineIdMsg" class="small" style="margin-top:4px;"></div></div>
+    <div class="field"><label>💬 LINE ID <span style="font-weight:400;font-size:.8rem;">(หัวหน้าใช้ติดต่อคุณทาง LINE)</span></label><div style="display:flex;gap:8px;"><input id="lineId" placeholder="เช่น noi.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" onchange="lineIdSave()" style="flex:1;min-width:0;"><button type="button" onclick="lineIdSave(true)" style="border:none;border-radius:10px;padding:0 14px;font-weight:800;background:#06c755;color:#fff;">✅ ยืนยัน</button></div><div id="lineIdMsg" class="small" style="margin-top:4px;"></div><button type="button" onclick="lineAmi()" style="width:100%;margin-top:8px;border:2px solid #06c755;background:#f0fdf4;color:#047857;border-radius:12px;padding:10px;font-weight:800;">➕ เพิ่มเพื่อน LINE ร้าน (รับข้อความจากร้าน)</button><div class="small" style="margin-top:4px;color:var(--muted);">แล้วส่ง <b>เบอร์โทรของคุณ</b> ในแชทของร้าน 1 ครั้ง</div></div>
     <div class="field">
       <label>QR Code ธนาคาร (พร้อมเพย์)</label>
       <div><label class="fileBtn"><input type="file" accept="image/*" id="qrFile" style="display:none" onchange="handleQrUpload(event); fileName(this)">📷 เลือกรูป QR Code</label><span class="fileName small">ยังไม่ได้เลือกไฟล์</span></div>
@@ -2718,6 +2718,15 @@ async function lineIdSave(force){
 }
 setTimeout(()=>{ try{ const o=JSON.parse(localStorage.getItem(lineIdCle())||'null'); const el=document.getElementById('lineId'); if(o && el && !el.value){ el.value=o.v; if(!o.ok) lineIdSave(true); } }catch(e){} }, 1500);
 
+// ➕ ajouter le compte officiel LINE du salon en ami → elle envoie son numéro → messages personnels (oubli de pointer…)
+async function lineAmi(){
+  let u=''; try{ const j=JSON.parse(await readTxt(await fetch(SHEET_URL+'?lineami=1&_='+Date.now()))); if(j.ok) u=j.url; }catch(e){}
+  if(!u){ alert('⚠️ ยังไม่พร้อม — แจ้งหัวหน้า'); return; }
+  const t=(document.getElementById('phone').value||'').replace(/\D/g,'');
+  if(t){ try{ await navigator.clipboard.writeText(t); }catch(e){} }
+  alert('📲 LINE จะเปิด → กด “เพิ่มเพื่อน”\nแล้วส่งเบอร์โทรของคุณในแชท'+(t?'\n('+t+' — คัดลอกแล้ว วางได้เลย)':''));
+  location.href=u;
+}
 // ===== 🤒 / ❌ LIEN DU GROUPE LINE (retard) : ?absence=malade → certificat médical · ?absence=absent → absence du jour =====
 setTimeout(()=>{ try{
   const a=new URLSearchParams(location.search).get('absence'); if(!/^(malade|absent)$/.test(a||'')) return;
