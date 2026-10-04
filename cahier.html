@@ -194,6 +194,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     <div class="hd-r">
       <a class="icon-btn" href="./" style="text-decoration:none;color:inherit">🏠 กลับ</a>
       <button class="icon-btn" id="btnRefresh" type="button">🔄 อัปเดต</button>
+      <button class="icon-btn" id="btnSuppr" type="button" style="color:var(--busy)">❌ ยกเลิกนวด</button>
       <button class="icon-btn demobtn" id="btnDemo" type="button">🧪 ฝึก</button>
       <span class="sync" id="sync"></span>
       <span class="clock" id="clock">--:--</span>
@@ -302,6 +303,14 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     <div class="air-s" id="pickS"></div>
     <div class="chips" id="pickC" style="justify-content:center"></div>
     <button class="cancel" type="button" id="pickX">ยกเลิก</button>
+  </div>
+</div>
+<div class="air" id="suppr" hidden role="dialog" aria-modal="true" aria-labelledby="supT">
+  <div class="air-box" style="border-color:var(--busy);max-height:88vh;overflow:auto;text-align:left">
+    <div class="air-t" id="supT" style="font-size:1.35rem;color:var(--busy);text-align:center">❌ ยกเลิกการนวด</div>
+    <div class="air-s" style="text-align:center">แตะการนวดที่ต้องการยกเลิก · ต้องใช้รหัสหัวหน้า</div>
+    <div id="supL" style="display:grid;gap:8px"></div>
+    <button class="cancel" type="button" id="supX">ปิด</button>
   </div>
 </div>
 <div class="air" id="annul" hidden role="dialog" aria-modal="true" aria-labelledby="annT">
@@ -865,6 +874,28 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   function drawAnn(){ $('annC').innerHTML=RAISONS.map(x=>chip(x[0]==='autre'?'อื่นๆ':x[0],'',annRaison===x[0],false,'data-r="'+esc(x[0])+'"',x[1])).join(''); $('annTxt').hidden=annRaison!=='autre'; }
   $('annC').onclick=e=>{ const c=e.target.closest('button'); if(!c) return; annRaison=c.dataset.r; drawAnn(); };
   $('annX').onclick=()=>{ $('annul').hidden=true; };
+  // ❌ ANNULER UN MASSAGE (tous les téléphones) : liste des massages du jour → code 140963 → annulé partout (chambre libérée, plus compté)
+  const CODE_SUPPR='140963';
+  function supDessiner(){
+    const L=S.rows.filter(r=>!annule(r)).slice().sort((a,b)=>b.n-a.n);
+    $('supL').innerHTML=L.length ? L.map(r=>'<button type="button" data-sup="'+r.n+'" style="display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:14px;padding:12px;font:inherit;cursor:pointer">'
+        +'<b style="font-size:1.2rem;min-width:44px">#'+r.n+'</b><span style="flex:1;min-width:0"><b>'+r.names.map(esc).join(' + ')+'</b><br><span style="color:var(--muted);font-size:.9rem">▶ '+hm(r.start)+(r.end?' → '+hm(r.end):' · 🔴 กำลังนวด')+' · '+(dehors(r)?'นอกร้าน':'ห้อง '+r.room)+' · '+massTxt(r)+'</span></span><span style="font-size:1.3rem">🗑️</span></button>').join('')
+      : '<div style="text-align:center;color:var(--muted);padding:12px">ยังไม่มีการนวดวันนี้</div>';
+  }
+  $('btnSuppr').onclick=async()=>{ if(!DEMO){ try{ await chargerJour(); }catch(e){} } supDessiner(); $('suppr').hidden=false; };
+  $('supX').onclick=()=>{ $('suppr').hidden=true; };
+  $('supL').addEventListener('click',e=>{
+    const b=e.target.closest('button[data-sup]'); if(!b) return;
+    const n=+b.dataset.sup, r=S.rows.find(x=>x.n===n); if(!r || annule(r)) return;
+    $('suppr').hidden=true;
+    demanderCode('❌ ยกเลิก #'+n+' · '+r.names.join(' + '), 'รหัสหัวหน้า (6 หลัก)', v=>v===CODE_SUPPR, 6).then(ok=>{
+      if(!ok){ $('suppr').hidden=false; return; }
+      const enCours=!r.end; if(enCours) r.end=Date.now();
+      r.annul={etat:'ok', raison:'ยกเลิกโดยหัวหน้า', par:'👑', t:Date.now(), ok:Date.now()};
+      save(); draw(); if(!$('form').hidden) drawForm();
+      toast('❌ #'+n+' ยกเลิกแล้ว'+(enCours && !dehors(r)?' · ห้อง '+r.room+' ว่าง':''));
+    });
+  });
   $('addNX').onclick=()=>{ $('addN').hidden=true; };
   $('addNOk').onclick=()=>{ const v=($('addNIn').value||'').trim().replace(/\s+/g,' ');
     if(!/^[A-Za-z\u0E00-\u0E7F][A-Za-z\u0E00-\u0E7F .'-]{0,29}$/.test(v)){ toast('⚠️ ชื่อเล่น (A-Z)'); return; }
