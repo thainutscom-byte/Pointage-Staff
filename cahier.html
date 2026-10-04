@@ -450,14 +450,26 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       const q=lsG('cahier_file',{}), sent=lsG('cahier_envoye',{});
       for(const id of Object.keys(q)){
         const it=q[id];
-        try{ const t=await lireTxt(await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(it)})); if(t.indexOf('"ok":1')<0) break; }catch(e){ break; }
+        try{ const t=await lireTxt(await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(it)}));
+          if(t.indexOf('"occupee"')>=0){ let o={}; try{ o=JSON.parse(t).occupee||{}; }catch(z){}
+            refusChambre(it, o); const q3=lsG('cahier_file',{}); delete q3[id]; lsS('cahier_file',q3); continue; }
+          if(t.indexOf('"ok":1')<0) break; }catch(e){ break; }
         sent[id]=it.op==='row'?JSON.stringify(it.row):'1';
         const q2=lsG('cahier_file',{}); if(q2[id] && JSON.stringify(q2[id])===JSON.stringify(it)) delete q2[id]; lsS('cahier_file',q2); lsS('cahier_envoye',sent);
       }
     } finally { envoiEnCours=false; etatSync(); }
   }
+  // ⛔ une autre fille a pris la chambre juste avant (vu par Google) → ce massage est retiré de ce téléphone
+  function refusChambre(it, o){
+    const r=S.rows.find(x=>cle(x)===it.id); if(!r) return;
+    S.rows=S.rows.filter(x=>x!==r); lsS('cahier_'+JOUR,S);
+    setTimeout(()=>{ chargerJour(); alert('⛔ ห้อง '+(o.room||r.room)+' มีคนอยู่แล้ว'+(o.names&&o.names.length?' ('+o.names.join(' + ')+')':'')+'\n\nการนวด #'+r.n+' ของ '+r.names.join(' + ')+' ถูกยกเลิก\nกรุณาเลือกห้องอื่น'); },50);
+    draw();
+  }
   function etatSync(){ const n=Object.keys(lsG('cahier_file',{})).length, el=$('sync'); if(!el) return;
-    el.textContent=DEMO?'':n?'📶 รอส่ง '+n:'☁️ บันทึกแล้ว'; el.className='sync'+(n?' wait':''); }
+    const age=Date.now()-(window.__majOk||0), vieux=!DEMO && age>45000;
+    el.textContent=DEMO?'':(n?'📶 รอส่ง '+n:'☁️ บันทึกแล้ว')+(vieux?' · ⚠️ ไม่ได้อัปเดต':' · 🔄 '+hm(window.__majOk||Date.now()));
+    el.className='sync'+(n||vieux?' wait':''); el.style.color=vieux?'#dc2626':''; }
   // filles du jour + rechargement du cahier si la tablette l'a perdu
   // ☁️ fusion : massages et caisse venus des autres appareils → ajoutés / mis à jour (la modification la plus récente gagne)
   function fusionner(cible, rowsG, evG){
@@ -482,10 +494,13 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     }
     return chg;
   }
-  async function chargerJour(){
+  let chargeEnCours=null;
+  function chargerJour(){ if(!chargeEnCours) chargeEnCours=chargerJour0().finally(()=>{ chargeEnCours=null; }); return chargeEnCours; }
+  async function chargerJour0(){
     try{
       const t=await lireTxt(await fetch(SHEET_URL+'?cahtab=1&d='+JOUR+'&_='+Date.now())); if(t[0]!=='{') return;
       const j=JSON.parse(t); if(!j.ok) return;
+      window.__majOk=Date.now(); etatSync();
       lsS('cahier_staff_'+JOUR,j.staff||[]);
       if(j.hh && !DEMO){ HHF=j.hh; lsS('cahier_hhf',HHF); majHH(); }
       if(!DEMO){ STAFF=(j.staff||[]).map(x=>x.n); HASH={}; SHIFT={}; (j.staff||[]).forEach(x=>{ HASH[x.n]=x.h; SHIFT[x.n]=x.s||''; }); FINS=j.fins||[]; lsS('cahier_fins_'+JOUR,FINS);
@@ -617,16 +632,20 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
     if(b.dataset.ref){ F.ref=b.dataset.ref; }
     if(b.dataset.name||b.dataset.room||b.dataset.special||b.dataset.qty||b.dataset.pay||b.dataset.ref) drawForm();
   });
-  $('start').onclick=()=>{
+  $('start').onclick=async()=>{
     const T=typ(F.type); if(T[4]) F.room=null;
-    if(!T[4] && roomOf(F.room)){ toast('⛔ ห้อง '+F.room+' มีคนอยู่แล้ว'); drawForm(); return; }
+    const bs=$('start'); if(bs.dataset.att) return;
+    if(!T[4] && !DEMO){ bs.dataset.att='1'; const t0=bs.textContent; bs.textContent='⏳ ตรวจห้อง…';     // 🔄 dernière version des autres téléphones (6 s max)
+      try{ await Promise.race([chargerJour(), new Promise(r=>setTimeout(r,6000))]); }catch(e){}
+      delete bs.dataset.att; bs.textContent=t0; }
+    if(!T[4] && roomOf(F.room)){ const o=roomOf(F.room); toast('⛔ ห้อง '+F.room+' มีคนอยู่แล้ว ('+o.names.join(' + ')+')'); closeForm(); draw(); return; }
     const n=S.rows.reduce((m,r)=>Math.max(m,r.n),0)+1;
     S.rows.push({n,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),hh:hhNow(),names:F.names.slice(),start:Date.now(),end:null,room:F.room,type:F.type,qty:F.qty,pay:null,ref:F.ref});
     save(); closeForm(); draw(); toast('▶️ #'+n+' · '+F.names.join(' + ')+' · '+(T[4]?'นอกร้าน':'ห้อง '+F.room)+' · '+TH[F.type]+' · OP'+F.qty+' · เริ่ม '+hm(Date.now()));
   };
   document.addEventListener('click',e=>{
     const b=e.target.closest('button'); if(!b) return;
-    if(b.dataset.go){ openForm(+b.dataset.go); return; }
+    if(b.dataset.go){ const k=+b.dataset.go; openForm(k); if(!DEMO) chargerJour().then(()=>{ if(!$('form').hidden && F.room===k && roomOf(k)){ closeForm(); draw(); toast('⛔ ห้อง '+k+' มีคนอยู่แล้ว ('+roomOf(k).names.join(' + ')+')'); } }); return; }
     if(b.dataset.fin){ const n=+b.dataset.fin;
       // ⏹ sur la carte de la chambre : 1 seule touche → la chambre est libérée tout de suite
       if(!b.classList.contains('fin') && armed!=='f'+n){ armed='f'+n; b.textContent='แตะอีกครั้ง ✔'; setTimeout(()=>{ if(armed==='f'+n){ armed=null; draw(); } },4000); return; }
@@ -849,7 +868,10 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   $('pickX').onclick=()=>{ $('pick').hidden=true; };
   $('btnDemo').onclick=entrerDemo; $('demoOut').onclick=sortirDemo;
   setInterval(envoyer,30000); setTimeout(envoyer,2000);
-  setTimeout(chargerJour,500); setInterval(chargerJour,30000);   // toutes les 30 s : les autres appareils
+  // 🔄 les autres téléphones : toutes les 10 s quand l'écran est allumé + tout de suite quand on revient sur la page
+  setTimeout(chargerJour,300); setInterval(()=>{ if(!document.hidden) chargerJour(); },10000); setInterval(etatSync,5000);
+  ['focus','pageshow','online'].forEach(ev=>window.addEventListener(ev,()=>{ chargerJour(); envoyer(); }));
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ chargerJour(); envoyer(); } });
   $('btnRefresh').onclick=async()=>{ $('btnRefresh').disabled=true; try{ await envoyer(); await chargerJour(); toast('🔄 อัปเดตแล้ว '+hm(Date.now())); }finally{ $('btnRefresh').disabled=false; } };
   setInterval(()=>{ const j=jourIso(); if(j!==JOUR && !DEMO){ JOUR=j; S=charger(); STAFF=[]; HASH={}; FINS=[]; ['cashPanel','bossPanel','setPanel','form'].forEach(id=>$(id).hidden=true); draw(); chargerJour(); toast('📅 วันใหม่ '+jourFr(JOUR)); } },60000);
   function tick(){ $('clock').textContent=hm(Date.now()); }
