@@ -340,6 +340,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     <div id="plReste" style="font-size:2.4rem;font-weight:800;color:#34d399;letter-spacing:1px;"></div>
     <div id="plInfo" style="font-size:.9rem;color:#9ca3af;margin-top:10px;line-height:1.6;"></div>
     <a href="cahier.html?paie=1" style="display:block;margin:12px 0 0;text-decoration:none;background:#f59e0b;color:#111;font-weight:900;font-size:1.1rem;padding:15px;border-radius:14px;text-align:center;">💰 จ่ายเงิน · แคชเชียร์</a>
+    <button type="button" id="plRestart" onclick="plRestart()" style="display:none;width:100%;margin-top:12px;border:none;border-radius:14px;padding:15px;font-size:1.1rem;font-weight:900;background:#16a34a;color:#fff;">🔄 เริ่มงานอีกครั้ง</button>
     <button type="button" onclick="plRouvrir()" style="margin-top:26px;border:2px solid #34d399;background:transparent;color:#34d399;font-weight:800;font-size:1rem;padding:12px 18px;border-radius:12px;">🔓 เปิดแอปอีกครั้ง (หัวหน้า)</button>
     <a href="https://line.me/R/ti/g/vJMkG2gVhz" target="_blank" rel="noopener" style="display:block;margin:16px auto 0;max-width:280px;text-decoration:none;background:#06c755;color:#fff;font-weight:800;padding:12px;border-radius:12px;">💬 เข้ากลุ่ม LINE พนักงาน</a>
     <div style="margin-top:18px;"><a href="#" onclick="bossMode();return false;" style="color:#6b7280;font-size:.85rem;text-decoration:none;">👑 หัวหน้า</a></div>
@@ -911,13 +912,21 @@ function infoManque(){
   if(!infoIdLu()) M.push('บัตรประชาชน (ส่งในกลุ่ม LINE)');
   return M;
 }
+// ⏳ 3 JOURS DE DÉLAI : la 1ʳᵉ fois qu'il manque un renseignement, l'app reste entièrement utilisable 3 jours ; ensuite ▶️ est bloqué
+const INFO_DELAI_J=3;
+function infoDelai(){   // → millisecondes restantes (0 = délai fini)
+  let t0=0; try{ t0=+localStorage.getItem('pointage_info_debut')||0; if(!t0){ t0=Date.now(); localStorage.setItem('pointage_info_debut', String(t0)); } }catch(e){ return INFO_DELAI_J*864e5; }
+  return Math.max(0, t0+INFO_DELAI_J*864e5-Date.now());
+}
 function infoExempt(){ const n=(document.getElementById('name').value||'').trim().toLowerCase(); return !!(window.__BOSS || window.__essai || n==='boss'); }
 function infoMaj(){
   try{
     const M=infoExempt()?[]:infoManque(), L=document.getElementById('infoListe'), B=document.getElementById('infoBan'), P=document.getElementById('infoPastille');
     const ok=x=>!M.includes(x), ligne=x=>(ok(x)?'✅ ':'❌ ')+x;
     if(L){ L.style.display=M.length?'block':'none'; L.innerHTML='<b>📋 ข้อมูลที่ต้องกรอก (บังคับ)</b><br>'+['ชื่อเล่น (ภาษาอังกฤษ)','เบอร์โทรศัพท์ (10 หลัก)','LINE ID','QR Code ธนาคาร','เข้ากลุ่ม LINE พนักงาน','บัตรประชาชน (ส่งในกลุ่ม LINE)'].map(ligne).join('<br>'); }
-    if(B){ B.style.display=M.length?'block':'none'; B.innerHTML='⚠️ ข้อมูลยังไม่ครบ — กดเริ่มงานไม่ได้<br><span style="font-weight:600;font-size:.9rem;">ขาด: '+M.join(' · ')+' · แตะที่นี่เพื่อกรอก</span>'; }
+    const reste=M.length?infoDelai():0, jr=Math.ceil(reste/864e5);
+    if(B){ B.style.display=M.length?'block':'none'; B.style.background=reste?'#fffbeb':'#fef2f2'; B.style.borderColor=reste?'#f59e0b':'var(--red)'; B.style.color=reste?'#92400e':'var(--red)';
+      B.innerHTML=(reste?'⏳ กรอกข้อมูลให้ครบภายใน '+jr+' วัน — ไม่อย่างนั้นจะกดเริ่มงานไม่ได้':'⚠️ ข้อมูลยังไม่ครบ — กดเริ่มงานไม่ได้')+'<br><span style="font-weight:600;font-size:.9rem;">ขาด: '+M.join(' · ')+' · แตะที่นี่เพื่อกรอก</span>'; }
     if(P) P.textContent=M.length?'❌ '+M.length:'✅';
     [['name',!ok('ชื่อเล่น (ภาษาอังกฤษ)')],['phone',!ok('เบอร์โทรศัพท์ (10 หลัก)')],['lineId',!ok('LINE ID')]].forEach(([id,bad])=>{ const e=document.getElementById(id); if(e) e.style.borderColor=bad?'var(--red)':''; });
     const g=document.getElementById('grpOk'); if(g && document.activeElement!==g) g.checked=infoGrpLu();
@@ -927,7 +936,7 @@ function infoMaj(){
 function infoOuvrir(){ const f=document.getElementById('ficheBox'); if(f){ f.open=true; setTimeout(()=>{ try{ f.scrollIntoView({behavior:'smooth'}); }catch(e){} },50); } }
 setInterval(infoMaj, 2000); setTimeout(infoMaj, 1200); document.addEventListener('input', ()=>setTimeout(infoMaj,50));
 async function startWork(btn){
-  { const M=infoExempt()?[]:infoManque(); if(M.length){ alert('⚠️ กรุณากรอกข้อมูลให้ครบก่อนเริ่มงาน:\n• '+M.join('\n• ')); infoOuvrir(); return; } }
+  { const M=infoExempt()?[]:infoManque(); if(M.length && !infoDelai()){ alert('⚠️ กรุณากรอกข้อมูลให้ครบก่อนเริ่มงาน:\n• '+M.join('\n• ')); infoOuvrir(); return; } }
   if(!nameIsEn()){ checkNameEn(); alert('⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z) ก่อนเริ่มงาน'); document.getElementById('name').focus(); return; }
   // plus de selfie : l'heure d'arrivée est validée par la position GPS (au salon)
   const day=btn.closest('.day');
@@ -2126,8 +2135,18 @@ function plPre(on, e){
     plPreCaches.forEach(([c,d])=>c.style.display=d); plPreCaches=null; if(note) note.remove();
   }
 }
+// 🔄 app fermée après « ⏹️ เลิกงาน » : la fille peut recommencer (la journée n'est pas encore validée)
+function plRestart(){
+  try{ localStorage.removeItem('pointage_depart'); }catch(e){}
+  plVerifier();
+  const d=tbJour(); if(!d || (d.dataset.locked==='1' && !jourAuj(d))){ alert('🔒 วันนี้ยืนยันแล้ว — ขอให้หัวหน้าเปิดวันทำงานอีกครั้ง'); return; }
+  if(document.getElementById('plageGate').style.display==='block'){ alert('⏰ หมดเวลาทำงานของวันนี้แล้ว'); return; }
+  reStart(d);
+}
 function plVerifier(){
   plAutoValider();
+  { const b=document.getElementById('plRestart'); if(b){ let dep=null; try{ dep=JSON.parse(localStorage.getItem('pointage_depart')||'null'); }catch(e){}
+      const d=tbJour(); b.style.display=(dep && dep.d===isoD(workToday()) && d && (d.dataset.locked!=='1' || jourAuj(d)))?'block':'none'; } }
   const e=plEtat(), g=document.getElementById('plageGate'); if(!g) return;
   const rg=document.getElementById('renouvGate');
   if(e.fini){ if(g.style.display==='block') g.style.display='none'; plPre(false); rnMontrer(); return; }
@@ -2526,7 +2545,42 @@ function tbJour(){ const iso=isoD(workToday()); return [...document.querySelecto
 function tbStart(){ const d=tbJour(); if(!d){ alert('📅 วันนี้ไม่อยู่ในสัญญาของคุณ'); return; }
   if(d.querySelector('.arrival').value && !stRecu(d)){ const s1=document.getElementById('tbStartBtn'); s1.textContent='⏳ กำลังส่ง…'; s1.disabled=true;   // pas encore reçu par Google → on renvoie
     startValider(d,false).then(ok=>{ tbMaj(); if(!ok) alert('❌ ส่งเวลาเริ่มงานไม่ได้ — ตรวจอินเทอร์เน็ต แล้วกดอีกครั้ง'); }); return; }
+  if(d.querySelector('.arrival').value){ reStart(d); return; }          // déjà commencé → « 🔄 เริ่มงานอีกครั้ง »
   const b=d.querySelector('button[onclick^="startWork"]'); if(b && !b.disabled) startWork(b); setTimeout(tbMaj,800); }
+// 🔄 RÉACTIVER « ▶️ เริ่มงาน » : nouvelle heure d'arrivée = maintenant (au salon), la journée continue (« เลิกงาน » effacé)
+// 🔓 journée d'AUJOURD'HUI déjà validée (« ✅ ยืนยันและเลิกงาน ») : elle peut la rouvrir elle-même pour recommencer
+function jourAuj(d){ try{ const dd=dayDate(+d.dataset.d); return !!dd && isoD(dd)===isoD(workToday()); }catch(e){ return false; } }
+function deverrouillerJour(d){
+  const q=s=>d.querySelector(s);
+  d.dataset.locked='0';
+  d.querySelectorAll('input,button').forEach(x=>{ if(!x.classList.contains('selfieInput') && !x.classList.contains('justFile')) x.disabled=false; });
+  const lb=q('button[onclick^="lockDay"]'); if(lb) lb.style.display='';
+  q('.lockedTag').style.display='none';
+  d.classList.remove('pastDay'); d.style.display='';
+  try{ q('.dayBody').style.display='block'; q('.daySummary').style.display='none'; const ar=q('.dayArrow'); if(ar) ar.textContent='▼'; }catch(e){}
+  try{ applyFreeze(); }catch(e){}
+}
+async function reStart(d){
+  if(d.dataset.locked==='1' && !jourAuj(d)){ alert('🔒 วันนี้ยืนยันแล้ว — ขอให้หัวหน้าเปิดวันทำงานอีกครั้ง'); return; }
+  const avant=d.querySelector('.arrival').value, hm=fmtHM(new Date());
+  if(!confirm('🔄 เริ่มงานอีกครั้ง?\n\nเวลาเริ่มงานเดิม '+avant+' → เวลาใหม่ '+hm+'\n(ถ้าเลยเวลาเริ่มงาน อาจนับเป็นมาสาย)')) return;
+  const s1=document.getElementById('tbStartBtn'); s1.disabled=true; s1.textContent='📍 …';
+  try{
+    if(!(await gpsAuSalon())){ tbMaj(); return; }
+    if(d.dataset.locked==='1') deverrouillerJour(d);
+    d.querySelector('.arrival').value=hm;
+    const fb=d.querySelector('button[onclick^="finishWork"]'); if(fb){ fb.disabled=false; fb.textContent='⏹️ เลิกงาน'; }
+    d.querySelector('.finish').value='';
+    try{ const dep=JSON.parse(localStorage.getItem('pointage_depart')||'null'); if(dep && dep.d===isoD(workToday())) localStorage.removeItem('pointage_depart'); }catch(e){}
+    const sb=d.querySelector('button[onclick^="startWork"]'); if(sb){ sb.disabled=true; sb.textContent='✅ เริ่มงาน '+hm; }
+    try{ const st=startPayload(d), L=startLus(); if(st){ delete L[st.id]; localStorage.setItem('sheet_start_v1', JSON.stringify(L)); } }catch(e){}
+    calc(); saveState(); startConfAff(d);
+    try{ appScan('🔄 เริ่มงานอีกครั้ง '+avant+' → '+hm); }catch(e){}
+    // 🗒️ le cahier ne la montre plus « 🏁 จบงานแล้ว » (heure de fin effacée)
+    try{ const nom=(document.getElementById('name').value||'').trim(); if(nom) fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'cahier',op:'fin',d:isoD(workToday()),name:nom,h:''})}).catch(()=>{}); }catch(e){}
+    const ok=await startValider(d,false); if(!ok) alert('📶 ส่งเวลาไม่ได้ — แอปจะส่งให้อัตโนมัติเมื่อมีอินเทอร์เน็ต');
+  } finally { tbMaj(); }
+}
 // ▶️ l'heure d'arrivée est-elle bien arrivée dans Google ?
 function stRecu(d){ try{ const st=startPayload(d); return !st || !!startLus()[st.id]; }catch(e){ return true; } }
 // 🔁 heure d'arrivée pas reçue par Google (réseau coupé, Google lent) → renvoyée toute seule toutes les 20 s, au retour du réseau et à l'ouverture
@@ -2565,7 +2619,8 @@ function tbMaj(){
   const arr=d.querySelector('.arrival').value, fin=fini?(d.querySelector('.finish').value||'✔'):'', s1=document.getElementById('tbStartBtn'), s2=document.getElementById('tbFinBtn');
   // ✅ vert seulement quand Google a bien reçu l'heure d'arrivée · sinon orange « ⏳ กำลังส่ง » (renvoyé tout seul, ou toucher pour renvoyer)
   const recu=arr && stRecu(d);
-  s1.textContent=!arr?'▶️ เริ่มงาน':recu?'✅ เริ่มงาน '+arr:'⏳ เริ่มงาน '+arr+' · กำลังส่ง'; s1.disabled=!!recu; s1.style.opacity=recu?.6:1; s1.style.background=arr&&!recu?'#f59e0b':'#16a34a';
+  const verrou=d.dataset.locked==='1' && !jourAuj(d);   // aujourd'hui : même validée, elle peut recommencer
+  s1.innerHTML=!arr?'▶️ เริ่มงาน':recu?'✅ เริ่มงาน '+arr+(verrou?'':'<br><span style="font-size:.75rem;font-weight:700;">🔄 แตะเพื่อเริ่มใหม่</span>'):'⏳ เริ่มงาน '+arr+' · กำลังส่ง'; s1.disabled=!!(recu && verrou); s1.style.opacity=recu?.75:1; s1.style.background=arr&&!recu?'#f59e0b':'#16a34a';
   s2.textContent=fin?'✅ เลิกงาน '+fin:'⏹️ เลิกงาน'; s2.disabled=!!fin || !arr; s2.style.opacity=(fin||!arr)?.6:1; s2.style.background=arr&&!fin?'#dc2626':'#6b7280';
   const v=sel=>+(d.querySelector(sel).value||0), box=(l,n,c)=>'<div style="border-radius:10px;padding:8px 2px;background:'+c+';"><div class="small" style="font-weight:700;">'+l+'</div><div style="font-size:1.4rem;font-weight:900;">'+n+'</div></div>';
   // 👭 massage à 2 filles = 0.5 massage pour chacune (2 เลดี้ et แฮปปี้ฮาวร์)
