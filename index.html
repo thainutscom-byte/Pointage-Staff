@@ -388,6 +388,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
   </div>
   
   </div>
+  <div id="infoBan" onclick="infoOuvrir()" style="display:none;background:#fef2f2;border:2px solid var(--red);color:var(--red);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-weight:800;text-align:center;cursor:pointer;line-height:1.5;"></div>
   <!-- 🕐 choix du créneau juste sous ▶️ เริ่มงาน / ⏹️ เลิกงาน (copie du choix de la fiche, mêmes règles) -->
   <div id="horTopBox" class="card" style="padding:10px 12px;margin-bottom:12px;display:none;">
     <label for="horTop" style="display:block;font-weight:800;margin-bottom:6px;">🕐 ช่วงเวลาทำงานของฉัน</label>
@@ -411,7 +412,8 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       <div id="nextInfo" class="small" style="font-weight:700;margin-top:4px;"></div>
       <div class="small" style="color:var(--text);margin-top:4px;">📄 ส่ง PDF ให้หัวหน้าก่อน แล้วกด 🗑️ รอบใหม่</div>
     </div>
-    <details id="ficheBox"><summary style="font-weight:900;font-size:1.05rem;cursor:pointer;padding:6px 0;">👤 ข้อมูลของฉัน · สัญญา · ช่วงเวลา</summary>
+    <details id="ficheBox"><summary style="font-weight:900;font-size:1.05rem;cursor:pointer;padding:6px 0;">👤 ข้อมูลของฉัน · สัญญา · ช่วงเวลา <span id="infoPastille"></span></summary>
+    <div id="infoListe" style="display:none;background:#fef2f2;border:2px solid var(--red);border-radius:12px;padding:10px 12px;margin-bottom:10px;line-height:1.7;"></div>
     <div class="field"><label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label><input id="name" placeholder="เช่น Noi, Ploy, Mint" autocapitalize="words" autocomplete="off" oninput="checkNameEn()"><div id="nameWarn" class="small" style="display:none;color:var(--red);font-weight:700;margin-top:4px;">⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z) เท่านั้น</div></div>
     <div class="field"><label>เบอร์โทรศัพท์</label><input id="phone" placeholder="0X XXX XXXX"></div>
     <div class="field"><label>💬 LINE ID <span style="font-weight:400;font-size:.8rem;">(หัวหน้าใช้ติดต่อคุณทาง LINE)</span></label><div style="display:flex;gap:8px;"><input id="lineId" placeholder="เช่น noi.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" onchange="lineIdSave()" style="flex:1;min-width:0;"><button type="button" onclick="lineIdSave(true)" style="border:none;border-radius:10px;padding:0 14px;font-weight:800;background:#06c755;color:#fff;">✅ ยืนยัน</button></div><div id="lineIdMsg" class="small" style="margin-top:4px;"></div><button type="button" onclick="lineAmi()" style="width:100%;margin-top:8px;border:2px solid #06c755;background:#f0fdf4;color:#047857;border-radius:12px;padding:10px;font-weight:800;">➕ เพิ่มเพื่อน LINE ร้าน (รับข้อความจากร้าน)</button><div class="small" style="margin-top:4px;color:var(--muted);">แล้วส่ง <b>เบอร์โทรของคุณ</b> ในแชทของร้าน 1 ครั้ง</div></div>
@@ -421,6 +423,14 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
       <div style="text-align:center;margin-top:6px;">
         <img id="qrPreview" style="max-width:140px;display:none;border-radius:8px;border:1px solid var(--border);">
       </div>
+    </div>
+    <div class="field"><label>🪪 บัตรประชาชน (บังคับ) <span style="font-weight:400;font-size:.8rem;">ถ่ายรูปแล้วส่งในกลุ่ม LINE</span></label>
+      <label class="fileBtn" style="display:block;text-align:center;"><input type="file" accept="image/*" capture="environment" id="idFile" style="display:none" onchange="idPhoto(this)">📷 ถ่ายรูปบัตรประชาชน → ส่งทาง LINE</label>
+      <div id="idMsg" class="small" style="margin-top:4px;font-weight:700;"></div>
+    </div>
+    <div class="field"><label>👥 กลุ่ม LINE พนักงาน</label>
+      <a href="https://line.me/R/ti/g/vJMkG2gVhz" target="_blank" rel="noopener" onclick="infoGroupe()" id="grpBtn" style="display:block;text-align:center;text-decoration:none;background:#06c755;color:#fff;padding:12px;border-radius:12px;font-weight:800;">💬 เข้ากลุ่ม LINE พนักงาน</a>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700;"><input type="checkbox" id="grpOk" onchange="infoGroupe(this.checked)" style="width:22px;height:22px;flex:none;"> ฉันเข้ากลุ่ม LINE พนักงานแล้ว</label>
     </div>
     <div class="row2">
       <div class="field"><label>ประเภทสัญญา</label>
@@ -871,7 +881,53 @@ async function bossSend(){
 }
 window.addEventListener('load',()=>setTimeout(bossCardUpdate,800)); setInterval(bossCardUpdate,60000);
 function checkNameEn(){ try{ bossCardUpdate(); }catch(e){} const v=(document.getElementById('name').value||'').trim(), w=document.getElementById('nameWarn'); if(w) w.style.display = (v && !nameIsEn()) ? 'block' : 'none'; }
+// ===== 📋 RENSEIGNEMENTS OBLIGATOIRES : nom, téléphone, LINE ID, QR Code banque, groupe LINE du staff =====
+// 🪪 pièce d'identité : photo prise → partagée directement dans LINE (la photo n'est PAS gardée dans l'app ni dans Google)
+function infoIdLu(){ try{ return !!localStorage.getItem('pointage_idcard'); }catch(e){ return false; } }
+async function idPhoto(inp){
+  const f=inp.files && inp.files[0], m=document.getElementById('idMsg'); if(!f) return; inp.value='';
+  const nom=(document.getElementById('name').value||'').trim(), tel=(document.getElementById('phone').value||'').trim(), txt='🪪 บัตรประชาชน · '+nom+(tel?' · '+tel:'');
+  const fait=()=>{ try{ localStorage.setItem('pointage_idcard', new Date().toISOString()); }catch(e){} m.style.color='var(--green)'; m.textContent='✅ ส่งบัตรประชาชนแล้ว'; infoMaj(); try{ appScan('🪪 pièce d\'identité envoyée sur LINE — '+nom+' '+tel); }catch(e){} };
+  const fichier=new File([f], 'id_'+(nom||'staff').replace(/[^A-Za-z0-9]/g,'')+'.jpg', {type:f.type||'image/jpeg'});
+  try{
+    if(navigator.canShare && navigator.canShare({files:[fichier]})){
+      m.style.color=''; m.textContent='📤 เลือก LINE → เลือกกลุ่ม LINE พนักงาน → ส่ง';
+      await navigator.share({files:[fichier], text:txt}); fait(); return; }
+  }catch(e){ if(e && e.name==='AbortError'){ m.style.color='var(--red)'; m.textContent='❌ ยังไม่ได้ส่ง — กดอีกครั้ง'; return; } }
+  // téléphone sans partage de fichiers : la photo est enregistrée, puis on l'envoie à la main dans le groupe
+  try{ const a=document.createElement('a'); a.href=URL.createObjectURL(fichier); a.download=fichier.name; document.body.appendChild(a); a.click(); a.remove(); }catch(e){}
+  if(confirm('📥 บันทึกรูปบัตรประชาชนในโทรศัพท์แล้ว\nเปิดกลุ่ม LINE พนักงาน แล้วส่งรูปนี้ในกลุ่ม\n\nส่งแล้วกด OK')) fait();
+  else { m.style.color='var(--red)'; m.textContent='❌ ยังไม่ได้ส่ง — กดอีกครั้ง'; }
+}
+function infoGrpLu(){ try{ return localStorage.getItem('pointage_grp')==='1'; }catch(e){ return false; } }
+function infoGroupe(v){ try{ localStorage.setItem('pointage_grp', v===false?'0':'1'); }catch(e){} const c=document.getElementById('grpOk'); if(c) c.checked=v!==false; infoMaj(); }
+function infoManque(){
+  const M=[], v=id=>(document.getElementById(id).value||'').trim();
+  if(!nameIsEn()) M.push('ชื่อเล่น (ภาษาอังกฤษ)');
+  if(!/^0\d{9}$/.test(v('phone').replace(/\D/g,''))) M.push('เบอร์โทรศัพท์ (10 หลัก)');
+  if(v('lineId').length<2) M.push('LINE ID');
+  if(!qrDataUrl) M.push('QR Code ธนาคาร');
+  if(!infoGrpLu()) M.push('เข้ากลุ่ม LINE พนักงาน');
+  if(!infoIdLu()) M.push('บัตรประชาชน (ส่งในกลุ่ม LINE)');
+  return M;
+}
+function infoExempt(){ const n=(document.getElementById('name').value||'').trim().toLowerCase(); return !!(window.__BOSS || window.__essai || n==='boss'); }
+function infoMaj(){
+  try{
+    const M=infoExempt()?[]:infoManque(), L=document.getElementById('infoListe'), B=document.getElementById('infoBan'), P=document.getElementById('infoPastille');
+    const ok=x=>!M.includes(x), ligne=x=>(ok(x)?'✅ ':'❌ ')+x;
+    if(L){ L.style.display=M.length?'block':'none'; L.innerHTML='<b>📋 ข้อมูลที่ต้องกรอก (บังคับ)</b><br>'+['ชื่อเล่น (ภาษาอังกฤษ)','เบอร์โทรศัพท์ (10 หลัก)','LINE ID','QR Code ธนาคาร','เข้ากลุ่ม LINE พนักงาน','บัตรประชาชน (ส่งในกลุ่ม LINE)'].map(ligne).join('<br>'); }
+    if(B){ B.style.display=M.length?'block':'none'; B.innerHTML='⚠️ ข้อมูลยังไม่ครบ — กดเริ่มงานไม่ได้<br><span style="font-weight:600;font-size:.9rem;">ขาด: '+M.join(' · ')+' · แตะที่นี่เพื่อกรอก</span>'; }
+    if(P) P.textContent=M.length?'❌ '+M.length:'✅';
+    [['name',!ok('ชื่อเล่น (ภาษาอังกฤษ)')],['phone',!ok('เบอร์โทรศัพท์ (10 หลัก)')],['lineId',!ok('LINE ID')]].forEach(([id,bad])=>{ const e=document.getElementById(id); if(e) e.style.borderColor=bad?'var(--red)':''; });
+    const g=document.getElementById('grpOk'); if(g && document.activeElement!==g) g.checked=infoGrpLu();
+    const im=document.getElementById('idMsg'); if(im && !im.textContent && infoIdLu()){ im.style.color='var(--green)'; im.textContent='✅ ส่งบัตรประชาชนแล้ว'; }
+  }catch(e){}
+}
+function infoOuvrir(){ const f=document.getElementById('ficheBox'); if(f){ f.open=true; setTimeout(()=>{ try{ f.scrollIntoView({behavior:'smooth'}); }catch(e){} },50); } }
+setInterval(infoMaj, 2000); setTimeout(infoMaj, 1200); document.addEventListener('input', ()=>setTimeout(infoMaj,50));
 async function startWork(btn){
+  { const M=infoExempt()?[]:infoManque(); if(M.length){ alert('⚠️ กรุณากรอกข้อมูลให้ครบก่อนเริ่มงาน:\n• '+M.join('\n• ')); infoOuvrir(); return; } }
   if(!nameIsEn()){ checkNameEn(); alert('⚠️ กรุณาเขียนชื่อเล่นเป็นภาษาอังกฤษ (A-Z) ก่อนเริ่มงาน'); document.getElementById('name').focus(); return; }
   // plus de selfie : l'heure d'arrivée est validée par la position GPS (au salon)
   const day=btn.closest('.day');
