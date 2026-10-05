@@ -910,7 +910,8 @@ async function startValider(day, auto){
   const b=B.querySelector('.startOk'); if(b){ if(b.disabled) return false; b.disabled=true; b.textContent='⏳ กำลังส่ง…'; }
   let ok=!!startLus()[st.id];
   if(!ok){
-    try{ const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(st)}); const t=await readTxt(r);
+    try{ const c=new AbortController(), tm=setTimeout(()=>c.abort(), 25000);
+         const r=await fetch(SHEET_URL,{method:'POST',body:JSON.stringify(st),signal:c.signal}); const t=await readTxt(r); clearTimeout(tm);
          if(r.ok && (t==='ok'||t==='blocked')){ const s0=startLus(); s0[st.id]=1; try{ localStorage.setItem('sheet_start_v1', JSON.stringify(s0)); }catch(e){} ok=true; }
          if(t==='blocked') setBlocked(true); }catch(e){}
   }
@@ -2441,7 +2442,17 @@ setInterval(massLecture,3000); setTimeout(massLecture,800);
 
 // ===== 🏠 EN HAUT DE L'APP : ▶️ เริ่มงาน / ⏹ เลิกงาน du jour · mes massages du jour (vérification) · ⚠️ erreur → autorisation du patron =====
 function tbJour(){ const iso=isoD(workToday()); return [...document.querySelectorAll('.day')].find(d=>{ const dd=dayDate(+d.dataset.d); return dd && isoD(dd)===iso; })||null; }
-function tbStart(){ const d=tbJour(); if(!d){ alert('📅 วันนี้ไม่อยู่ในสัญญาของคุณ'); return; } const b=d.querySelector('button[onclick^="startWork"]'); if(b && !b.disabled) startWork(b); setTimeout(tbMaj,800); }
+function tbStart(){ const d=tbJour(); if(!d){ alert('📅 วันนี้ไม่อยู่ในสัญญาของคุณ'); return; }
+  if(d.querySelector('.arrival').value && !stRecu(d)){ const s1=document.getElementById('tbStartBtn'); s1.textContent='⏳ กำลังส่ง…'; s1.disabled=true;   // pas encore reçu par Google → on renvoie
+    startValider(d,false).then(ok=>{ tbMaj(); if(!ok) alert('❌ ส่งเวลาเริ่มงานไม่ได้ — ตรวจอินเทอร์เน็ต แล้วกดอีกครั้ง'); }); return; }
+  const b=d.querySelector('button[onclick^="startWork"]'); if(b && !b.disabled) startWork(b); setTimeout(tbMaj,800); }
+// ▶️ l'heure d'arrivée est-elle bien arrivée dans Google ?
+function stRecu(d){ try{ const st=startPayload(d); return !st || !!startLus()[st.id]; }catch(e){ return true; } }
+// 🔁 heure d'arrivée pas reçue par Google (réseau coupé, Google lent) → renvoyée toute seule toutes les 20 s, au retour du réseau et à l'ouverture
+function stRenvoyer(){ try{ const d=tbJour(); if(!d || !d.querySelector('.arrival').value || stRecu(d) || window.__stEnv) return;
+  window.__stEnv=1; startValider(d,true).finally(()=>{ window.__stEnv=0; try{ tbMaj(); }catch(e){} }); }catch(e){} }
+setInterval(stRenvoyer, 20000); setTimeout(stRenvoyer, 4000);
+window.addEventListener('online', stRenvoyer); document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) stRenvoyer(); });
 // ▶️ ouverte depuis le cahier (« ลงเวลามาทำงานตอนนี้ ») : ?start=1 → l'heure d'arrivée est enregistrée tout de suite (GPS au salon)
 if(window.__START_AUTO) setTimeout(()=>{ try{ const d=tbJour(); if(d && !d.querySelector('.arrival').value) tbStart(); }catch(e){} }, 2500);
 function tbFin(){ const d=tbJour(); if(!d){ alert('📅 วันนี้ไม่อยู่ในสัญญาของคุณ'); return; }
@@ -2471,7 +2482,9 @@ function tbMaj(){
   const fb=d.querySelector('button[onclick^="finishWork"]'); let dep=null; try{ dep=JSON.parse(localStorage.getItem('pointage_depart')||'null'); }catch(e){}
   const fini=(fb && fb.disabled) || (dep && dep.d===isoD(workToday()));      // (la case « fin » contient l'heure prévue : pas un signe de départ)
   const arr=d.querySelector('.arrival').value, fin=fini?(d.querySelector('.finish').value||'✔'):'', s1=document.getElementById('tbStartBtn'), s2=document.getElementById('tbFinBtn');
-  s1.textContent=arr?'✅ เริ่มงาน '+arr:'▶️ เริ่มงาน'; s1.disabled=!!arr; s1.style.opacity=arr?.6:1;
+  // ✅ vert seulement quand Google a bien reçu l'heure d'arrivée · sinon orange « ⏳ กำลังส่ง » (renvoyé tout seul, ou toucher pour renvoyer)
+  const recu=arr && stRecu(d);
+  s1.textContent=!arr?'▶️ เริ่มงาน':recu?'✅ เริ่มงาน '+arr:'⏳ เริ่มงาน '+arr+' · กำลังส่ง'; s1.disabled=!!recu; s1.style.opacity=recu?.6:1; s1.style.background=arr&&!recu?'#f59e0b':'#16a34a';
   s2.textContent=fin?'✅ เลิกงาน '+fin:'⏹️ เลิกงาน'; s2.disabled=!!fin || !arr; s2.style.opacity=(fin||!arr)?.6:1; s2.style.background=arr&&!fin?'#dc2626':'#6b7280';
   const v=sel=>+(d.querySelector(sel).value||0), box=(l,n,c)=>'<div style="border-radius:10px;padding:8px 2px;background:'+c+';"><div class="small" style="font-weight:700;">'+l+'</div><div style="font-size:1.4rem;font-weight:900;">'+n+'</div></div>';
   // 👭 massage à 2 filles = 0.5 massage pour chacune (2 เลดี้ et แฮปปี้ฮาวร์)
