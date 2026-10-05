@@ -1102,5 +1102,14 @@ setInterval(function verifPointage(){
   }catch(e){}
 }, 3000);
 </script>
+<!-- 👆 TOUCHE TOUCHÉE : elle grossit + contour jaune un instant → on voit tout de suite que l'appui est pris en compte -->
+<style>.tapz{transform:scale(1.12)!important;box-shadow:0 0 0 4px #facc15,0 6px 18px rgba(0,0,0,.35)!important;transition:transform .08s ease-out,box-shadow .08s!important;filter:brightness(1.12)}</style>
+<script>(function(){
+  const SEL='button,a[href],a[onclick],.chip,[role="button"],label.btn,input[type="checkbox"],input[type="radio"],select';
+  function on(e){ const el=e.target && e.target.closest && e.target.closest(SEL); if(!el || el.disabled) return;
+    el.classList.add('tapz'); clearTimeout(el.__tapz); el.__tapz=setTimeout(()=>el.classList.remove('tapz'), 280); }
+  document.addEventListener('pointerdown', on, {passive:true, capture:true});
+  document.addEventListener('touchstart', ()=>{}, {passive:true});   // iPhone : active l'effet au toucher
+})();</script>
 </body>
 </html>
