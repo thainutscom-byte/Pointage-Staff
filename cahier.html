@@ -454,7 +454,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   const noms=()=>{ const L=STAFF.concat((S.extra||[]).filter(x=>!STAFF.some(y=>y.toLowerCase()===x.toLowerCase())));
     return L.concat(ESSAI.filter(x=>!L.some(y=>y.toLowerCase()===x.toLowerCase()))); };
   // ⏰ POINTAGE OBLIGATOIRE : une fille qui n'a pas fait « ▶️ เริ่มงาน » aujourd'hui ne peut pas être mise dans un massage
-  const pasPointe=n=>!DEMO && STAFF.length>0 && !ESSAI.includes(n) && !(S.extra||[]).includes(n) && !VENUES.has(String(n).toLowerCase());
+  const pasPointe=n=>false && !DEMO && STAFF.length>0 && !ESSAI.includes(n) && !(S.extra||[]).includes(n) && !VENUES.has(String(n).toLowerCase());
   const finie=n=>FINS.some(f=>String(f.n).trim().toLowerCase()===String(n).trim().toLowerCase());
 
   // ===== ☁️ ENREGISTREMENT DANS GOOGLE (onglets 🗒️ Cahier et 💰 Caisse) =====
@@ -1081,6 +1081,7 @@ try{ if('serviceWorker' in navigator && location.protocol==='https:') navigator.
 // ⏰ TÉLÉPHONE D'UNE FILLE QUI N'A PAS POINTÉ : le cahier reste bloqué tant qu'elle n'a pas fait « ▶️ เริ่มงาน » dans l'app
 //    (pas pour le patron, ni la tablette débloquée par le code 👑, ni les filles hors de la liste du jour)
 setInterval(function verifPointage(){
+  return;   // 🔓 désactivé : le cahier n'est plus bloqué si le pointage n'est pas reçu
   try{
     if(localStorage.getItem('pointage_patron')==='1' || localStorage.getItem('cahier_gps_libre')==='1') return;
     const o=JSON.parse(localStorage.getItem('pointage_ident')||'null'), moi=String((o&&o.name)||'').trim().toLowerCase(); if(!moi || moi==='boss') return;
