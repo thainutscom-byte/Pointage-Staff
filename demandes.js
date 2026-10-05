@@ -32,7 +32,7 @@
     const body = { type: 'demande', id: r.id, kind: r.kind, name: nom(), phone: tel(), contract: N === 10 ? 'Freelance 10 j' : 'Mensuel 30 j', shift: curShift(),
                    date: r.date || '', lim: r.lim || '', deb: r.deb || '', jours: r.jours || 0, fin: r.fin || '', dernier: r.dernier || '',
                    raison: r.raison || '', note: r.note || '', ref: r.ref || '' };
-    if (r.kind === 'maladie' || r.kind === 'certificat') { const day = dayDe(r.date); if (day && day.dataset.cert) { body.photo = day.dataset.cert; body.certAt = day.dataset.certAt || ''; body.retard = day.dataset.certLate === '1'; } }
+    if ((r.kind === 'maladie' || r.kind === 'certificat') && !r.memeCert) { const day = dayDe(r.date); if (day && day.dataset.cert) { body.photo = day.dataset.cert; body.certAt = day.dataset.certAt || ''; body.retard = day.dataset.certLate === '1'; } }
     try {
       const t = await readTxt(await fetch(SHEET_URL, { method: 'POST', body: JSON.stringify(body) }));
       return t.indexOf('"ok":1') >= 0;
@@ -57,7 +57,7 @@
   function lienLine(r) {
     const L = ['📨 ' + NOMS[r.kind] + ' / ' + FR[r.kind], '👤 ' + nom() + (tel() ? ' · ' + tel() : '')];
     if (r.kind === 'maladie') {
-      L.push('📅 ' + jourTh(isoVers(r.date)) + (curShift() ? ' (' + curShift() + ')' : ''));
+      L.push('📅 ' + jourTh(isoVers(r.date)) + (r.jours > 1 && r.fin ? ' → ' + jourTh(isoVers(r.fin)) + ' · 🗓️ ' + r.jours + ' วัน / jours' : '') + (curShift() ? ' (' + curShift() + ')' : ''));
       L.push('⏰ ใบรับรองแพทย์ภายใน / certificat avant : ' + heureTh(new Date(r.lim)));
       L.push(r.cert ? '📎 ส่งใบรับรองแพทย์ในแอปแล้ว ✅' : '📎 จะส่งใบรับรองแพทย์ในแอปก่อนเวลา');
     }
@@ -190,12 +190,34 @@
       + '<div style="font-size:2.4rem;font-weight:900;color:#dc2626;line-height:1.15;">' + (dl ? heureTh(dl) : '—') + '</div>'
       + '<div style="font-weight:700;">' + (dl ? jourTh(dl) : '') + ' · ' + CERT_HOURS + ' ชม. หลังเวลาเริ่มงาน</div>'
       + '<div style="font-size:.85rem;margin-top:6px;">ไม่มีใบรับรองแพทย์ หรือส่งช้า = นับเป็นขาดงาน (กฎกิโยติน)</div></div>'
+      + '<div style="margin-top:12px;font-weight:800;">🗓️ หยุดกี่วัน (ตามใบรับรองแพทย์)</div>'
+      + '<div style="display:flex;align-items:center;gap:10px;margin:6px 0 4px;">'
+      + '<button type="button" onclick="demMalJours(-1)" style="width:56px;height:52px;border:none;border-radius:12px;background:#e5e7eb;font-size:1.6rem;font-weight:900;">−</button>'
+      + '<div id="demMalN" style="flex:1;text-align:center;font-size:2rem;font-weight:900;">1</div>'
+      + '<button type="button" onclick="demMalJours(1)" style="width:56px;height:52px;border:none;border-radius:12px;background:#e5e7eb;font-size:1.6rem;font-weight:900;">+</button></div>'
+      + '<div id="demMalFin" style="text-align:center;font-weight:700;color:#374151;margin-bottom:6px;"></div>'
       + '<label style="display:block;text-align:center;' + BTN + 'background:#7c3aed;box-sizing:border-box;cursor:pointer;">📷 ถ่ายรูป / เลือกรูปใบรับรองแพทย์'
       + '<input type="file" accept="image/*" style="display:none" onchange="demPhotoChoisie(this)"></label>'
       + '<img id="demApercu" style="display:' + (photoAttente ? 'block' : 'none') + ';max-width:100%;max-height:220px;margin:10px auto 0;border-radius:10px;border:1px solid #d1d5db;"' + (photoAttente ? ' src="' + photoAttente + '"' : '') + '>'
       + '<div id="demPhotoTxt" style="font-size:.85rem;color:#6b7280;text-align:center;margin-top:6px;">' + (photoAttente ? '✅ แนบรูปแล้ว' : 'ยังไม่มีใบรับรองแพทย์? แจ้งลาป่วยก่อนได้ แล้วส่งรูปภายหลัง (ก่อนเวลาด้านบน)') + '</div>'
       + '<button type="button" id="demOkMal" onclick="demMaladeOk(' + n + ')" style="' + BTN + 'background:#16a34a;">✅ ยืนยันลาป่วย</button>'
       + ANNULER);
+    malN = 1; malDeb = n; malMaj();
+  }
+  // 🗓️ arrêt de plusieurs jours : jours de travail qui se suivent dans le contrat, à partir du jour choisi
+  let malN = 1, malDeb = 0;
+  function joursArret(n, nb) {
+    const out = []; let k = n;
+    while (out.length < nb) { const day = document.querySelector('.day[data-d="' + k + '"]'); if (!day || !dayDate(k)) break;
+      if (day.dataset.locked !== '1' && !day.querySelector('.arrival').value) out.push(day); else break; k++; }
+    return out;
+  }
+  function malMax() { return Math.max(1, Math.min(14, joursArret(malDeb, 14).length)); }
+  function malJours(k) { malN = Math.max(1, Math.min(malMax(), malN + k)); malMaj(); }
+  function malMaj() {
+    const e = $('demMalN'); if (!e) return; e.textContent = malN;
+    const L = joursArret(malDeb, malN), f = L.length ? dayDate(+L[L.length - 1].dataset.d) : null;
+    $('demMalFin').textContent = jourTh(dayDate(malDeb)) + (malN > 1 && f ? ' → ' + jourTh(f) : '') + ' (' + malN + ' วัน)' + (malN >= malMax() && malMax() < 14 ? ' · สุดท้ายของสัญญา' : '');
   }
   async function photoChoisie(inp) {
     const f = inp.files && inp.files[0]; if (!f) return;
@@ -207,14 +229,21 @@
     const day = document.querySelector('.day[data-d="' + n + '"]'); if (!day) return;
     const b = $('demOkMal'); b.disabled = true; b.textContent = '⏳ ...';
     const dd = dayDate(n), dl = justDeadline(day), iso = isoD(dd);
-    cocherMalade(day);
-    if (photoAttente && photoAttente !== day.dataset.cert) poserCert(day, photoAttente);
-    const vieille = lire().find(r => r.kind === 'maladie' && r.date === iso);
-    const r = { id: vieille ? vieille.id : undefined, kind: 'maladie', date: iso, lim: dl ? dl.toISOString() : '', cert: !!day.dataset.cert };
-    if (vieille) ecrire(lire().filter(x => x.id !== vieille.id));
-    const ok = await nouvelle(r);
+    const L = joursArret(n, malDeb === n ? malN : 1), nb = L.length || 1, grp = nid();
+    const fin = isoD(dayDate(+(L[L.length - 1] || day).dataset.d));
+    let r = null, ok = true;
+    for (let i = 0; i < L.length; i++) {
+      const dj = L[i], isoJ = isoD(dayDate(+dj.dataset.d)), dlj = justDeadline(dj);
+      cocherMalade(dj);
+      if (photoAttente && photoAttente !== dj.dataset.cert) poserCert(dj, photoAttente);
+      const vieille = lire().find(x => x.kind === 'maladie' && x.date === isoJ);
+      if (vieille) ecrire(lire().filter(x => x.id !== vieille.id));
+      const ri = { id: vieille ? vieille.id : undefined, kind: 'maladie', date: isoJ, lim: dlj ? dlj.toISOString() : '', cert: !!dj.dataset.cert, grp,
+                   jours: i === 0 ? nb : 0, fin: i === 0 ? fin : '', memeCert: i > 0, note: nb > 1 ? 'arrêt ' + nb + ' jours : ' + iso + ' → ' + fin + ' (jour ' + (i + 1) + '/' + nb + ')' : '' };
+      const oki = await nouvelle(ri); ok = ok && oki; if (i === 0) r = ri;
+    }
     autoVerrou();
-    fini(r, ok, 'แจ้งลาป่วยแล้ว · ' + jourTh(dd),
+    fini(r, ok, 'แจ้งลาป่วยแล้ว · ' + jourTh(dd) + (nb > 1 ? ' → ' + jourTh(isoVers(fin)) + ' · ' + nb + ' วัน' : ''),
       '<div style="text-align:center;line-height:1.6;">' + (day.dataset.cert ? '📎 ส่งใบรับรองแพทย์แล้ว ✅' : '<b style="color:#dc2626;">📎 อย่าลืมส่งรูปใบรับรองแพทย์<br>ภายใน ' + (dl ? heureTh(dl) + ' · ' + jourTh(dl) : '') + '</b><br><span style="font-size:.85rem;">กดปุ่ม 📷 บนหน้าจอล็อก</span>') + '</div>'
       + '<div style="text-align:center;margin-top:6px;">ขอให้หายป่วยเร็วๆ นะ 🙏</div>');
   }
@@ -225,7 +254,8 @@
     let url; try { url = await photo(f); } catch (e) { alert('⚠️ เปิดรูปไม่ได้ — ลองใหม่'); return; }
     poserCert(day, url);
     const m = lire().find(r => r.kind === 'maladie' && r.date === iso);
-    if (m) ecrire(lire().map(x => x.id === m.id ? Object.assign(x, { cert: true }) : x));
+    if (m && m.grp) lire().filter(x => x.kind === 'maladie' && x.grp === m.grp && x.date !== iso).forEach(x => { const d2 = dayDe(x.date); if (d2 && !d2.dataset.cert) poserCert(d2, url); });
+    if (m) ecrire(lire().map(x => (x.id === m.id || (m.grp && x.grp === m.grp)) ? Object.assign(x, { cert: true }) : x));
     const ok = await nouvelle({ kind: 'certificat', date: iso, ref: m ? m.id : '', lim: m ? m.lim : '' });
     autoVerrou(); majPanneaux();
     alert((day.dataset.certLate === '1' ? '⚠️ ส่งใบรับรองแพทย์แล้ว แต่เกินเวลา — นับเป็นขาดงาน' : '✅ ส่งใบรับรองแพทย์แล้ว — ทันเวลา') + (ok ? '' : '\n📶 จะส่งให้หัวหน้าเมื่อมีอินเทอร์เน็ต'));
@@ -355,6 +385,7 @@
   window.demMaladeJour = maladeJour;
   window.demPhotoChoisie = photoChoisie;
   window.demMaladeOk = maladeOk;
+  window.demMalJours = malJours;
   window.demCertPlusTard = certPlusTard;
   window.demBfJours = bfJours;
   window.demBfMaj = bfMaj;
