@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#7c3aed">
+<title>👩 Présence du jour</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--orange:#ea580c;--violet:#7c3aed;--border:#e5e7eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:520px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px));}
+  h1{font-size:1.25rem;margin:4px 0 2px;text-align:center}
+  .sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:12px}
+  .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .k{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .k .v{font-size:1.8rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .k .l{font-size:.8rem;color:var(--muted);font-weight:700}
+  .card{background:var(--card);border-radius:16px;padding:12px 14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .card h2{font-size:1rem;margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+  .card h2 small{font-weight:600;color:var(--muted);font-size:.8rem}
+  .row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--border);font-size:.95rem}
+  .row:first-of-type{border-top:none}
+  .st{font-weight:800;font-size:.85rem;text-align:right}
+  .ok{color:var(--green)} .ret{color:var(--red)} .att{color:var(--orange)}
+  a.back{display:block;text-align:center;margin-top:10px;color:var(--violet);font-weight:700;text-decoration:none}
+  #maj{text-align:center;color:var(--muted);font-size:.8rem}
+  .ctc{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px}
+  .ctc a,.ctc button{flex:1 1 30%;text-align:center;text-decoration:none;border:none;border-radius:9px;padding:8px 4px;font-weight:800;font-size:.85rem}
+  .autre{display:block;text-align:center;background:var(--violet);color:#fff;text-decoration:none;font-weight:800;border-radius:12px;padding:12px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>👩 Présence du jour</h1>
+  <div class="sub" id="date"></div>
+  <div class="kpis">
+    <div class="k"><div class="l">👩 Présentes</div><div class="v" id="kPres">–</div></div>
+    <div class="k"><div class="l">⏰ Pas de pointage reçu</div><div class="v" id="kAbs">–</div></div>
+  </div>
+  <div id="liste"><div class="card">Chargement…</div></div>
+  <div id="maj"></div>
+  <a class="autre" href="patron-chiffres.html">💆 Massages et chiffre du jour →</a>
+  <a class="back" href="patron.html">← Espace patron</a>
+</div>
+<script src="autorisation.js?v=8" data-retards="1"></script>
+<script>
+// 👩 PRÉSENCE DU JOUR : qui est là · pas de pointage reçu (retards) — page légère, séparée des chiffres
+//    1 seul appel nécessaire (liste des employées + pointages) ; la journée envoyée par le téléphone est ajoutée ensuite.
+//    Le dernier résultat s'affiche tout de suite à l'ouverture (mémoire du téléphone), puis se met à jour.
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const $=id=>document.getElementById(id);
+const isoJ=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+const getJ=u=>fetch(API+u+'&_='+Date.now()).then(readTxt).then(JSON.parse);
+function debutMin(sh){ const m=String(sh||'').match(/^(\d{1,2})[h:](\d{2})?/); return m ? (+m[1])*60+(+(m[2]||0)) : null; }
+function finMin(sh){ const m=String(sh||'').match(/-(\d{1,2})[h:]?(\d{2})?/); if(!m) return null; let f=(+m[1])*60+(+(m[2]||0)); const d=debutMin(sh); if(d!==null && f<=d) f+=1440; return f; }
+const k9=(n,t)=>String(n||'').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(t||'').replace(/\D/g,'').slice(-9);
+const hhmm=m=>String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+let B=null, ENV={}, ARRV={}, enCours=false;
+
+function jourBase(){ const now=new Date(), base=new Date(now.getTime()-6*3600e3); const jour=isoJ(base); base.setHours(0,0,0,0); return {now, base, jour, min:(now-base)/60000}; }
+function dessiner(){
+  if(!B) return;
+  const {jour, min}=jourBase(), groupes={}; let pres=0, abs=0;
+  (B.emps||[]).filter(e=>!e.bloque && !/^boss$/i.test(String(e.nom).trim())).forEach(e=>{
+    const h=(B.hor||{})[e.label], sh=h && h.deb<=jour && h.fin>=jour ? h.sh : '', kk=k9(e.nom,e.tel), envoyee=!!ENV[kk];
+    if(!sh && !e.service && !envoyee) return;                      // pas de contrat aujourd'hui
+    const d=debutMin(sh), f=finMin(sh); let st, cls;
+    if(e.service){ st='● arrivée '+(e.depuis||''); cls='ok'; pres++; }
+    else if(envoyee){ st='✅ journée envoyée'+(ARRV[kk] && ARRV[kk]!=='✓'?' · arrivée '+ARRV[kk]:''); cls='ok'; pres++; }
+    else if(d!==null && min>=d+15 && (f===null || min<=f)){ st='⏰ pas de ▶️ reçu ('+Math.round(min-d)+' min)'; cls='ret'; abs++; }
+    else if(d!==null && f!==null && min>f){ st='❓ aucun pointage reçu'; cls='ret'; abs++; }
+    else { st='⏳ à '+hhmm(d||0); cls='att'; }
+    (groupes[sh||'(sans horaire)']=groupes[sh||'(sans horaire)']||[]).push({nom:e.nom, tel:e.tel, st, cls});
+  });
+  $('kPres').textContent=pres; $('kAbs').textContent=abs; $('kAbs').style.color=abs?'var(--red)':'';
+  const L=$('liste'); L.innerHTML='';
+  Object.keys(groupes).sort((a,b)=>(debutMin(a)??999)-(debutMin(b)??999)).forEach(sh=>{
+    const c=document.createElement('div'), g=groupes[sh]; c.className='card';
+    // retards en premier dans chaque horaire
+    g.sort((a,b)=>({ret:0,att:1,ok:2}[a.cls]-{ret:0,att:1,ok:2}[b.cls]) || a.nom.localeCompare(b.nom));
+    c.innerHTML='<h2><span></span><small></small></h2>';
+    c.querySelector('span').textContent='🕐 '+sh; c.querySelector('small').textContent=g.filter(x=>x.cls==='ok').length+'/'+g.length+' présentes';
+    g.forEach(x=>{ const r=document.createElement('div'); r.className='row';
+      r.innerHTML='<div><b></b></div><div class="st"></div>';
+      r.querySelector('b').textContent=x.nom; const s=r.querySelector('.st'); s.textContent=x.st; s.classList.add(x.cls);
+      if(x.cls==='ret' && window.autContact){ const z=document.createElement('div'); z.className='ctc'; window.autContact(z, {nom:x.nom, tel:x.tel, sh}); r.appendChild(z); }
+      c.appendChild(r); });
+    L.appendChild(c); });
+  if(!L.children.length) L.innerHTML='<div class="card">Aucune employée prévue aujourd\'hui.</div>';
+}
+async function charger(){
+  if(enCours) return; enCours=true;
+  const {now, base, jour}=jourBase();
+  $('date').textContent=base.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+  $('maj').textContent='🔄 Mise à jour…';
+  // ⚡ affichage immédiat du dernier résultat de la journée
+  if(!B){ try{ const c=JSON.parse(localStorage.getItem('pres_cache')||'null'); if(c && c.jour===jour){ B=c.B; ENV=c.ENV||{}; ARRV=c.ARRV||{}; dessiner(); } }catch(e){} }
+  // journées envoyées par les téléphones : en parallèle, n'empêchent pas l'affichage
+  const pM=getJ('?boss=1&pin=x&mjour='+jour).catch(()=>({})), pD=getJ('?jourdetail='+jour).catch(()=>({}));
+  try{
+    const b=await getJ('?boss=1&pin=x&d='+jour);
+    if(b.err){ $('liste').innerHTML='<div class="card">🔐 Activez ce téléphone patron pour voir la présence.</div>'; $('maj').textContent=''; return; }
+    B=b; if(window.autLineIds) window.autLineIds().then(dessiner).catch(()=>{});
+    dessiner();
+    const [M,D]=await Promise.all([pM,pD]); const E={}, A={};
+    Object.keys(M.jour||{}).forEach(k=>{ const q=k.split('|'); E[k9(q[0],q[1])]=1; });
+    (D.lignes||[]).forEach(x=>{ const k=k9(x.nom,x.tel); E[k]=1; A[k]=String(x.arr||'').replace(/[^\d:]/g,'').slice(0,5)||'✓'; });
+    ENV=E; ARRV=A; dessiner();
+    try{ localStorage.setItem('pres_cache', JSON.stringify({jour, B, ENV, ARRV})); }catch(e){}
+    $('maj').textContent='Mis à jour à '+new Date().toTimeString().slice(0,5)+' · actualisation toutes les minutes';
+  }catch(e){ $('maj').textContent='⚠️ Pas de connexion — nouvel essai dans 1 minute'; }
+  finally{ enCours=false; }
+}
+charger(); setInterval(charger, 60000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) charger(); });
+</script>
+</body>
+</html>

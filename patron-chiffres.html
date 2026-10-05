@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#7c3aed">
+<title>💆 Massages et chiffre du jour</title>
+<style>
+  :root{--bg:#e5e7eb;--card:#fff;--text:#111827;--muted:#6b7280;--red:#dc2626;--green:#16a34a;--violet:#7c3aed;--border:#e5e7eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .wrap{max-width:520px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px));}
+  h1{font-size:1.25rem;margin:4px 0 8px;text-align:center}
+  .top{display:flex;gap:8px;margin-bottom:12px}
+  .top input{flex:1;font-size:1rem;padding:9px;border-radius:10px;border:2px solid var(--border);background:#fff}
+  .top button{border:none;border-radius:10px;padding:0 14px;font-weight:800;background:var(--violet);color:#fff;font-size:1rem}
+  .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .k{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .k .v{font-size:1.8rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .k .l{font-size:.8rem;color:var(--muted);font-weight:700}
+  .card{background:var(--card);border-radius:16px;padding:12px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  table{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+  th{background:#ede9fe;font-size:.72rem;padding:6px 3px;text-align:center;border:1px solid #ddd6fe}
+  td{border:1px solid #ede9fe;padding:7px 3px;text-align:center}
+  td.n{text-align:left;font-weight:700}
+  tr.tot td{background:#fef3c7;font-weight:800}
+  .note{color:var(--muted);font-size:.78rem;margin-top:8px;line-height:1.4}
+  #maj{text-align:center;color:var(--muted);font-size:.8rem}
+  a.back{display:block;text-align:center;margin-top:10px;color:var(--violet);font-weight:700;text-decoration:none}
+  .autre{display:block;text-align:center;background:var(--violet);color:#fff;text-decoration:none;font-weight:800;border-radius:12px;padding:12px;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💆 Massages et chiffre du jour</h1>
+  <div class="top"><input type="date" id="jour"><button type="button" onclick="charger(true)">🔄</button></div>
+  <div class="kpis">
+    <div class="k"><div class="l">💆 Massages du jour</div><div class="v" id="kMas">–</div></div>
+    <div class="k"><div class="l">💰 Chiffre du jour</div><div class="v" id="kCA">–</div></div>
+  </div>
+  <div class="card" id="fiche">Chargement…</div>
+  <div id="maj"></div>
+  <a class="autre" href="patron-presence.html">👩 Présence du jour →</a>
+  <a class="back" href="patron.html">← Espace patron</a>
+</div>
+<script src="autorisation.js?v=8"></script>
+<script>
+// 💆 MASSAGES ET CHIFFRE DU JOUR : fiche par employée (journées envoyées par les téléphones, onglet « Massages ») + totaux
+//    1 seul appel à Google ; le dernier résultat s'affiche tout de suite à l'ouverture.
+const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const $=id=>document.getElementById(id);
+const isoJ=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
+const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nb=v=>v ? String(Math.round(v*10)/10).replace('.',',') : '–';
+const baht=n=>Math.round(n).toLocaleString('en-US')+' ฿';
+const aujourdhui=()=>isoJ(new Date(Date.now()-6*3600e3));
+$('jour').value=aujourdhui(); $('jour').max=aujourdhui();
+$('jour').onchange=()=>charger(true);
+let enCours=false;
+
+function dessiner(j){
+  const L=(j.lignes||[]).filter(x=>!/^boss$/i.test(String(x.nom).trim()) || x.ca);
+  let T={l1:0,l2:0,hh:0,ca:0};
+  L.forEach(x=>{ T.l1+=+x.l1||0; T.l2+=+x.l2||0; T.hh+=+x.hh||0; T.ca+=(+x.ca||((+x.l1||0)*600+(+x.l2||0)*800+(+x.hh||0)*600)); });
+  const mas=T.l1+T.l2+T.hh;
+  $('kMas').textContent=nb(mas)==='–'?'0':nb(mas); $('kCA').textContent=baht(T.ca);
+  if(!L.length){ $('fiche').innerHTML='<div style="text-align:center;color:var(--muted)">Aucune journée envoyée pour ce jour.</div>'; return; }
+  let h='<table><tr><th>Employée</th><th>1 lady</th><th>2 lady</th><th>Happy H.</th><th>💆</th><th>฿</th></tr>';
+  L.forEach(x=>{ const ca=+x.ca||((+x.l1||0)*600+(+x.l2||0)*800+(+x.hh||0)*600), m=(+x.l1||0)+(+x.l2||0)+(+x.hh||0);
+    h+='<tr><td class="n">'+esc(x.nom)+(x.arr?'<div style="font-size:.7rem;color:var(--muted);font-weight:600">▶️ '+esc(x.arr)+(x.dep?' · ⏹️ '+esc(x.dep):'')+'</div>':'')+'</td><td>'+nb(+x.l1)+'</td><td>'+nb(+x.l2)+'</td><td>'+nb(+x.hh)+'</td><td><b>'+nb(m)+'</b></td><td>'+Math.round(ca).toLocaleString('en-US')+'</td></tr>'; });
+  h+='<tr class="tot"><td class="n">TOTAL</td><td>'+nb(T.l1)+'</td><td>'+nb(T.l2)+'</td><td>'+nb(T.hh)+'</td><td>'+nb(mas)+'</td><td>'+Math.round(T.ca).toLocaleString('en-US')+'</td></tr></table>';
+  h+='<div class="note">Massage à 2 (2 lady, Happy Hour) = 0,5 par employée · 1 lady 600 ฿ · 2 lady 800 ฿ · Happy Hour 600 ฿</div>';
+  $('fiche').innerHTML=h;
+}
+async function charger(montrer){
+  const jour=$('jour').value || aujourdhui(); if(enCours && !montrer) return; enCours=true;
+  if(montrer) $('fiche').textContent='Chargement…';
+  // ⚡ dernier résultat de ce jour affiché tout de suite
+  try{ const c=JSON.parse(localStorage.getItem('chif_cache_'+jour)||'null'); if(c) dessiner(c); }catch(e){}
+  $('maj').textContent='🔄 Mise à jour…';
+  try{
+    const j=JSON.parse(await readTxt(await fetch(API+'?jourdetail='+jour+'&_='+Date.now())));
+    if(($('jour').value||aujourdhui())!==jour) return;          // un autre jour a été choisi entre-temps
+    if(j.err){ $('fiche').textContent = j.err==='tok' ? '🔐 Activez ce téléphone patron' : '⚠️ Erreur'; $('maj').textContent=''; return; }
+    dessiner(j); try{ localStorage.setItem('chif_cache_'+jour, JSON.stringify({lignes:j.lignes||[]})); }catch(e){}
+    $('maj').textContent='Mis à jour à '+new Date().toTimeString().slice(0,5)+(jour===aujourdhui()?' · actualisation toutes les minutes':'');
+  }catch(e){ $('maj').textContent='⚠️ Pas de connexion — réessayez'; }
+  finally{ enCours=false; }
+}
+charger(true);
+setInterval(()=>{ if(!document.hidden && $('jour').value===aujourdhui()) charger(false); }, 60000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && $('jour').value===aujourdhui()) charger(false); });
+</script>
+</body>
+</html>
