@@ -333,7 +333,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
 <div id="plageGate" style="display:none;position:fixed;inset:0;z-index:99990;background:#111827;color:#fff;overflow:auto;">
   <div style="max-width:380px;margin:0 auto;padding:calc(70px + env(safe-area-inset-top,0px)) 20px 30px;text-align:center;">
     <div style="font-size:3.4rem;">🔒</div>
-    <div style="font-size:1.1rem;font-weight:700;margin:10px 0 4px;">แอปปิดอยู่นอกเวลาทำงาน</div>
+    <div style="font-size:1.6rem;font-weight:800;margin:14px 0 4px;line-height:1.4;color:#fbbf24;">เปิดได้เฉพาะที่ร้านเท่านั้น</div>
     <div id="plOuv" style="font-size:1.35rem;font-weight:800;margin:14px 0 6px;"></div>
     <div id="plReste" style="font-size:2.4rem;font-weight:800;color:#34d399;letter-spacing:1px;"></div>
     <div id="plInfo" style="font-size:.9rem;color:#9ca3af;margin-top:10px;line-height:1.6;"></div>
@@ -1957,10 +1957,10 @@ async function eSuite(choix){
 function eQuitter(){ if(!confirm('จบการทดลองงาน?')) return; eEnvoyer(); try{ localStorage.removeItem('pointage_essai'); }catch(x){} location.href=location.pathname; }
 
 // ===== 🕐 APP OUVERTE SEULEMENT AUTOUR DE L'HORAIRE =====
-// Ouverture 1 h avant le début de l'horaire · fermeture 15 min après « ⏹️ เลิกงาน » (heure de départ),
+// Ouverture dès 8 h du matin · fermeture 15 min après « ⏹️ เลิกงาน » (heure de départ),
 // au plus tard 2 h après la fin de l'horaire → la journée est alors validée et envoyée automatiquement.
 // Toujours ouverte : sans contrat / sans horaire / contrat terminé (choisir le suivant), compte Boss, 👑 mode patron.
-const PL_AVANT=60, PL_APRES_DEPART=15, PL_MAX_APRES=120;
+const PL_AVANT=60, PL_OUV_MATIN=8*60, PL_APRES_DEPART=15, PL_MAX_APRES=120;   // 🌅 ouverte dès 8 h du matin
 function nowT(){ let o=0; try{ o=+localStorage.getItem('pointage_offset')||0; }catch(e){} return Date.now()+o; }
 function plFinShift(str){ const p=String(str||'').split('-'); if(p.length<2) return null; const x=p[1].trim(); let h,m=0; if(x.includes(':')){ const q=x.split(':'); h=+q[0]; m=+q[1]; } else h=parseInt(x.replace('h','')); return h*60+m; }
 function plFenetre(dd){   // dd = date (00:00) d'un jour du contrat → {ouv, ferm} en ms
@@ -1969,8 +1969,7 @@ function plFenetre(dd){   // dd = date (00:00) d'un jour du contrat → {ouv, fe
   let ferm=b+(em+PL_MAX_APRES)*60000;
   try{ const dep=JSON.parse(localStorage.getItem('pointage_depart')||'null'); if(dep && dep.d===isoD(base)) ferm=Math.min(ferm, dep.at+PL_APRES_DEPART*60000); }catch(e){}
   try{ const ro=JSON.parse(localStorage.getItem('pointage_rouvert')||'null'); if(ro && ro.d===isoD(base)) ferm=Math.max(ferm, ro.until); }catch(e){}
-  let ouv=b+(sm-PL_AVANT)*60000;
-  try{ const s0=document.getElementById('startDate').value; if(s0 && isoD(base)===s0 && premierJour(1)) ouv=b; }catch(e){}   // 1er jour : ouvert dès 00:00
+  let ouv=b+Math.min(PL_OUV_MATIN, sm-PL_AVANT)*60000;   // 🌅 dès 8 h (ou 1 h avant si l'horaire commence avant 9 h)
   return {ouv, ferm, debut:b+sm*60000, fin:b+em*60000};
 }
 function plEtat(){
@@ -1981,7 +1980,7 @@ function plEtat(){
   if(cycleFinished()) return {ouvert:false, fini:true};           // contrat terminé : seulement le choix du nouveau contrat
   if(!curShift()){ const t=new Date(now); t.setHours(0,0,0,0);    // horaire pas encore choisi : avant le début, seulement contrat/date/horaire
     return t<s0 ? {ouvert:false, avant:true, prochain:s0.getTime(), dd:s0} : {ouvert:true}; }
-  // jour de travail en cours (la veille pour les horaires de nuit) puis le prochain jour du contrat
+  // jour de travail en cours (la veille pour les horaires de nuit) puis le prochain jour du contrat · 🌅 ouverture dès 8 h
   for(let k=-1;k<=N;k++){
     const t0=new Date(now); t0.setHours(0,0,0,0); const dd=addDays(t0,k); if(dd<s0 || dd>fin) continue;
     const f=plFenetre(dd); if(!f) return {ouvert:true};
@@ -2022,7 +2021,7 @@ function plPre(on, e){
       [...document.body.children].forEach(c=>{ if(chemin.has(c) || c.tagName==='SCRIPT' || c.tagName==='STYLE' || /Gate$|Bar$|Banner$/.test(c.id||'')) return; plPreCaches.push([c, c.style.display]); c.style.display='none'; });
     }
     const o=new Date(e.prochain);
-    document.getElementById('plPreNote').innerHTML='⏳ สัญญาเริ่มวันที่ '+fmtDate(new Date(e.dd))+(curShift() ? '<br>แอปจะเปิดใช้งานเต็มรูปแบบ '+TH_DAYS[o.getDay()]+' '+fmtDate(o).slice(0,5)+' เวลา '+fmtHM(o)+' น.' : '<br><span style="color:#dc2626;">⚠️ กรุณาเลือกช่วงเวลาทำงาน</span>')+'<br><span style="font-weight:400;font-size:.85rem;">ตอนนี้เลือกได้เฉพาะ ประเภทสัญญา · วันที่เริ่มรอบ · ช่วงเวลาทำงาน · ที่พัก · ยูนิฟอร์ม</span>';
+    document.getElementById('plPreNote').innerHTML='⏳ สัญญาเริ่มวันที่ '+fmtDate(new Date(e.dd))+(curShift() ? '<br>แอปจะเปิดใช้งานเต็มรูปแบบในวันเริ่มสัญญา' : '<br><span style="color:#dc2626;">⚠️ กรุณาเลือกช่วงเวลาทำงาน</span>')+'<br><span style="font-weight:400;font-size:.85rem;">ตอนนี้เลือกได้เฉพาะ ประเภทสัญญา · วันที่เริ่มรอบ · ช่วงเวลาทำงาน · ที่พัก · ยูนิฟอร์ม</span>';
   } else if(plPreCaches){
     plPreCaches.forEach(([c,d])=>c.style.display=d); plPreCaches=null; if(note) note.remove();
   }
@@ -2037,9 +2036,9 @@ function plVerifier(){
   plPre(false);
   if(e.ouvert){ if(g.style.display==='block'){ g.style.display='none'; document.body.style.overflow=''; } return; }
   const r=Math.max(0,e.prochain-nowT()), h=Math.floor(r/3600000), m=Math.floor(r%3600000/60000), sec=Math.floor(r%60000/1000), o=new Date(e.prochain);
-  document.getElementById('plOuv').innerHTML='<div style="font-size:1.1rem;font-weight:700;">แอปจะเปิดให้ใช้ตั้งแต่</div><div style="font-size:4.2rem;font-weight:900;line-height:1.1;color:#fbbf24;">'+fmtHM(o)+' <span style="font-size:1.8rem;">น.</span></div>';
-  document.getElementById('plReste').textContent=(h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(sec).padStart(2,'0');
-  document.getElementById('plInfo').innerHTML='<div style="font-size:1.1rem;color:#d1d5db;">📅 '+TH_DAYS[o.getDay()]+' '+fmtDate(o)+'</div><div style="font-size:1rem;color:#d1d5db;margin-top:14px;">ช่วงเวลาทำงานของคุณ</div><div style="font-size:2.8rem;font-weight:900;color:#fff;line-height:1.15;">'+curShift()+'</div>';
+  document.getElementById('plOuv').innerHTML='';   // 🌅 pas d'heure d'ouverture affichée
+  document.getElementById('plReste').textContent='';
+  document.getElementById('plInfo').innerHTML='';
   if(g.style.display!=='block'){ g.style.display='block'; document.body.style.overflow='hidden'; }
 }
 
