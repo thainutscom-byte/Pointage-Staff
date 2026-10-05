@@ -13,6 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 
 <script>
+window.__START_AUTO=/[?&]start=1(&|$)/.test(location.search);   // ▶️ ouverte depuis le cahier : lu avant que l'adresse soit réécrite
 (function(){try{
   var ua=navigator.userAgent;
   window.__isIOS=/iPhone|iPad|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
@@ -311,7 +312,7 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
 <div id="autGate" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(17,24,39,.97);color:#fff;align-items:center;justify-content:center;padding:20px;">
   <div style="max-width:360px;width:100%;text-align:center;">
     <div style="font-size:3rem;">👑</div>
-    <div style="font-size:1.2rem;font-weight:800;margin:8px 0;">ส่งคำขอถึงหัวหน้าแล้ว</div>
+    <div id="autTitre" style="font-size:1.2rem;font-weight:800;margin:8px 0;padding:12px;border-radius:14px;background:#16a34a;color:#fff;">✅ ส่งคำขอถึงหัวหน้าแล้ว</div>
     <div id="autTxt" style="line-height:1.6;color:#d1d5db;"></div>
     <a id="autLine" href="#" style="display:block;margin:16px 0 4px;background:#06c755;color:#fff;text-decoration:none;font-weight:900;font-size:1.15rem;padding:16px;border-radius:14px;">💬 ส่งคำขอให้หัวหน้าทาง LINE</a>
     <div style="font-size:.85rem;color:#d1d5db;">กดปุ่มนี้ → LINE จะเปิด → กด <b>ส่ง</b> · หัวหน้าจะอนุมัติเร็วขึ้น</div>
@@ -384,6 +385,12 @@ try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k &
     </div>
   </div>
   
+  </div>
+  <!-- 🕐 choix du créneau juste sous ▶️ เริ่มงาน / ⏹️ เลิกงาน (copie du choix de la fiche, mêmes règles) -->
+  <div id="horTopBox" class="card" style="padding:10px 12px;margin-bottom:12px;display:none;">
+    <label for="horTop" style="display:block;font-weight:800;margin-bottom:6px;">🕐 ช่วงเวลาทำงานของฉัน</label>
+    <select id="horTop" style="width:100%;font-size:1.05rem;font-weight:700;padding:10px;border-radius:10px;"></select>
+    <div id="horTopNote" class="small" style="font-weight:700;margin-top:4px;"></div>
   </div>
   <div id="todayBox" class="card" style="padding:12px;margin-bottom:12px;">
 
@@ -1405,6 +1412,17 @@ async function shiftChosen(sel){
   planRefresh();
 }
 setTimeout(()=>{ ['shiftGlobal','shiftGlobalMonthly'].forEach(id=>{ const e=document.getElementById(id); if(e) e.dataset.prev=e.value; }); }, 900);
+// 🕐 copie du choix d'horaire sous ▶️ เริ่มงาน / ⏹️ เลิกงาน : changer ici = changer sur la fiche (places, accord du patron, avertissement : inchangés)
+function horTopMaj(){
+  const box=document.getElementById('horTopBox'), h=document.getElementById('horTop'), sel=shiftSel(); if(!box || !h || !sel) return;
+  const voir=!!(document.getElementById('startDate').value && (document.getElementById('name').value||'').trim()); box.style.display=voir?'block':'none'; if(!voir) return;
+  const sig=[...sel.options].map(o=>o.value+'|'+o.textContent+'|'+o.disabled).join('§');
+  if(h.dataset.sig!==sig){ h.innerHTML=''; [...sel.options].forEach(o=>{ const x=document.createElement('option'); x.value=o.value; x.textContent=o.value?o.textContent:'-- เลือกช่วงเวลา --'; x.disabled=o.disabled; h.appendChild(x); }); h.dataset.sig=sig; }
+  if(document.activeElement!==h) h.value=sel.value; h.disabled=sel.disabled;
+  const n=document.getElementById('horNote'); document.getElementById('horTopNote').textContent=n?n.textContent:''; document.getElementById('horTopNote').style.color=n?n.style.color:'';
+}
+document.getElementById('horTop').addEventListener('change', e=>{ const sel=shiftSel(); if(!sel) return; sel.value=e.target.value; sel.dispatchEvent(new Event('change')); setTimeout(horTopMaj, 300); });
+setInterval(horTopMaj, 1500); setTimeout(horTopMaj, 1000);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) planRefreshSoon(); });
 setTimeout(planRefresh, 2000);
 
@@ -2424,6 +2442,8 @@ setInterval(massLecture,3000); setTimeout(massLecture,800);
 // ===== 🏠 EN HAUT DE L'APP : ▶️ เริ่มงาน / ⏹ เลิกงาน du jour · mes massages du jour (vérification) · ⚠️ erreur → autorisation du patron =====
 function tbJour(){ const iso=isoD(workToday()); return [...document.querySelectorAll('.day')].find(d=>{ const dd=dayDate(+d.dataset.d); return dd && isoD(dd)===iso; })||null; }
 function tbStart(){ const d=tbJour(); if(!d){ alert('📅 วันนี้ไม่อยู่ในสัญญาของคุณ'); return; } const b=d.querySelector('button[onclick^="startWork"]'); if(b && !b.disabled) startWork(b); setTimeout(tbMaj,800); }
+// ▶️ ouverte depuis le cahier (« ลงเวลามาทำงานตอนนี้ ») : ?start=1 → l'heure d'arrivée est enregistrée tout de suite (GPS au salon)
+if(window.__START_AUTO) setTimeout(()=>{ try{ const d=tbJour(); if(d && !d.querySelector('.arrival').value) tbStart(); }catch(e){} }, 2500);
 function tbFin(){ const d=tbJour(); if(!d){ alert('📅 วันนี้ไม่อยู่ในสัญญาของคุณ'); return; }
   if(!d.querySelector('.arrival').value){ alert('⚠️ กด ▶️ เริ่มงาน ก่อน'); return; }
   const b=d.querySelector('button[onclick^="finishWork"]'); if(!b || b.disabled) return;
@@ -2527,19 +2547,40 @@ function wEssai(){   // 🧪 jour d'essai : plus de code à demander au supervis
 //   (si le serveur n'a pas encore le fichier « Autorisation », l'ancien code du jour reste possible)
 const AUT_TXT={cahier:'✏️ แก้จำนวนนวด (สมุดผิด)', boss:'👑 เปิดโหมดหัวหน้า', freeze:'🔑 แก้ไขวันที่ / ช่วงเวลา', debloquer:'🔓 ปลดล็อกโทรศัพท์', rouvrir:'🔓 เปิดวันทำงานอีกครั้ง', paye:'💰 ยืนยันการชำระเงิน', nouvelle:'🆕 พนักงานใหม่ ขอเข้าใช้แอป', gps:'📍 เริ่มงานโดยไม่ผ่าน GPS'};
 const LINE_PATRON='@048gmlsc';   // compte LINE du salon qui reçoit les demandes
-async function demanderPatron(act){
-  let support=false;
-  try{ const c=new AbortController(); const tm=setTimeout(()=>c.abort(),12000);
-       const t=await readTxt(await fetch(SHEET_URL+'?autping=1&_='+Date.now(),{signal:c.signal})); clearTimeout(tm); support=t.indexOf('"aut":1')>=0; }catch(e){}
-  if(!support){
-    const v=prompt('👑 Code patron / รหัสหัวหน้า'); if(v===null) return false;
-    if(v.replace(/\D/g,'')!==codePatron()){ alert('❌ รหัสไม่ถูกต้อง'); return false; } return true;
-  }
-  const id=(Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)).slice(0,22);
+// 🔒 une seule demande à la fois : le bouton touché devient orange et bloqué, l'écran « 📤 envoi… » s'affiche tout de suite,
+//    puis « ✅ ส่งคำขอแล้ว » en vert. Re-toucher le bouton ne renvoie RIEN au patron (même demande réutilisée pendant 30 min).
+function demanderPatron(act){
+  if(window.__autEnCours) return window.__autEnCours;
+  const b=document.activeElement && /^(BUTTON|A)$/.test(document.activeElement.tagName) ? document.activeElement : null, bAvant=b?[b.innerHTML,b.style.background,b.style.pointerEvents,b.disabled]:null;
+  if(b){ b.disabled=true; b.style.pointerEvents='none'; b.style.background='#f59e0b'; b.innerHTML='⏳ ส่งคำขอแล้ว…'; }
+  window.__autEnCours=demanderPatron2_(act).finally(()=>{ window.__autEnCours=null; if(b){ b.innerHTML=bAvant[0]; b.style.background=bAvant[1]; b.style.pointerEvents=bAvant[2]; b.disabled=bAvant[3]; } });
+  return window.__autEnCours;
+}
+async function demanderPatron2_(act){
+  const G=document.getElementById('autGate'), T=document.getElementById('autTitre');
   const nom=(document.getElementById('name').value||'').trim()||'(nouvelle)', tel=(document.getElementById('phone').value||'').replace(/\D/g,'');
-  try{ const t=await readTxt(await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'autdem', id, act, nom, tel})})); if(t.indexOf('"ok":1')<0) throw 0; }
-  catch(e){ alert('⚠️ ส่งคำขอไม่ได้ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'); return false; }
-  const G=document.getElementById('autGate'); window.__autAnnule=false;
+  window.__autAnnule=false;
+  T.style.background='#f59e0b'; T.textContent='📤 กำลังส่งคำขอ… รอสักครู่'; document.getElementById('autTxt').innerHTML='<b>'+(AUT_TXT[act]||act)+'</b>';
+  document.getElementById('autLine').style.display='none'; G.style.display='flex';
+  // même demande encore en attente (< 30 min) → on la réutilise, aucun nouveau message au patron
+  const cle='aut_att_'+act; let id='', deja=false;
+  try{ const o=JSON.parse(localStorage.getItem(cle)||'null'); if(o && Date.now()-o.at<30*60000){ id=o.id; deja=true; } }catch(e){}
+  if(!deja){
+    id=(Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)).slice(0,22);
+    let t='';
+    try{ const c=new AbortController(); const tm=setTimeout(()=>c.abort(),20000);
+         t=await readTxt(await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'autdem', id, act, nom, tel}),signal:c.signal})); clearTimeout(tm); }
+    catch(e){ G.style.display='none'; alert('⚠️ ส่งคำขอไม่ได้ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'); return false; }
+    if(t.indexOf('"ok":1')<0){   // serveur sans « Autorisation » : ancien code patron
+      G.style.display='none'; const v=prompt('👑 Code patron / รหัสหัวหน้า'); if(v===null) return false;
+      if(v.replace(/\D/g,'')!==codePatron()){ alert('❌ รหัสไม่ถูกต้อง'); return false; } return true; }
+    try{ const r=JSON.parse(t); if(r.id) id=r.id; if(r.deja) deja=true; }catch(e){}
+    try{ localStorage.setItem(cle, JSON.stringify({id, at:Date.now()})); }catch(e){}
+  }
+  const fini=()=>{ try{ localStorage.removeItem(cle); }catch(e){} };
+  T.style.background='#16a34a'; T.textContent=deja?'✅ ส่งคำขอไปแล้ว — รอหัวหน้า':'✅ ส่งคำขอถึงหัวหน้าแล้ว';
+  document.getElementById('autLine').style.display='block';
+
   // 💬 message tout prêt pour le compte LINE du patron (@048gmlsc) : la fille n'a qu'à appuyer sur « ส่ง »
   { const m='👑 คำขอ / Demande : '+(AUT_TXT[act]||act)+'\n👤 '+nom+(tel?' · '+tel:'')+'\n🕐 '+fmtHM(new Date())+'\n✅ อนุมัติ / Autoriser :\nhttps://thainutscom-byte.github.io/Pointage-Staff/patron-autorisations.html';
     const a=document.getElementById('autLine'); if(a) a.href='https://line.me/R/oaMessage/'+encodeURIComponent(LINE_PATRON)+'/?'+encodeURIComponent(m); }
@@ -2552,12 +2593,12 @@ async function demanderPatron(act){
       await new Promise(r=>setTimeout(r,3000)); k++; document.getElementById('autAnim').textContent=['⏳','⌛'][k%2];
       if(window.__autAnnule) return false;
       try{ const t=await readTxt(await fetch(SHEET_URL+'?autor='+id+'&_='+Date.now())); const st=(JSON.parse(t)||{}).st;
-        if(st==='ok'){ appScan('👑 autorisé par le patron : '+act); return true; }
-        if(st==='non'){ alert('❌ หัวหน้าไม่อนุมัติ'); return false; }
-        if(st==='exp'){ alert('⌛ หมดเวลา — ลองใหม่อีกครั้ง'); return false; }
+        if(st==='ok'){ fini(); appScan('👑 autorisé par le patron : '+act); return true; }
+        if(st==='non'){ fini(); alert('❌ หัวหน้าไม่อนุมัติ'); return false; }
+        if(st==='exp' || st==='inconnu'){ fini(); alert('⌛ หมดเวลา — ลองใหม่อีกครั้ง'); return false; }
       }catch(e){}
     }
-    alert('⌛ หมดเวลา — ลองใหม่อีกครั้ง'); return false;
+    fini(); alert('⌛ หมดเวลา — ลองใหม่อีกครั้ง'); return false;
   } finally { G.style.display='none'; }
 }
 

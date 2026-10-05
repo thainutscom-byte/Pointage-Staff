@@ -52,7 +52,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 #rooms .room.unpaid{grid-column:1/-1;min-height:0}
 #cType{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px} #cType .chip{min-width:0;width:100%;padding-left:4px;padding-right:4px;white-space:nowrap;font-size:.95rem}
 #cQty{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px} #cQty .chip{min-width:0;width:100%;padding-left:2px;padding-right:2px;white-space:nowrap;font-size:.9rem}
-#cNames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px} #cNames .chip{min-width:0;width:100%;padding-left:4px;padding-right:4px} #cNames .chip[data-occupee]{opacity:.35;filter:grayscale(1)} #cNames .note{grid-column:1/-1}
+#cNames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px} #cNames .chip{min-width:0;width:100%;padding-left:4px;padding-right:4px} #cNames .chip[data-paspointe]{opacity:1;filter:none;background:#fee2e2!important;border:2px solid #dc2626!important;color:#b91c1c!important} #cNames .chip[data-paspointe] small{color:#b91c1c!important;font-weight:800} #cNames .chip[data-occupee]{opacity:.35;filter:grayscale(1)} #cNames .note{grid-column:1/-1}
 #cRooms{display:grid;grid-template-columns:repeat(var(--nr,3),minmax(0,1fr));gap:8px} #cRooms .chip{min-width:0;width:100%}
 @media (max-width:560px){
   #rooms .room:not(.unpaid){padding:9px 8px;min-height:112px}
@@ -453,6 +453,8 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   const ESSAI=['Lady 1','Lady 2'];
   const noms=()=>{ const L=STAFF.concat((S.extra||[]).filter(x=>!STAFF.some(y=>y.toLowerCase()===x.toLowerCase())));
     return L.concat(ESSAI.filter(x=>!L.some(y=>y.toLowerCase()===x.toLowerCase()))); };
+  // ⏰ POINTAGE OBLIGATOIRE : une fille qui n'a pas fait « ▶️ เริ่มงาน » aujourd'hui ne peut pas être mise dans un massage
+  const pasPointe=n=>!DEMO && STAFF.length>0 && !ESSAI.includes(n) && !(S.extra||[]).includes(n) && !VENUES.has(String(n).toLowerCase());
   const finie=n=>FINS.some(f=>String(f.n).trim().toLowerCase()===String(n).trim().toLowerCase());
 
   // ===== ☁️ ENREGISTREMENT DANS GOOGLE (onglets 🗒️ Cahier et 💰 Caisse) =====
@@ -619,7 +621,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   function chip(label,sub,on,dis,attr,col){ return '<button class="chip'+(on?' on':'')+'" type="button" '+(col?'style="--c:'+col+'" ':'')+attr+(dis?' disabled':'')+'>'+label+(sub?'<small>'+sub+'</small>':'')+'</button>'; }
   function drawForm(){
     const bn=busyNames();
-    $('cNames').innerHTML=(STAFF.length?'':'<p class="note">⚠️ ยังไม่มีรายชื่อพนักงานวันนี้ — ตรวจอินเทอร์เน็ต</p>')+noms().map((s,i)=>({s,i,h:horDe(s)})).sort((a,b)=>(a.h?HOR.indexOf(a.h):99)-(b.h?HOR.indexOf(b.h):99) || (ESSAI.includes(a.s)-ESSAI.includes(b.s)) || a.s.localeCompare(b.s)).map(({s,h})=>chip(esc(s), bn.has(s)?'กำลังนวด':finie(s)?'🏁 จบงานแล้ว':S.caissiere===s?'💰 แคชเชียร์':h?'🕐 '+h[1]:(S.extra||[]).includes(s)?'➕ วันนี้':'', F.names.includes(s), false, 'data-name="'+esc(s)+'"'+(bn.has(s)?' data-occupee="1"':''), ESSAI.includes(s)?'#e5e7eb':h?h[2]:'#94a3b8')).join('')
+    $('cNames').innerHTML=(STAFF.length?'':'<p class="note">⚠️ ยังไม่มีรายชื่อพนักงานวันนี้ — ตรวจอินเทอร์เน็ต</p>')+noms().map((s,i)=>({s,i,h:horDe(s)})).sort((a,b)=>(a.h?HOR.indexOf(a.h):99)-(b.h?HOR.indexOf(b.h):99) || (ESSAI.includes(a.s)-ESSAI.includes(b.s)) || a.s.localeCompare(b.s)).map(({s,h})=>chip(esc(s), pasPointe(s)?'⛔ ยังไม่ลงเวลามา':bn.has(s)?'กำลังนวด':finie(s)?'🏁 จบงานแล้ว':S.caissiere===s?'💰 แคชเชียร์':h?'🕐 '+h[1]:(S.extra||[]).includes(s)?'➕ วันนี้':'', F.names.includes(s), false, 'data-name="'+esc(s)+'"'+(bn.has(s)?' data-occupee="1"':'')+(pasPointe(s)?' data-paspointe="1"':''), ESSAI.includes(s)?'#e5e7eb':h?h[2]:'#94a3b8')).join('')
       +chip('➕ ชื่ออื่น','รหัสหัวหน้า',false,false,'data-addname="1"','#64748b');
     let rh=''; for(let k=1;k<=S.rooms;k++){ const r=roomOf(k); rh+=chip('ห้อง '+k, r?'🔴 '+r.names.map(esc).join('+'):'🟢 ว่าง', F.room===k, !!r, 'data-room="'+k+'"', '#34d399'); }
     $('cRooms').innerHTML=rh; $('cRooms').style.setProperty('--nr', S.rooms);
@@ -646,6 +648,19 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
   }
   function openForm(room){ F={names:[],room:room||null,room0:room||null,type:null,special:null,qty:1,pay:null,ref:null}; $('form').hidden=false; drawForm(); $('form').scrollIntoView({behavior:'smooth',block:'start'}); }
   function closeForm(){ $('form').hidden=true; }
+  // ⛔ nom en rouge = pas encore « ▶️ เริ่มงาน » : message clair « valide ton heure d'arrivée »
+  function pasPointeMsg(nom){
+    let o=document.getElementById('ppMsg'); if(o) o.remove();
+    o=document.createElement('div'); o.id='ppMsg';
+    o.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:20px';
+    o.innerHTML='<div style="background:#fff;color:#111827;border:4px solid #dc2626;border-radius:18px;max-width:380px;width:100%;padding:20px;text-align:center;display:grid;gap:12px">'
+      +'<div style="font-size:3rem">⏰</div><div style="font-size:1.35rem;font-weight:800;color:#dc2626">'+esc(nom)+'</div>'
+      +'<div style="font-size:1.2rem;font-weight:800;line-height:1.5">กรุณาลงเวลามาทำงานก่อน<br>เปิดแอปของคุณ → กด ▶️ เริ่มงาน</div>'
+      +'<div style="font-size:.95rem;color:#475569">แล้วกลับมาที่สมุด → แตะ 🔄 อัปเดต</div>'
+      +'<button type="button" style="border:none;border-radius:14px;padding:14px;font:inherit;font-size:1.1rem;font-weight:800;background:#dc2626;color:#fff">ตกลง</button></div>';
+    o.addEventListener('click',e=>{ if(e.target===o || e.target.tagName==='BUTTON') o.remove(); });
+    document.body.appendChild(o);
+  }
 
   $('btnNew').onclick=()=>openForm(null);
   $('cancel').onclick=closeForm;
@@ -655,6 +670,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       demanderCode('➕ ชื่ออื่น', 'รหัสหัวหน้า', v=>v===codeJour(), 6).then(ok=>{ if(!ok) return;
         $('addNIn').value=''; $('addN').hidden=false; setTimeout(()=>$('addNIn').focus(),50); });
       return; }
+    if(b.dataset.paspointe){ pasPointeMsg(b.dataset.name); return; }
     if(b.dataset.occupee){ const s=b.dataset.name, r=live().find(x=>x.names.includes(s));
       toast('⛔ '+s+' กำลังนวด'+(r?(dehors(r)?' (นอกร้าน)':' (ห้อง '+r.room+')'):'')+' — กด ⏹ เสร็จ ก่อน'); return; }
     if(b.dataset.name){ const s=b.dataset.name; F.names=F.names.includes(s)?F.names.filter(x=>x!==s):F.names.concat(s).slice(F.special?-2:-3); }
@@ -1051,6 +1067,29 @@ try{ if('serviceWorker' in navigator && location.protocol==='https:') navigator.
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) verifier(false); });
   setInterval(()=>{ if(!document.hidden) verifier(false); }, 5*60000);
 })();
+
+// ⏰ TÉLÉPHONE D'UNE FILLE QUI N'A PAS POINTÉ : le cahier reste bloqué tant qu'elle n'a pas fait « ▶️ เริ่มงาน » dans l'app
+//    (pas pour le patron, ni la tablette débloquée par le code 👑, ni les filles hors de la liste du jour)
+setInterval(function verifPointage(){
+  try{
+    if(localStorage.getItem('pointage_patron')==='1' || localStorage.getItem('cahier_gps_libre')==='1') return;
+    const o=JSON.parse(localStorage.getItem('pointage_ident')||'null'), moi=String((o&&o.name)||'').trim().toLowerCase(); if(!moi || moi==='boss') return;
+    const J=(()=>{ const d=new Date(Date.now()-6*3600e3); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
+    const staff=JSON.parse(localStorage.getItem('cahier_staff_'+J)||'null'); if(!staff || !staff.length) return;
+    const ma=staff.find(x=>String(x.n).trim().toLowerCase()===moi);
+    let v=document.getElementById('ptVoile');
+    if(ma && !ma.v){
+      if(!v){ v=document.createElement('div'); v.id='ptVoile';
+        v.style.cssText='position:fixed;inset:0;z-index:9998;background:#0b0d12;color:#f8fafc;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:inherit';
+        v.innerHTML='<div style="max-width:420px;display:grid;gap:14px"><div style="font-size:3.5rem">⏰</div><div style="font-size:1.4rem;font-weight:700">กด ▶️ เริ่มงาน ก่อน</div>'
+          +'<div style="font-size:1.05rem;line-height:1.6;color:#cbd5e1">ต้องลงเวลามาทำงานในแอปก่อน<br>จึงจะใช้สมุดลงงานได้<br><span style="font-size:.9rem">ถ้าไม่กดเริ่มงาน การนวดจะไม่ถูกนับ</span></div>'
+          +'<a href="./?start=1" style="display:block;border-radius:14px;padding:15px;font-size:1.15rem;font-weight:700;background:#16a34a;color:#fff;text-decoration:none">▶️ ลงเวลามาทำงานตอนนี้</a>'
+          +'<button type="button" onclick="location.reload()" style="border:2px solid #475569;border-radius:14px;padding:12px;font:inherit;font-weight:700;background:transparent;color:#cbd5e1">🔄 กดเริ่มงานแล้ว · อัปเดต</button></div>';
+        document.body.appendChild(v); }
+      v.hidden=false;
+    } else if(v) v.hidden=true;
+  }catch(e){}
+}, 3000);
 </script>
 </body>
 </html>
