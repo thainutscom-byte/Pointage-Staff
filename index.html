@@ -2718,9 +2718,9 @@ async function lineIdSave(force){
 setTimeout(()=>{ try{ const o=JSON.parse(localStorage.getItem(lineIdCle())||'null'); const el=document.getElementById('lineId'); if(o && el && !el.value){ el.value=o.v; if(!o.ok) lineIdSave(true); } }catch(e){} }, 1500);
 
 // ➕ ajouter le compte officiel LINE du salon en ami → elle envoie son numéro → messages personnels (oubli de pointer…)
+const LINE_SALON='https://lin.ee/On8xxub';   // 🔗 lien « ajouter en ami » du compte officiel LINE du salon
 async function lineAmi(){
-  let u=''; try{ const j=JSON.parse(await readTxt(await fetch(SHEET_URL+'?lineami=1&_='+Date.now()))); if(j.ok) u=j.url; }catch(e){}
-  if(!u){ alert('⚠️ ยังไม่พร้อม — แจ้งหัวหน้า'); return; }
+  const u=LINE_SALON;   // lien direct : plus besoin de demander à Google
   const t=(document.getElementById('phone').value||'').replace(/\D/g,'');
   if(t){ try{ await navigator.clipboard.writeText(t); }catch(e){} }
   alert('📲 LINE จะเปิด → กด “เพิ่มเพื่อน”\nแล้วส่งเบอร์โทรของคุณในแชท'+(t?'\n('+t+' — คัดลอกแล้ว วางได้เลย)':''));
