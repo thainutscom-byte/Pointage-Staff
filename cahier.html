@@ -657,8 +657,18 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       +'<div style="font-size:3rem">⏰</div><div style="font-size:1.35rem;font-weight:800;color:#dc2626">'+esc(nom)+'</div>'
       +'<div style="font-size:1.2rem;font-weight:800;line-height:1.5">กรุณาลงเวลามาทำงานก่อน<br>เปิดแอปของคุณ → กด ▶️ เริ่มงาน</div>'
       +'<div style="font-size:.95rem;color:#475569">แล้วกลับมาที่สมุด → แตะ 🔄 อัปเดต</div>'
-      +'<button type="button" style="border:none;border-radius:14px;padding:14px;font:inherit;font-size:1.1rem;font-weight:800;background:#dc2626;color:#fff">ตกลง</button></div>';
-    o.addEventListener('click',e=>{ if(e.target===o || e.target.tagName==='BUTTON') o.remove(); });
+      +'<button type="button" data-ok style="border:none;border-radius:14px;padding:14px;font:inherit;font-size:1.1rem;font-weight:800;background:#dc2626;color:#fff">ตกลง</button>'
+      +'<button type="button" data-pat style="border:2px solid #b45309;border-radius:14px;padding:11px;font:inherit;font-size:.95rem;font-weight:800;background:#fffbeb;color:#92400e">👑 หัวหน้า : ลงเวลามาให้ '+esc(nom)+' ตอนนี้</button></div>';
+    o.addEventListener('click',e=>{ if(e.target===o || (e.target.closest && e.target.closest('[data-ok]'))) o.remove(); });
+    // 👑 le patron enregistre l'arrivée tout de suite (code 140963) → le nom passe en couleur normale sur tous les cahiers
+    o.querySelector('[data-pat]').onclick=()=>{ o.remove();
+      demanderCode('👑 ลงเวลามาให้ '+nom, 'รหัสหัวหน้า (6 หลัก)', v=>v==='140963', 6).then(async ok=>{ if(!ok) return;
+        toast('⏳ กำลังบันทึก…');
+        try{ const j=JSON.parse(await lireTxt(await fetch(SHEET_URL,{method:'POST',body:JSON.stringify({type:'cahier',op:'arrivee',d:JOUR,name:nom,code:'140963'})})));
+          if(!j.ok) throw 0;
+          VENUES.add(String(nom).toLowerCase()); lsS('cahier_venues_'+JOUR,[...VENUES]); if(!$('form').hidden) drawForm(); draw();
+          toast('✅ '+nom+' ลงเวลามาแล้ว'+(j.heure?' '+j.heure:'')); setTimeout(chargerJour, 1500);
+        }catch(e){ toast('❌ บันทึกไม่ได้ — ตรวจอินเทอร์เน็ตแล้วลองใหม่'); } }); };
     document.body.appendChild(o);
   }
 
