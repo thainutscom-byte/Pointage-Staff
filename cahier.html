@@ -181,6 +181,11 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
 .sync.wait{color:var(--gold)}
 .toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:520px;margin:0 auto;background:var(--ink);color:var(--bg);border-radius:14px;padding:14px 18px;font-weight:600;text-align:center}
 @media (prefers-reduced-motion: no-preference){ .room{transition:background .25s,border-color .25s} }
+/* 💰 MODE PAIEMENT HORS DU SALON : seulement la caisse et « ยังไม่จ่าย » */
+body.payOnly #rooms .room:not(.unpaid),body.payOnly #finSec,body.payOnly #dehorsSec,body.payOnly #btnSuppr,body.payOnly #btnDemo,body.payOnly #btnBoss,body.payOnly #form,body.payOnly #bossPanel,body.payOnly #setPanel,body.payOnly #bookSec{display:none!important}
+#payBan{display:none}
+body.payOnly #payBan{display:block;background:#fef3c7;color:#92400e;border:2px solid #f59e0b;border-radius:14px;padding:10px 12px;margin:0 0 10px;font-weight:800;text-align:center;line-height:1.5}
+#payBan button{margin-top:6px;border:none;border-radius:10px;padding:9px 12px;font:inherit;font-weight:800;background:#0f766e;color:#fff}
 </style>
 </head>
 <body>
@@ -203,6 +208,7 @@ body.demo .wrap{outline:4px dashed #f472b6;outline-offset:-4px;border-radius:18p
       <button class="icon-btn bossbtn" id="btnBoss" type="button">👑 หัวหน้า</button>
     </div>
   </header>
+  <div id="payBan">💰 โหมดจ่ายเงิน (นอกร้าน) — ใช้ได้เฉพาะแคชเชียร์และ “ยังไม่จ่าย”<br><button type="button" id="payBanOut">📍 ตรวจตำแหน่ง · ใช้สมุดเต็ม</button></div>
   <div id="caisseBar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin:-4px 0 10px;font-weight:700;font-size:.95rem"></div>
 
   <div class="panel cash" id="cashPanel" hidden>
@@ -1042,10 +1048,13 @@ try{ if('serviceWorker' in navigator && location.protocol==='https:') navigator.
     voile.innerHTML='<div style="max-width:420px;display:grid;gap:12px"><div style="font-size:3.5rem">📍</div><div style="font-size:1.4rem;font-weight:700">'+titre+'</div>'
       +'<div style="font-size:1.05rem;line-height:1.6;color:#cbd5e1">'+sous+'</div>'
       +'<button type="button" id="gpsRe" style="border:none;border-radius:14px;padding:15px;font:inherit;font-size:1.1rem;font-weight:700;background:#0f766e;color:#fff">🔄 ตรวจตำแหน่งอีกครั้ง</button>'
+      +'<button type="button" id="gpsPaie" style="border:none;border-radius:14px;padding:15px;font:inherit;font-size:1.1rem;font-weight:800;background:#f59e0b;color:#111">💰 จ่ายเงิน · แคชเชียร์</button>'
       +'<button type="button" id="gpsBoss" style="border:2px solid #475569;border-radius:14px;padding:12px;font:inherit;font-weight:700;background:transparent;color:#cbd5e1">👑 รหัสหัวหน้า</button>'
       +'<a href="./" style="color:#94a3b8;font-weight:600">🏠 กลับไปที่แอป</a></div>';
     voile.hidden=false; document.body.style.overflow='hidden';
     voile.querySelector('#gpsRe').onclick=()=>{ ls('cahier_gps_ok','0'); verifier(true); };
+    voile.querySelector('#gpsPaie').onclick=()=>paie(true);
+    if(PAIE_URL || ss_('cahier_paie')==='1') paie(true);   // ouvert depuis l'app verrouillée (« 💰 จ่ายเงิน ») → directement la caisse
     voile.querySelector('#gpsBoss').onclick=()=>{
       if(typeof demanderCode!=='function'){ return; }
       voile.style.zIndex='40';   // le pavé du code passe devant
@@ -1053,7 +1062,15 @@ try{ if('serviceWorker' in navigator && location.protocol==='https:') navigator.
         if(ok){ ls('cahier_gps_libre','1'); cacher(); } });
     };
   }
-  function cacher(){ if(voile){ voile.hidden=true; document.body.style.overflow=''; } }
+  function cacher(){ if(voile){ voile.hidden=true; document.body.style.overflow=''; } paie(false); }
+  // 💰 hors du salon / téléphone verrouillé : la caissière peut quand même encaisser (caisse + « ยังไม่จ่าย »), rien d'autre
+  const PAIE_URL=/[?&]paie=1/.test(location.search), ss_=k=>{ try{ return sessionStorage.getItem(k); }catch(e){ return null; } };
+  function paie(on){
+    try{ on ? sessionStorage.setItem('cahier_paie','1') : sessionStorage.removeItem('cahier_paie'); }catch(e){}
+    document.body.classList.toggle('payOnly', !!on);
+    if(on && voile){ voile.hidden=true; document.body.style.overflow=''; }
+  }
+  { const b=document.getElementById('payBanOut'); if(b) b.onclick=()=>{ ls('cahier_gps_ok','0'); verifier(true); }; }
   async function salon(){
     try{ const c=JSON.parse(lg('pointage_gps_salon')||'null'); if(c && Date.now()-c.t<6*3600e3 && c.v) return c.v; }catch(e){}
     try{ const t=(await (await fetch(API_G+'?gps=1&_='+Date.now())).text()).trim(); const v=t[0]==='{'?JSON.parse(t):{}; ls('pointage_gps_salon', JSON.stringify({t:Date.now(), v})); return v; }catch(e){ return null; }
