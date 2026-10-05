@@ -245,16 +245,16 @@ body.payOnly #payBan{display:block;background:#fef3c7;color:#92400e;border:2px s
   <div class="panel" id="form" hidden>
     <div id="fRoom" style="font-weight:800;font-size:1.3rem;margin-bottom:6px"></div>
     <div class="step">
-      <h2>1 · <b>ลูกค้า</b></h2>
-      <div class="chips" id="cRef"></div>
-    </div>
-    <div class="step">
-      <h2>2 · <b>ชื่อ</b></h2>
+      <h2>1 · <b>ชื่อ</b></h2>
       <div class="chips" id="cNames"></div>
     </div>
     <div class="step">
-      <h2>3 · <b>ประเภท</b> <small style="font-weight:600;color:var(--muted)">อัตโนมัติ</small></h2>
+      <h2>2 · <b>ประเภท</b> <small style="font-weight:600;color:var(--muted)">อัตโนมัติ</small></h2>
       <div class="chips" id="cType"></div>
+    </div>
+    <div class="step">   <!-- 🆕 / 🔁 client : juste avant OP -->
+      <h2>3 · <b>ลูกค้า</b></h2>
+      <div class="chips" id="cRef"></div>
     </div>
     <div class="step">
       <h2>4 · <b>OP</b> 1–5 <span id="total" style="color:var(--accent);font-weight:700"></span></h2>
@@ -646,8 +646,8 @@ body.payOnly #payBan{display:block;background:#fef3c7;color:#92400e;border:2px s
     const T=typ(F.type);
     // นอกร้าน / บาร์ไฟน์ : pas de chambre → chambres grisées
     if(T && T[4]){ F.room=null; $('cRooms').querySelectorAll('button').forEach(b=>b.disabled=true); } else if(!F.room && F.room0 && !roomOf(F.room0)) F.room=F.room0;
-    const manque=!F.ref?'1 · เลือกลูกค้าใหม่ / เก่า':!F.names.length?'2 · เลือกชื่อ':(F.special && F.names.length>2)?'2 · '+TH[F.special]+' = เลือก 1–2 ชื่อ':!T?'3 · เลือกประเภท'
-      :false?'':(T[3]===2 && F.names.length!==2)?'4 · '+TH[F.type]+' = ต้องเลือก 2 ชื่อ':(T[3]===3 && F.names.length!==3)?'4 · '+TH.l3+' = ต้องเลือก 3 ชื่อ':(T[3]===1 && F.names.length!==1)?'4 · '+TH.l1+' = เลือก 1 ชื่อ':(T[3]===0 && F.names.length>2)?'4 · เลือก 1–2 ชื่อ'
+    const manque=!F.names.length?'1 · เลือกชื่อ':(F.special && F.names.length>2)?'1 · '+TH[F.special]+' = เลือก 1–2 ชื่อ':!T?'2 · เลือกประเภท':!F.ref?'3 · เลือกลูกค้าใหม่ / เก่า'
+      :false?'':(T[3]===2 && F.names.length!==2)?'1 · '+TH[F.type]+' = ต้องเลือก 2 ชื่อ':(T[3]===3 && F.names.length!==3)?'1 · '+TH.l3+' = ต้องเลือก 3 ชื่อ':(T[3]===1 && F.names.length!==1)?'1 · '+TH.l1+' = เลือก 1 ชื่อ':(T[3]===0 && F.names.length>2)?'4 · เลือก 1–2 ชื่อ'
       :(!T[4] && !F.room)?'แตะห้องที่ว่างก่อน':'';
     $('fRoom').textContent=T&&T[4]?TH[F.special]+' · นอกร้าน':F.room?'🛏️ ห้อง '+F.room:'';
     $('start').disabled=!!manque; $('hint').textContent=manque?'👉 '+manque:'';
