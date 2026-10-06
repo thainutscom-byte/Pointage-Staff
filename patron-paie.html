@@ -107,7 +107,7 @@ function dessiner(){
       +(x.ret?'<div class="lig neg"><span>Autres retenues</span><span>− '+baht(x.ret)+'</span></div>':'')
       +'<div class="lig net"><span>Net à payer</span><span>'+baht(x.net)+'</span></div>'
       +(x.paye?'<button type="button" class="pay ok" data-i="'+i+'" data-act="voir">✅ PAYÉ · '+baht(x.net)+'</button><button type="button" class="annul" data-i="'+i+'" data-act="annuler">annuler « payé »</button>'
-              :'<button type="button" class="pay" data-i="'+i+'" data-act="payer"'+(x.net>0?'':' disabled style="opacity:.5"')+'>💰 PAYER · '+baht(x.net)+'</button>'+(x.qr?'':'<div class="noqr">⚠️ pas encore de QR Code banque (elle doit l\'ajouter dans son app)</div>'))
+              :'<button type="button" class="pay" data-i="'+i+'" data-act="payer"'+(x.net>0?'':' disabled style="opacity:.5"')+'>💰 PAYER · '+baht(x.net)+'</button>'+(x.qr?'':'<div class="noqr">⚠️ QR Code banque pas encore reçu : elle doit ouvrir son app une fois (ou l\'ajouter dans 👤 ข้อมูลของฉัน)</div>'))
       +'</div>'; }).join('');
 }
 async function charger(maj){
