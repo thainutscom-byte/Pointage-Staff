@@ -92,7 +92,7 @@
     LINES_P=(async()=>{ try{ const j=JSON.parse(await txt(await fetch(API+'?lineids=1&_='+Date.now()))); if(j && j.line) LINES=j.line; }catch(e){} return LINES; })(); return LINES_P; }
   const cleE=(nom,tel)=>String(nom||'').trim().toLowerCase().replace(/\s+/g,' ')+'|'+String(tel||'').replace(/\D/g,'');
   function msgRetard(o){ const n=new Date(); return 'สวัสดี '+o.nom+' 🙏 ตอนนี้ '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+' น. แล้ว คุณยังไม่ได้กดเริ่มงาน (ช่วงเวลา '+o.sh+') กรุณามาที่ร้านด่วน หรือแจ้งหัวหน้าทันที'; }
-  const APP_URL='https://thainutscom-byte.github.io/Pointage-Staff/?openExternalBrowser=1&absence=';
+  const APP_URL='https://pointage-staff.web.app/app/?openExternalBrowser=1&absence=';
   function msgGroupe(o){ const n=new Date(), h=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
     return '📢 @'+o.nom+' ⏰ ตอนนี้ '+h+' น. ยังไม่ได้กดเริ่มงาน (ช่วงเวลา '+o.sh+')\n'
       +'🏃 กำลังมา → ถึงร้านแล้วกด ▶️ เริ่มงาน ในแอป\n'

@@ -63,7 +63,7 @@
     }
     if (r.kind === 'barfine') { L.push('📅 ' + jourTh(isoVers(r.deb)) + ' → ' + jourTh(isoVers(r.fin)) + ' · ' + r.jours + ' วัน / jours'); if (r.note) L.push('📝 ' + r.note); }
     if (r.kind === 'demission') { L.push('📅 วันทำงานวันสุดท้าย / dernier jour : ' + jourTh(isoVers(r.dernier))); if (r.raison) L.push('📝 ' + r.raison);
-      L.push('👑 https://thainutscom-byte.github.io/Pointage-Staff/patron-demission.html'); }
+      L.push('👑 https://pointage-staff.web.app/patron/demission.html'); }
     return 'https://line.me/R/oaMessage/' + encodeURIComponent(LINE_PATRON) + '/?' + encodeURIComponent(L.join('\n'));
   }
 

@@ -69,7 +69,7 @@
 </div>
 <script>
 // 💬 lien manager PERSONNEL (une clé par personne) envoyé UNIQUEMENT par LINE · retirable dans « 👥 Accès manager »
-const MGR_URL='https://thainutscom-byte.github.io/Pointage-Staff/manager.html';
+const MGR_URL='https://pointage-staff.web.app/app/manager.html';
 async function mgrPost(o){ let t=(await (await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({type:'mgr'},o))})).text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } const j=JSON.parse(t); if(!j.ok) throw j.err||'x'; return j; }
 let MGR_L=[];   // accès déjà envoyés (pour marquer « déjà manager »)
 async function mgrChoix(){
