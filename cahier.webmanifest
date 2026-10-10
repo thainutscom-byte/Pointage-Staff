@@ -1,8 +1,9 @@
 {
+ "id": "./cahier.html",
  "name": "สมุดลงงาน",
  "short_name": "สมุดลงงาน",
  "start_url": "cahier.html",
- "scope": "./",
+ "scope": "./cahier",
  "display": "standalone",
  "background_color": "#282a2f",
  "theme_color": "#0f766e",
