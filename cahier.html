@@ -460,7 +460,10 @@ body.payOnly #payBan{display:block;background:#fef3c7;color:#92400e;border:2px s
   const noms=()=>{ const L=STAFF.concat((S.extra||[]).filter(x=>!STAFF.some(y=>y.toLowerCase()===x.toLowerCase())));
     return L.concat(ESSAI.filter(x=>!L.some(y=>y.toLowerCase()===x.toLowerCase()))); };
   // ⏰ POINTAGE OBLIGATOIRE : une fille qui n'a pas fait « ▶️ เริ่มงาน » aujourd'hui ne peut pas être mise dans un massage
-  const pasPointe=n=>false && !DEMO && STAFF.length>0 && !ESSAI.includes(n) && !(S.extra||[]).includes(n) && !VENUES.has(String(n).toLowerCase());
+  const pasPointe=n=>!DEMO && STAFF.length>0 && !ESSAI.includes(n) && !(S.extra||[]).includes(n) && !VENUES.has(String(n).toLowerCase());
+  // 👥 le cahier n'affiche QUE les filles présentes (pointées, pas encore parties) ; les autres derrière « 👀 ยังไม่มา »
+  let VOIR_ABS=false;
+  const estLa=(s,bn)=>bn.has(s) || F.names.includes(s) || (!finie(s) && (DEMO ? s!=='Nok' : !pasPointe(s)));
   const finie=n=>FINS.some(f=>String(f.n).trim().toLowerCase()===String(n).trim().toLowerCase());
 
   // ===== ☁️ ENREGISTREMENT DANS GOOGLE (onglets 🗒️ Cahier et 💰 Caisse) =====
@@ -626,8 +629,9 @@ body.payOnly #payBan{display:block;background:#fef3c7;color:#92400e;border:2px s
   let F={names:[],room:null,type:null,qty:1,pay:null,ref:null};
   function chip(label,sub,on,dis,attr,col){ return '<button class="chip'+(on?' on':'')+'" type="button" '+(col?'style="--c:'+col+'" ':'')+attr+(dis?' disabled':'')+'>'+label+(sub?'<small>'+sub+'</small>':'')+'</button>'; }
   function drawForm(){
-    const bn=busyNames();
-    $('cNames').innerHTML=(STAFF.length?'':'<p class="note">⚠️ ยังไม่มีรายชื่อพนักงานวันนี้ — ตรวจอินเทอร์เน็ต</p>')+noms().map((s,i)=>({s,i,h:horDe(s)})).sort((a,b)=>(a.h?HOR.indexOf(a.h):99)-(b.h?HOR.indexOf(b.h):99) || (ESSAI.includes(a.s)-ESSAI.includes(b.s)) || a.s.localeCompare(b.s)).map(({s,h})=>chip(esc(s), pasPointe(s)?'⛔ ยังไม่ลงเวลามา':bn.has(s)?'กำลังนวด':finie(s)?'🏁 จบงานแล้ว':S.caissiere===s?'💰 แคชเชียร์':h?'🕐 '+h[1]:(S.extra||[]).includes(s)?'➕ วันนี้':'', F.names.includes(s), false, 'data-name="'+esc(s)+'"'+(bn.has(s)?' data-occupee="1"':'')+(pasPointe(s)?' data-paspointe="1"':''), ESSAI.includes(s)?'#e5e7eb':h?h[2]:'#94a3b8')).join('')
+    const bn=busyNames(), nAbs=noms().filter(s=>!estLa(s,bn)).length;
+    $('cNames').innerHTML=(STAFF.length?'':'<p class="note">⚠️ ยังไม่มีรายชื่อพนักงานวันนี้ — ตรวจอินเทอร์เน็ต</p>')+noms().filter(s=>VOIR_ABS || estLa(s,bn)).map((s,i)=>({s,i,h:horDe(s)})).sort((a,b)=>(a.h?HOR.indexOf(a.h):99)-(b.h?HOR.indexOf(b.h):99) || (ESSAI.includes(a.s)-ESSAI.includes(b.s)) || a.s.localeCompare(b.s)).map(({s,h})=>chip(esc(s), pasPointe(s)?'⛔ ยังไม่ลงเวลามา':bn.has(s)?'กำลังนวด':finie(s)?'🏁 จบงานแล้ว':S.caissiere===s?'💰 แคชเชียร์':h?'🕐 '+h[1]:(S.extra||[]).includes(s)?'➕ วันนี้':'', F.names.includes(s), false, 'data-name="'+esc(s)+'"'+(bn.has(s)?' data-occupee="1"':'')+(pasPointe(s)?' data-paspointe="1"':''), pasPointe(s)?'#ef4444':ESSAI.includes(s)?'#e5e7eb':h?h[2]:'#94a3b8')).join('')
+      +(nAbs?chip(VOIR_ABS?'🙈 ซ่อนคนที่ไม่อยู่':'👀 ไม่อยู่ '+nAbs+' คน','',false,false,'data-voirabs="1"','#64748b'):'')
       +chip('➕ ชื่ออื่น','รหัสหัวหน้า',false,false,'data-addname="1"','#64748b');
     let rh=''; for(let k=1;k<=S.rooms;k++){ const r=roomOf(k); rh+=chip('ห้อง '+k, r?'🔴 '+r.names.map(esc).join('+'):'🟢 ว่าง', F.room===k, !!r, 'data-room="'+k+'"', '#34d399'); }
     $('cRooms').innerHTML=rh; $('cRooms').style.setProperty('--nr', S.rooms);
@@ -652,7 +656,7 @@ body.payOnly #payBan{display:block;background:#fef3c7;color:#92400e;border:2px s
     $('fRoom').textContent=T&&T[4]?TH[F.special]+' · นอกร้าน':F.room?'🛏️ ห้อง '+F.room:'';
     $('start').disabled=!!manque; $('hint').textContent=manque?'👉 '+manque:'';
   }
-  function openForm(room){ F={names:[],room:room||null,room0:room||null,type:null,special:null,qty:1,pay:null,ref:null}; $('form').hidden=false; drawForm(); $('form').scrollIntoView({behavior:'smooth',block:'start'}); }
+  function openForm(room){ F={names:[],room:room||null,room0:room||null,type:null,special:null,qty:1,pay:null,ref:null}; VOIR_ABS=false; $('form').hidden=false; drawForm(); $('form').scrollIntoView({behavior:'smooth',block:'start'}); }
   function closeForm(){ $('form').hidden=true; }
   // ⛔ nom en rouge = pas encore « ▶️ เริ่มงาน » : message clair « valide ton heure d'arrivée »
   function pasPointeMsg(nom){
@@ -686,6 +690,7 @@ body.payOnly #payBan{display:block;background:#fef3c7;color:#92400e;border:2px s
       demanderCode('➕ ชื่ออื่น', 'รหัสหัวหน้า', v=>v===codeJour(), 6).then(ok=>{ if(!ok) return;
         $('addNIn').value=''; $('addN').hidden=false; setTimeout(()=>$('addNIn').focus(),50); });
       return; }
+    if(b.dataset.voirabs){ VOIR_ABS=!VOIR_ABS; drawForm(); return; }
     if(b.dataset.paspointe){ pasPointeMsg(b.dataset.name); return; }
     if(b.dataset.occupee){ const s=b.dataset.name, r=live().find(x=>x.names.includes(s));
       toast('⛔ '+s+' กำลังนวด'+(r?(dehors(r)?' (นอกร้าน)':' (ห้อง '+r.room+')'):'')+' — กด ⏹ เสร็จ ก่อน'); return; }
