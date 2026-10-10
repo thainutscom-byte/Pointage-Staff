@@ -84,6 +84,18 @@
     <h2 style="margin:6px 0">ขออภัย ไม่สามารถจองได้</h2>
     <div id="ageStopTxt" style="line-height:1.7;font-size:1.02rem"></div>
     <div class="small" style="margin-top:12px">รับสมัครเฉพาะผู้หญิงสัญชาติไทย อายุ 18 ปีขึ้นไป<br>ต้องนำบัตรประชาชนมาแสดงในวันเริ่มงาน</div>
+    <div id="minBox" style="display:none;margin-top:14px;padding-top:12px;border-top:2px dashed #e5e7eb;text-align:left">
+      <div style="font-weight:800;text-align:center;line-height:1.5">💌 ฝากชื่อและไอดีไลน์ไว้<br>เราจะติดต่อคุณเมื่ออายุครบ 18 ปี</div>
+      <label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label>
+      <input id="minNom" placeholder="เช่น Fah" autocomplete="off" autocapitalize="words">
+      <label>💬 ไอดีไลน์ (LINE ID)</label>
+      <input id="minLine" placeholder="เช่น fah.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <label>📞 เบอร์โทรศัพท์ (ไม่บังคับ)</label>
+      <input id="minTel" type="tel" inputmode="numeric" placeholder="08X XXX XXXX">
+      <button class="big" id="minGo" disabled onclick="minEnvoyer()" style="margin-top:12px">💌 ฝากข้อมูลไว้</button>
+      <div id="minMsg" class="warn" style="text-align:center;margin-top:8px"></div>
+    </div>
+    <div id="minOk" style="display:none;margin-top:14px;font-weight:800;color:var(--green);line-height:1.6">✅ บันทึกแล้ว — เราจะติดต่อคุณทาง LINE เมื่ออายุครบ 18 ปี 🎂</div>
   </div>
   <div id="p35" class="card" style="display:none;border:3px solid #ec4899">
     <h2 style="margin:0 0 4px;font-size:1.15rem">🙋 ใบสมัคร (อายุเกิน 35 ปี)</h2>
@@ -218,13 +230,30 @@ function ageRefus(){
   if(n<AGE_MIN){ const b=new Date(d); b.setFullYear(d.getFullYear()+AGE_MIN); jusqua=iso(b);
     txt='ต้องมีอายุ <b>18 ปีขึ้นไป</b> เท่านั้น<br>ตอนนี้คุณอายุ <b>'+n+' ปี</b><br><br>📅 จองได้ตั้งแต่วันที่<br><b style="font-size:1.3rem">'+dm(jusqua)+'</b><br>(วันเกิดอายุครบ 18 ปี)'; }
   else txt='รับสมัครเฉพาะผู้ที่มีอายุ <b>18 – 35 ปี</b><br>ขอบคุณที่สนใจร่วมงานกับเรา 🙏';
-  lsSet('booking_age_stop', JSON.stringify({jusqua, txt, n}));
+  lsSet('booking_age_stop', JSON.stringify({jusqua, txt, n, dn:dnIso()}));
   scan('⛔ âge refusé : '+n+' ans (née le '+dm(dnIso())+')'+(jusqua!=='toujours'?' → bloquée jusqu\'au '+dm(jusqua):''));
-  ageStop(txt);
+  ageStop(txt); minAfficher(dnIso());
 }
 function ageStop(txt){ $('gate').style.display='none'; $('form').style.display='none'; $('ageStop').style.display='block'; $('ageStopTxt').innerHTML=txt; window.scrollTo(0,0); }
 function ageBloque(){ try{ const o=JSON.parse(lsGet('booking_age_stop')||'null'); if(!o) return null;
   if(o.jusqua!=='toujours' && iso(new Date())>=o.jusqua){ localStorage.removeItem('booking_age_stop'); return null; } return o; }catch(e){ return null; } }
+// 👧 MOINS DE 18 ANS : nom + LINE ID (+ téléphone) enregistrés → rappel automatique au patron le jour de ses 18 ans
+let MIN_DN='';
+function minAfficher(dn){ if(!dn || lsGet('booking_mineure_ok')) { if(lsGet('booking_mineure_ok')) $('minOk').style.display='block'; return; }
+  MIN_DN=dn; $('minBox').style.display='block'; if(!$('minNom').value && $('name').value) $('minNom').value=$('name').value; if(!$('minTel').value && $('phone').value) $('minTel').value=$('phone').value; minCheck(); }
+function minOkForm(){ const t=$('minTel').value.replace(/\D/g,'');
+  return /^[A-Za-z][A-Za-z .'-]*$/.test($('minNom').value.trim()) && /^[a-z0-9._-]{4,20}$/.test($('minLine').value.trim().toLowerCase()) && (!t || /^0[689]\d{8}$/.test(t)); }
+function minCheck(){ $('minGo').disabled=!minOkForm(); }
+['minNom','minLine','minTel'].forEach(id=>$(id).addEventListener('input',minCheck));
+async function minEnvoyer(){
+  if(!minOkForm()) return; const b=$('minGo'); b.disabled=true; b.textContent='⏳ …'; $('minMsg').style.display='none';
+  const p={type:'mineure', name:$('minNom').value.trim(), line:$('minLine').value.trim().toLowerCase(), phone:$('minTel').value.replace(/\D/g,''), naissance:MIN_DN, th:ctl()};
+  try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify(p)})));
+    if(j.ok){ lsSet('booking_mineure_ok','1'); $('minBox').style.display='none'; $('minOk').style.display='block'; return; }
+    $('minMsg').textContent= j.err==='line'?'⚠️ LINE ID ไม่ถูกต้อง':j.err==='tel'?'⚠️ เบอร์โทรไม่ถูกต้อง':'⚠️ ส่งไม่ได้ — ลองใหม่';
+  }catch(e){ $('minMsg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; }
+  $('minMsg').style.display='block'; b.textContent='💌 ฝากข้อมูลไว้'; b.disabled=false;
+}
 function ageOk(){ const a=ageVal(); return a>=AGE_MIN && a<=AGE_MAX; }
 // 🙋 PLUS DE 35 ANS : pas bloquée → candidature avec 3 photos plein pied + LINE ID, en attente d'acceptation
 const P35=[null,null,null];
@@ -438,7 +467,7 @@ function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function jour(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function gateStart(){
   if(window.__parVu){ scan(window.__parVu); window.__parVu=''; }
-  { const o=ageBloque(); if(o && o.n>AGE_MAX){ try{ localStorage.removeItem('booking_age_stop'); }catch(e){} } else if(o){ ageStop(o.txt); scan('⛔ âge : déjà bloquée ('+o.n+' ans)'); return; } }
+  { const o=ageBloque(); if(o && o.n>AGE_MAX){ try{ localStorage.removeItem('booking_age_stop'); }catch(e){} } else if(o){ ageStop(o.txt); minAfficher(o.dn); scan('⛔ âge : déjà bloquée ('+o.n+' ans)'); return; } }
   if(lsGet('booking_stop')===jour()){ bloquer(); scan('⛔ déjà bloqué aujourd\'hui'); return; }
   if(lsGet('booking_th')==='1'){ ouvrir(); scan('ouvert (déjà vérifié)'); return; }
   if(new URLSearchParams(location.search).get('mode')==='contrat' && /^0\d{9}$/.test(new URLSearchParams(location.search).get('t')||'')){ lsSet('booking_th','1'); ouvrir(); scan('🧪 après essai → contrat'); return; }
