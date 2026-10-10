@@ -41,6 +41,8 @@
   .qw{font-size:2.6rem;font-weight:800;text-align:center;margin:10px 0 14px}
   .qc{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .qc button{font-size:2.2rem;padding:14px 0;border-radius:14px;border:2px solid var(--border);background:#fff;color:var(--text)}
+.p35ph{display:flex;align-items:center;justify-content:center;min-height:96px;border:2px dashed #ec4899;border-radius:12px;background:#fdf2f8;font-weight:700;font-size:.85rem;text-align:center;cursor:pointer;overflow:hidden;margin:0;padding:0}
+.p35ph img{width:100%;height:96px;object-fit:cover;display:block}
 </style>
 </head>
 <body>
@@ -64,7 +66,7 @@
 
   <div class="card" style="background:#fef3c7;border:2px solid #f59e0b;text-align:center;line-height:1.6">
     <div style="font-weight:800;font-size:1.05rem">🇹🇭 รับสมัครเฉพาะผู้ที่มีสัญชาติไทยเท่านั้น</div>
-    <div class="small" style="color:#92400e;font-weight:700">👩 เฉพาะผู้หญิง (Lady) อายุ 18 – 35 ปี เท่านั้น</div>
+    <div class="small" style="color:#92400e;font-weight:700">👩 เฉพาะผู้หญิง (Lady) อายุ 18 ปีขึ้นไป<br>อายุเกิน 35 ปี: ส่งใบสมัครพร้อมรูปถ่าย ผู้จัดการจะติดต่อกลับ</div>
   </div>
 
   <div id="gate" class="card" style="text-align:center">
@@ -81,7 +83,35 @@
     <div class="ic">⛔</div>
     <h2 style="margin:6px 0">ขออภัย ไม่สามารถจองได้</h2>
     <div id="ageStopTxt" style="line-height:1.7;font-size:1.02rem"></div>
-    <div class="small" style="margin-top:12px">รับสมัครเฉพาะผู้หญิงสัญชาติไทย อายุ 18 – 35 ปี<br>ต้องนำบัตรประชาชนมาแสดงในวันเริ่มงาน</div>
+    <div class="small" style="margin-top:12px">รับสมัครเฉพาะผู้หญิงสัญชาติไทย อายุ 18 ปีขึ้นไป<br>ต้องนำบัตรประชาชนมาแสดงในวันเริ่มงาน</div>
+  </div>
+  <div id="p35" class="card" style="display:none;border:3px solid #ec4899">
+    <h2 style="margin:0 0 4px;font-size:1.15rem">🙋 ใบสมัคร (อายุเกิน 35 ปี)</h2>
+    <div class="small" style="margin-bottom:8px">กรุณากรอกข้อมูลให้ครบ · ผู้จัดการจะดูรูปและติดต่อกลับ</div>
+    <div style="line-height:1.8;font-weight:700;margin-bottom:6px">✔ คุณอายุเท่าไหร่ สัดส่วน<br>✔ โปรดส่งรูปภาพปัจจุบัน 3 รูป ร่างกายเต็ม<br>✔ หมายเลขโทรศัพท์<br>✔ ไอดีไลน์ ผู้จัดการจะโทรหาคุณ</div>
+    <label>ชื่อเล่น (เขียนเป็นภาษาอังกฤษ)</label>
+    <input id="p35nom" placeholder="เช่น Noi" autocomplete="off" autocapitalize="words">
+    <label>🎂 อายุ</label>
+    <div id="p35age" style="font-size:1.2rem;font-weight:800"></div>
+    <label>📏 สัดส่วน (อก-เอว-สะโพก)</label>
+    <input id="p35prop" placeholder="เช่น 34-26-36" autocomplete="off" maxlength="40">
+    <label>📷 รูปภาพปัจจุบัน 3 รูป · เต็มตัว (หัวถึงเท้า)</label>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+      <label class="p35ph"><input type="file" accept="image/*" data-i="0" hidden><span>📷 รูปที่ 1</span></label>
+      <label class="p35ph"><input type="file" accept="image/*" data-i="1" hidden><span>📷 รูปที่ 2</span></label>
+      <label class="p35ph"><input type="file" accept="image/*" data-i="2" hidden><span>📷 รูปที่ 3</span></label>
+    </div>
+    <label>📞 หมายเลขโทรศัพท์</label>
+    <input id="p35tel" type="tel" inputmode="numeric" placeholder="08X XXX XXXX">
+    <label>💬 ไอดีไลน์ (LINE ID)</label>
+    <input id="p35line" placeholder="เช่น noi.123" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+    <button class="big" id="p35go" disabled onclick="p35Envoyer()" style="margin-top:14px">📨 ส่งใบสมัคร</button>
+    <div id="p35msg" class="warn" style="text-align:center;margin-top:10px"></div>
+  </div>
+  <div id="p35ok" class="card ok" style="display:none">
+    <div class="ic">✅</div>
+    <h2 style="margin:6px 0">ได้รับใบสมัครแล้ว</h2>
+    <div style="line-height:1.7">ขอบคุณที่สนใจร่วมงานกับเรา 🙏<br>ใบสมัครของคุณ <b>รอการพิจารณา</b><br>ผู้จัดการจะติดต่อกลับทาง <b>LINE</b> หรือ <b>โทรศัพท์</b></div>
   </div>
   <div id="form" style="display:none">
     <div id="parBand" class="card" style="display:none;text-align:center;border:2px solid #ec4899;background:#fdf2f8;font-weight:800">👭 เพื่อนของ <span id="parBandNom"></span> แนะนำมา · ยินดีต้อนรับ 💖</div>
@@ -104,7 +134,7 @@
         <select id="dnA"><option value="">ปี (พ.ศ.)</option></select>
       </div>
       <div id="ageWarn" class="warn"></div>
-      <div class="small" style="margin-top:4px">รับสมัครเฉพาะผู้ที่มีอายุ 18 – 35 ปี</div>
+      <div class="small" style="margin-top:4px">อายุ 18 – 35 ปี: จองได้ทันที · อายุเกิน 35 ปี: ส่งใบสมัครพร้อมรูปถ่าย</div>
       <label class="modeC">ประเภทสัญญา</label>
       <select id="contract" class="modeC"><option value="10">ฟรีแลนซ์ (10 วัน)</option><option value="30">รายเดือน (30 วัน)</option></select>
       <label id="startLbl" class="modeC">วันที่เริ่มงาน</label>
@@ -171,7 +201,7 @@ const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+Stri
 const dm=s=>s.split('-').reverse().join('/');
 async function readTxt(r){ let t=(await r.text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } return t; }
 function nomOk(){ return /^[A-Za-z][A-Za-z .'-]*$/.test($('name').value.trim()); }
-// 🎂 DATE DE NAISSANCE : âge calculé → hors 18-35 ans = page de refus, bloqué (moins de 18 ans : jusqu'à ses 18 ans)
+// 🎂 DATE DE NAISSANCE : moins de 18 ans = refus (jusqu'à ses 18 ans) · plus de 35 ans = candidature avec photos (pas de blocage)
 const MOIS_TH=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 (()=>{ const J=$('dnJ'), M=$('dnM'), A=$('dnA'), y=new Date().getFullYear();
   for(let i=1;i<=31;i++) J.add(new Option(i, i));
@@ -196,6 +226,34 @@ function ageStop(txt){ $('gate').style.display='none'; $('form').style.display='
 function ageBloque(){ try{ const o=JSON.parse(lsGet('booking_age_stop')||'null'); if(!o) return null;
   if(o.jusqua!=='toujours' && iso(new Date())>=o.jusqua){ localStorage.removeItem('booking_age_stop'); return null; } return o; }catch(e){ return null; } }
 function ageOk(){ const a=ageVal(); return a>=AGE_MIN && a<=AGE_MAX; }
+// 🙋 PLUS DE 35 ANS : pas bloquée → candidature avec 3 photos plein pied + LINE ID, en attente d'acceptation
+const P35=[null,null,null];
+function plus35(){
+  $('form').style.display='none'; $('gate').style.display='none'; $('p35').style.display='block';
+  $('p35age').textContent=ageVal()+' ปี'; if(!$('p35nom').value) $('p35nom').value=$('name').value; if(!$('p35tel').value) $('p35tel').value=$('phone').value;
+  if(!plus35.vu){ plus35.vu=1; scan('🙋 +35 ans ('+ageVal()+' ans) → formulaire candidature'); }
+  window.scrollTo(0,0); p35Check();
+}
+function p35Ok(){ return /^[A-Za-z][A-Za-z .'-]*$/.test($('p35nom').value.trim()) && /^0[689]\d{8}$/.test($('p35tel').value.replace(/\D/g,''))
+  && /^[a-z0-9._-]{4,20}$/.test($('p35line').value.trim().toLowerCase()) && $('p35prop').value.trim().length>=2 && P35.every(Boolean); }
+function p35Check(){ $('p35go').disabled=!p35Ok(); }
+function p35Reduire(f){ return new Promise((ok,ko)=>{ const u=URL.createObjectURL(f), im=new Image();
+  im.onload=()=>{ const m=1280, k=Math.min(1, m/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg',0.8)); };
+  im.onerror=()=>{ URL.revokeObjectURL(u); ko(); }; im.src=u; }); }
+document.querySelectorAll('.p35ph input').forEach(inp=>inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; if(!f) return; const i=+inp.dataset.i, sp=inp.nextElementSibling;
+  sp.textContent='⏳'; try{ P35[i]=await p35Reduire(f); sp.innerHTML='<img alt="">'; sp.querySelector('img').src=P35[i]; }catch(e){ P35[i]=null; sp.textContent='⚠️ ลองใหม่'; } p35Check(); });
+['p35nom','p35prop','p35tel','p35line'].forEach(id=>$(id).addEventListener('input',p35Check));
+async function p35Envoyer(){
+  if(!p35Ok()) return; const b=$('p35go'); b.disabled=true; b.textContent='⏳ กำลังส่ง…'; $('p35msg').style.display='none';
+  const p={type:'candidature', name:$('p35nom').value.trim(), phone:$('p35tel').value.replace(/\D/g,''), line:$('p35line').value.trim().toLowerCase(),
+    age:ageVal(), naissance:dnIso(), prop:$('p35prop').value.trim(), photos:P35, th:ctl()};
+  try{ const j=JSON.parse(await readTxt(await fetch(API,{method:'POST',body:JSON.stringify(p)})));
+    if(j.ok){ $('p35').style.display='none'; $('p35ok').style.display='block'; window.scrollTo(0,0); return; }
+    $('p35msg').textContent= j.err==='tel'?'⚠️ เบอร์โทรไม่ถูกต้อง':j.err==='line'?'⚠️ LINE ID ไม่ถูกต้อง':j.err==='photos'?'⚠️ กรุณาเลือกรูป 3 รูป':'⚠️ ส่งไม่ได้ — ลองใหม่';
+  }catch(e){ $('p35msg').textContent='⚠️ ไม่มีอินเทอร์เน็ต — ลองใหม่'; }
+  $('p35msg').style.display='block'; b.textContent='📨 ส่งใบสมัคร'; b.disabled=false;
+}
 function lineOk(){ return /^[a-z0-9._-]{4,20}$/.test($('lineid').value.trim().toLowerCase()); }
 function telOk(){ return /^0\d{9}$/.test($('phone').value.replace(/\D/g,'')); }
 function fin(){ const s=$('start').value; if(!s) return ''; const d=new Date(s+'T00:00:00'); d.setDate(d.getDate()+(+$('contract').value)-1); return iso(d); }
@@ -266,7 +324,7 @@ async function reserverEssai(){
 function check(){
   { const aw=$('ageWarn'), d=naissance();
     if(d==='x'){ aw.textContent='⚠️ วันเกิดไม่ถูกต้อง'; aw.style.display='block'; }
-    else { aw.style.display='none'; if(d && !ageOk()){ ageRefus(); return; } } }
+    else { aw.style.display='none'; if(d && !ageOk()){ if(ageVal()>AGE_MAX){ plus35(); return; } ageRefus(); return; } } }
   if(MODE==='essai'){ $('nameWarn').style.display = $('name').value.trim() && !nomOk() ? 'block' : 'none';
     $('telWarn').style.display = $('phone').value.trim() && !telOk() ? 'block' : 'none'; $('endTxt').textContent='';
     $('lineWarn').style.display = $('lineid').value.trim() && !lineOk() ? 'block' : 'none';
@@ -380,7 +438,7 @@ function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function jour(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function gateStart(){
   if(window.__parVu){ scan(window.__parVu); window.__parVu=''; }
-  { const o=ageBloque(); if(o){ ageStop(o.txt); scan('⛔ âge : déjà bloquée ('+o.n+' ans)'); return; } }
+  { const o=ageBloque(); if(o && o.n>AGE_MAX){ try{ localStorage.removeItem('booking_age_stop'); }catch(e){} } else if(o){ ageStop(o.txt); scan('⛔ âge : déjà bloquée ('+o.n+' ans)'); return; } }
   if(lsGet('booking_stop')===jour()){ bloquer(); scan('⛔ déjà bloqué aujourd\'hui'); return; }
   if(lsGet('booking_th')==='1'){ ouvrir(); scan('ouvert (déjà vérifié)'); return; }
   if(new URLSearchParams(location.search).get('mode')==='contrat' && /^0\d{9}$/.test(new URLSearchParams(location.search).get('t')||'')){ lsSet('booking_th','1'); ouvrir(); scan('🧪 après essai → contrat'); return; }
