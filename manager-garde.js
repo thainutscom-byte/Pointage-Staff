@@ -2,7 +2,7 @@
 // · le téléphone du patron (a ouvert patron.html) passe toujours
 // · le téléphone du manager garde sa clé ; si le patron la retire → « ⛔ Accès retiré » sur la fiche et ses pages
 (function () {
-  var API = 'https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+  var API = 'https://pointage-staff.web.app/api';
   function g(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function s(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
   var kUrl = new URLSearchParams(location.search).get('k');

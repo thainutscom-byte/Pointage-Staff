@@ -83,7 +83,7 @@
 <script src="autorisation.js?v=8"></script>
 <script>
 // 💰 FICHE DE PAIE : une fiche par employée (onglet « 💰 Paie contrats ») · 💰 Payer → QR Code banque de la fille · ✅ payé → fiche verte
-const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const API='https://pointage-staff.web.app/api';
 const $=id=>document.getElementById(id);
 const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const baht=n=>Math.round(n||0).toLocaleString('en-US')+' ฿';

@@ -372,7 +372,7 @@ body.payOnly #payBan{display:block;background:#fef3c7;color:#92400e;border:2px s
 <script>
 (function(){
   const $=id=>document.getElementById(id);
-  const SHEET_URL='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+  const SHEET_URL='https://pointage-staff.web.app/api';
   // 🧪 mode entraînement : filles et téléphones d'exemple
   const DEMO_STAFF=['Noi','Ploy','Mint','Fon','Joy','Bee','Nok','Aom'];
   const DEMO_TEL={Noi:'0812345678',Ploy:'0623456789',Mint:'0934567890',Fon:'0845678901',Joy:'0656789012',Bee:'0967890123',Nok:'0878901234',Aom:'0689012345'};
@@ -1034,7 +1034,7 @@ try{ if('serviceWorker' in navigator && location.protocol==='https:') navigator.
 
 // ===== 📍 CAHIER UTILISABLE UNIQUEMENT AU SALON (position GPS) — sauf téléphone du patron ou appareil débloqué par le code 👑 =====
 (function(){
-  const API_G='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+  const API_G='https://pointage-staff.web.app/api';
   const lg=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, ls=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
   const exempt=()=>{ if(lg('pointage_patron')==='1' || lg('cahier_gps_libre')==='1') return true;
     try{ const o=JSON.parse(lg('pointage_ident')||'null'); if(o && /^boss$/i.test(String(o.name||'').trim())) return true; }catch(e){} return false; };

@@ -35,7 +35,7 @@
   <a href="patron.html" style="display:block;text-align:center;margin-top:14px;color:var(--red);font-weight:700;text-decoration:none">← Espace patron</a>
 </div>
 <script>
-const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const API='https://pointage-staff.web.app/api';
 const $=id=>document.getElementById(id), esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fr=n=>String(Math.round(n*10)/10).replace('.',','), baht=n=>Math.round(n).toLocaleString('fr-FR')+' ฿';
 async function post(op){ let t=(await (await fetch(API,{method:'POST',body:JSON.stringify({type:'papier',op})})).text()).trim(); if(t[0]==='<'){ try{ t=new DOMParser().parseFromString(t,'text/html').body.innerText.trim(); }catch(e){} } const j=JSON.parse(t); if(!j.ok) throw j.err||'x'; return j; }

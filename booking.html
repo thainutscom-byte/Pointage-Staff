@@ -157,7 +157,7 @@
   </div>
 </div>
 <script>
-const API='https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec';
+const API='https://pointage-staff.web.app/api';
 const SH={ '10':[['10h-16h','10:00-16:00 น.'],['13h-19h','13:00-19:00 น.'],['16h-22h','16:00-22:00 น.'],['19h-01h','19:00-01:00 น.'],['21h-03h','21:00-03:00 น.']],
            '30':[['09:00-17:00','09:00-17:00 น.'],['17:00-01:00','17:00-01:00 น.']] };
 // ⚙️ RÉGLAGES JOUR D'ESSAI (à modifier ici ET dans le script Google : AGE_MIN_ESSAI / AGE_MAX_ESSAI)
@@ -368,7 +368,7 @@ function parResa(p){ const r=parValide(); if(r) scan('📝 réservation parrain�
 // 👥 places par horaire : 4 (avril → octobre) · 5 (du 1er novembre au 30 mars)
 // 👥 places par horaire : réglées par le patron (page « 🗓️ Places disponibles ») · avril→octobre = ete · 1er nov.→30 mars = hiver
 let CAPS={ete:4,hiver:5}; try{ const c0=JSON.parse(localStorage.getItem('pointage_caps')||'null'); if(c0 && c0.ete) CAPS=c0; }catch(e){}
-fetch('https://script.google.com/macros/s/AKfycbxyz1ElnhUFdqn4NXSAny9tyhnTh7oeQ9hicxbsUzHLsuSPEVh82sWBBqFuWWJnB4Q5/exec?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver, sh:c.sh||{}}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
+fetch('https://pointage-staff.web.app/api?caps=1&_='+Date.now()).then(r=>r.text()).then(t=>{ try{ const c=JSON.parse(t); if(c && c.ete){ CAPS={ete:+c.ete, hiver:+c.hiver, sh:c.sh||{}}; try{ localStorage.setItem('pointage_caps', JSON.stringify(CAPS)); }catch(e){} } }catch(e){} }).catch(()=>{});
 function capJour(iso, sh){ const m=+String(iso).slice(5,7), d=+String(iso).slice(8,10), hiv=(m>=11 || m<=2 || (m===3 && d<=30)), p=(sh && CAPS.sh && CAPS.sh[sh]) || CAPS; return +(hiv ? p.hiver : p.ete) || (hiv ? 5 : 4); }   // sh = horaire (places réglées horaire par horaire)
 function capPeriode(deb, n, sh){ let c=99; const s=new Date(deb+'T00:00:00'); for(let i=0;i<(+n||1);i++){ const x=new Date(s); x.setDate(s.getDate()+i); const iso=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); c=Math.min(c, capJour(iso, sh)); } return c; }
 function ctl(){ return (SIG.thai?'✅ ภาษาไทย':'⚠️ langue '+(SIG.lang||'?'))+' · '+(SIG.bkk?'heure BKK':'⚠️ '+(SIG.tz||'?'))+' · '+SIG.model+' · quiz ✅'; }
