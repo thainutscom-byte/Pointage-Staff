@@ -1,5 +1,18 @@
 <!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>👩 Présence du jour</title><meta http-equiv="refresh" content="0;url=patron-presence.html">
-<script>location.replace('patron-presence.html');</script></head>
-<body style="font-family:sans-serif;text-align:center;padding:40px"><a href="patron-presence.html">👩 Présence du jour</a> · <a href="patron-chiffres.html">💆 Massages et chiffre du jour</a></body></html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ลงเวลา</title>
+<link rel="apple-touch-icon" href="app-icon-180.png">
+<style>body{font-family:system-ui,sans-serif;background:#f0e4cd;color:#7f1d1d;text-align:center;padding:60px 20px}img{width:120px;border-radius:26px}a{display:inline-block;margin-top:18px;background:#7f1d1d;color:#fff;padding:14px 22px;border-radius:12px;font-weight:800;text-decoration:none}</style>
+</head><body>
+<img src="app-icon-512.png" alt=""><h2>ย้ายไปที่อยู่ใหม่แล้ว</h2><div>⏳ กำลังเปิด…</div>
+<a id="go" href="https://pointage-staff.web.app/app/patron-direct.html">📲 เปิด ลงเวลา</a>
+<script>
+// ➡️ tout a déménagé sur pointage-staff.web.app/app : on emmène les réglages de l'appareil (sauf gros fichiers)
+(function(){ var d={}, t=0;
+  try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i), v=localStorage.getItem(k); if(v!==null && v.length<150000 && t+v.length<1200000){ d[k]=v; t+=v.length; } } }catch(e){}
+  var h=''; try{ h=btoa(unescape(encodeURIComponent(JSON.stringify(d)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }catch(e){}
+  var u='https://pointage-staff.web.app/app/patron-direct.html'+location.search+(h && h.length>4?'#migr='+h:'');
+  document.getElementById('go').href=u; location.replace(u);
+})();
+</script>
+</body></html>
